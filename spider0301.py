@@ -74,6 +74,36 @@ SD_SPECIAL_LIMITS = {
 }
 SD_SPECIAL_URLS = set(SD_SPECIAL_LIMITS.keys())
 
+# ACS RSS can return a Cloudflare challenge page instead of XML. When that
+# happens, fall back to Crossref by journal ISSN for the ACS feeds we track.
+ACS_CROSSREF_FEEDS = {
+    "https://pubs.acs.org/action/showFeed?type=etoc&feed=rss&jc=chreay": {
+        "issn": "0009-2665",
+        "journal": "Chemical Reviews",
+    },
+    "https://pubs.acs.org/action/showFeed?type=axatoc&feed=rss&jc=chreay": {
+        "issn": "0009-2665",
+        "journal": "Chemical Reviews",
+    },
+    "https://pubs.acs.org/action/showFeed?type=etoc&feed=rss&jc=aelccp": {
+        "issn": "2380-8195",
+        "journal": "ACS Energy Letters",
+    },
+    "https://pubs.acs.org/action/showFeed?type=axatoc&feed=rss&jc=aelccp": {
+        "issn": "2380-8195",
+        "journal": "ACS Energy Letters",
+    },
+    "https://pubs.acs.org/action/showFeed?type=axatoc&feed=rss&jc=jacsat": {
+        "issn": "0002-7863",
+        "journal": "Journal of the American Chemical Society",
+    },
+    "https://pubs.acs.org/action/showFeed?type=axatoc&feed=rss&jc=aamick": {
+        "issn": "1944-8244",
+        "journal": "ACS Applied Materials & Interfaces",
+    },
+}
+ACS_CROSSREF_ROWS = 100
+
 # ✅ Debug：作者抓取路径日志
 DEBUG_AUTHOR = os.getenv("DEBUG_AUTHOR", "1") == "1"
 
@@ -559,6 +589,125 @@ def query_crossref_info(doi: str) -> dict:
         "last_author": last_author,
     }
 
+
+def _crossref_first_text(value) -> str:
+    if isinstance(value, list):
+        for item in value:
+            txt = clean_html_text(str(item or ""))
+            if txt:
+                return txt
+        return ""
+    return clean_html_text(str(value or ""))
+
+def _crossref_primary_url(msg: dict, doi: str) -> str:
+    resource = msg.get("resource") if isinstance(msg, dict) else {}
+    primary = resource.get("primary") if isinstance(resource, dict) else {}
+    url = primary.get("URL") if isinstance(primary, dict) else ""
+    if url:
+        return normalize_link(url)
+    url = (msg.get("URL") or "").strip()
+    if url:
+        return normalize_link(url)
+    if doi:
+        return f"https://doi.org/{doi}"
+    return ""
+
+def _crossref_work_to_record(msg: dict, fallback_journal: str) -> dict | None:
+    doi = (msg.get("DOI") or "").strip()
+    if not doi or not doi.lower().startswith("10.1021/"):
+        return None
+
+    pub_date = _crossref_pick_date(msg)
+    if not in_target_dates(pub_date):
+        return None
+
+    title = fix_mojibake(_crossref_first_text(msg.get("title")))
+    if should_drop_by_title(title):
+        return None
+
+    container_title = _crossref_first_text(msg.get("container-title")) or fallback_journal
+    source_title = f"{container_title}: Latest Articles (ACS Publications)"
+    link = _crossref_primary_url(msg, doi)
+    published_str = pub_date.strftime("%Y-%m-%d %H:%M:%S %Z") if pub_date else ""
+
+    abstract = (msg.get("abstract", "") or "").strip()
+    if abstract:
+        abstract = clean_html_text(abstract)
+
+    last_author = _crossref_pick_last_author(msg)
+    return {
+        "title": title,
+        "link": link,
+        "source": source_title,
+        "published_str": published_str,
+        "pub_date": pub_date,
+        "doi": doi,
+        "last_author": last_author,
+        "last_author_source": "crossref" if last_author else "",
+        "author_needs_api": not bool(last_author),
+        "abstract": abstract,
+        "abstract_source": "crossref" if abstract else "",
+        "must_have_abstract": False,
+        "rss_pub_date": pub_date,
+        "rss_published_str": published_str,
+        "_drop": False,
+    }
+
+def query_acs_crossref_records(feed_url: str) -> list[dict]:
+    meta = ACS_CROSSREF_FEEDS.get(feed_url)
+    if not meta:
+        return []
+
+    from_date = min(TARGET_DATES).isoformat()
+    until_date = max(TARGET_DATES).isoformat()
+    url = f"https://api.crossref.org/journals/{meta['issn']}/works"
+    params = {
+        "filter": f"from-pub-date:{from_date},until-pub-date:{until_date},type:journal-article",
+        "rows": ACS_CROSSREF_ROWS,
+        "sort": "published",
+        "order": "desc",
+    }
+    headers = {"User-Agent": f"literature-rss-spider/1.0 (mailto:{NCBI_EMAIL})"}
+    resp = safe_get(url, params=params, headers=headers)
+    time.sleep(API_SLEEP)
+    if not resp:
+        return []
+
+    try:
+        items = resp.json().get("message", {}).get("items", [])
+    except Exception:
+        return []
+
+    records = []
+    seen = set()
+    for msg in items:
+        rec = _crossref_work_to_record(msg, meta["journal"])
+        if not rec:
+            continue
+        key = record_key(rec.get("doi", ""), rec.get("link", ""))
+        if key in seen:
+            continue
+        seen.add(key)
+        records.append(rec)
+    return records
+
+def merge_crossref_fallback_record(base: dict, prev_by_key, prev_has_abs_keys, prev_no_abs_recent3_keys) -> dict:
+    key = record_key(base.get("doi", ""), base.get("link", ""))
+    if key in prev_has_abs_keys:
+        rec = {**prev_by_key.get(key, {}), "must_have_abstract": False}
+        for field in ("title", "link", "source", "published_str", "pub_date", "doi", "rss_pub_date", "rss_published_str"):
+            if base.get(field) not in (None, ""):
+                rec[field] = base.get(field)
+        for field in ("last_author", "last_author_source", "abstract", "abstract_source"):
+            if not (rec.get(field) or "").strip() and (base.get(field) or "").strip():
+                rec[field] = base.get(field)
+        rec["author_needs_api"] = not bool((rec.get("last_author") or "").strip())
+        rec["_drop"] = False
+        return rec
+
+    base["must_have_abstract"] = key in prev_no_abs_recent3_keys
+    return base
+
 def query_semanticscholar_abstract(doi: str) -> dict:
     url = f"https://api.semanticscholar.org/graph/v1/paper/DOI:{doi}"
     params = {"fields": "title,abstract,year,journal"}
@@ -985,6 +1134,7 @@ def read_feed_list(path: Path) -> list[str]:
 def collect_rss_records(prev_by_key, prev_has_abs_keys, prev_no_abs_recent3_keys):
     urls = read_feed_list(FEED_LIST_FILE)
     today_records = {}
+    acs_crossref_done = set()
 
     for feed_url in urls:
         print(f"\n📡 RSS: {feed_url}")
@@ -994,6 +1144,7 @@ def collect_rss_records(prev_by_key, prev_has_abs_keys, prev_no_abs_recent3_keys
         is_sd_special = feed_url in SD_SPECIAL_URLS
         special_limit = SD_SPECIAL_LIMITS.get(feed_url, 0)
         special_taken = 0
+        feed_added = 0
 
         if is_sd_special:
             print(f" ✅ ScienceDirect特殊策略：抓最新 {special_limit} 条；pub_date 统一写抓取日期的前一天 {SD_ANCHOR_DATE} (UTC)")
@@ -1038,12 +1189,14 @@ def collect_rss_records(prev_by_key, prev_has_abs_keys, prev_no_abs_recent3_keys
 
                 if (rec.get("last_author") or "").strip():
                     today_records[key] = rec
+                    feed_added += 1
                     _dbg_author(f" [AUTHOR] reuse-yesterday ✅ {rec.get('last_author')} (kept) | key={key}")
                     if is_sd_special:
                         special_taken += 1
                     continue
                 else:
                     today_records[key] = rec
+                    feed_added += 1
                     _dbg_author(f" [AUTHOR] reuse-yesterday ⚠️ empty -> will try refill via RSS/API | key={key}")
 
             if reused_prev and key in today_records:
@@ -1117,12 +1270,28 @@ def collect_rss_records(prev_by_key, prev_has_abs_keys, prev_no_abs_recent3_keys
             }
 
             today_records[key] = out
+            feed_added += 1
 
             if is_sd_special:
                 special_taken += 1
 
         if is_sd_special:
             print(f" ✅ 特殊源实际收录：{special_taken}/{special_limit} 条（标题过滤/去重后可能少于limit）")
+
+        acs_meta = ACS_CROSSREF_FEEDS.get(feed_url)
+        acs_done_key = acs_meta.get("issn") if acs_meta else ""
+        if acs_meta and feed_added == 0 and acs_done_key not in acs_crossref_done:
+            print(f"  ACS RSS yielded 0 usable records; trying Crossref fallback for {acs_meta['journal']} ({acs_done_key})")
+            fallback_records = query_acs_crossref_records(feed_url)
+            added = 0
+            for base in fallback_records:
+                key = record_key(base.get("doi", ""), base.get("link", ""))
+                rec = merge_crossref_fallback_record(base, prev_by_key, prev_has_abs_keys, prev_no_abs_recent3_keys)
+                if key not in today_records:
+                    added += 1
+                today_records[key] = rec
+            acs_crossref_done.add(acs_done_key)
+            print(f"  ACS Crossref fallback added {added}/{len(fallback_records)} records")
 
     return today_records
 
