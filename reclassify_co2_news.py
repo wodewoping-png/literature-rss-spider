@@ -20,6 +20,7 @@ from pathlib import Path
 from typing import Dict, Iterable, List, Optional
 
 import pandas as pd
+from excel_output_utils import format_literature_worksheet
 from sentence_transformers import SentenceTransformer, util
 
 
@@ -494,6 +495,7 @@ def save_outputs(df: pd.DataFrame, output_csv: Path, output_xlsx: Path) -> None:
             sheet_df = df[df["assigned_category"] == sheet_name].copy()
             sheet_df = sheet_df.sort_values(by=["assigned_score", "pub_date"], ascending=[False, False], kind="stable")
             sheet_df[export_columns].to_excel(writer, sheet_name=sheet_name, index=False)
+            format_literature_worksheet(writer.sheets[sheet_name])
 
 
 def main() -> None:

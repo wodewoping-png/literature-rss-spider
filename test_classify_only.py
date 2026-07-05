@@ -22,6 +22,7 @@ from pathlib import Path
 from typing import Dict, List, Tuple
 
 import pandas as pd
+from excel_output_utils import format_literature_worksheet
 from docx import Document
 from docx.enum.text import WD_ALIGN_PARAGRAPH, WD_LINE_SPACING
 from docx.oxml import OxmlElement
@@ -322,6 +323,7 @@ def classify_batch_by_id(
         "You are an expert literature classifier. "
         "Classify each paper using abstract first, title as fallback. "
         "Multi-label is allowed. Do not invent category names."
+        " Follow the category definitions verbatim; exclusions/notes are binding and override broad keyword matches."
     )
 
     # Important: make schema as explicit as possible.
@@ -768,12 +770,14 @@ def write_grouped_xlsx(
             sheet = _safe_sheet_name(cat, used)
             sub = df.iloc[idxs].copy()
             sub.to_excel(writer, index=False, sheet_name=sheet)
+            format_literature_worksheet(writer.sheets[sheet])
 
         # sheet for still-missing after second pass
         if still_missing_row_indices:
             sheet = _safe_sheet_name(SHEET_STILL_MISSING, used)
             sub = df.iloc[still_missing_row_indices].copy()
             sub.to_excel(writer, index=False, sheet_name=sheet)
+            format_literature_worksheet(writer.sheets[sheet])
 
 
 def main():

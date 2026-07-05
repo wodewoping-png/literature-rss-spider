@@ -9,6 +9,7 @@ from datetime import datetime
 from pathlib import Path
 
 import pandas as pd
+from excel_output_utils import format_literature_worksheet
 from docx import Document
 from docx.enum.text import WD_ALIGN_PARAGRAPH, WD_LINE_SPACING
 from docx.oxml import OxmlElement
@@ -273,6 +274,7 @@ def classify_batch(client, rules, items):
         "You are an expert literature classifier. "
         "Classify each paper by the given category definitions using abstract first, title as fallback. "
         "Multi-label is allowed. Do not invent category names."
+        " Follow the category definitions verbatim; exclusions/notes are binding and override broad keyword matches."
     )
     user = (
         "分类规则（类别名: 说明）:\n"
@@ -725,6 +727,7 @@ def write_grouped_xlsx(df: pd.DataFrame, labels, ordered_categories, output_xlsx
             sheet = _safe_sheet_name(cat, used)
             sub = df.iloc[idxs].copy()
             sub.to_excel(writer, index=False, sheet_name=sheet)
+            format_literature_worksheet(writer.sheets[sheet])
 
 
 def main():

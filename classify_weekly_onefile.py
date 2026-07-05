@@ -61,6 +61,7 @@ from pathlib import Path
 from typing import Dict, List, Tuple, Optional, Any
 
 import pandas as pd
+from excel_output_utils import format_literature_worksheet
 from docx import Document
 from docx.enum.text import WD_ALIGN_PARAGRAPH, WD_LINE_SPACING
 from docx.oxml import OxmlElement
@@ -759,7 +760,8 @@ def gemini_classify_by_id(
         "3) DO NOT classify solely by a material name (e.g., 'perovskite'). Classify by application/system.\n"
         "4) If the article does not clearly match any category definition, return empty labels [].\n"
         "5) If candidates are provided for an item, you MUST choose labels only from candidates (or []).\n"
-        "6) Output MUST be valid JSON object. No extra keys.\n"
+        "6) Follow the category definitions verbatim; exclusions/notes are binding and override broad keyword matches.\n"
+        "7) Output MUST be valid JSON object. No extra keys.\n"
     )
 
     user = (
@@ -1098,7 +1100,9 @@ def write_grouped_xlsx(
 
     with pd.ExcelWriter(output_xlsx, engine="openpyxl") as writer:
         # ALL
-        df.to_excel(writer, index=False, sheet_name=_safe_sheet_name("ALL", used))
+        sheet = _safe_sheet_name("ALL", used)
+        df.to_excel(writer, index=False, sheet_name=sheet)
+        format_literature_worksheet(writer.sheets[sheet])
 
         # category sheets
         for cat in ordered_categories:
@@ -1108,16 +1112,19 @@ def write_grouped_xlsx(
             sheet = _safe_sheet_name(cat, used)
             sub = df.iloc[idxs].copy()
             sub.to_excel(writer, index=False, sheet_name=sheet)
+            format_literature_worksheet(writer.sheets[sheet])
 
         # UNCATEGORIZED
         if uncategorized:
             sheet = _safe_sheet_name("UNCATEGORIZED", used)
             df.iloc[uncategorized].copy().to_excel(writer, index=False, sheet_name=sheet)
+            format_literature_worksheet(writer.sheets[sheet])
 
         # STILL_MISSING (after 2 Gemini passes)
         if sid:
             sheet = _safe_sheet_name("STILL_MISSING", used)
             df[df["stable_id"].isin(sid)].copy().to_excel(writer, index=False, sheet_name=sheet)
+            format_literature_worksheet(writer.sheets[sheet])
 
 
 # ============================

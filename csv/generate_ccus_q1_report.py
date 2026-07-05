@@ -1,15 +1,19 @@
 from collections import OrderedDict
 from pathlib import Path
 import os
+import sys
 
 os.environ.setdefault("MPLCONFIGDIR", "/tmp/matplotlib")
 
 import matplotlib.pyplot as plt
 import pandas as pd
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+
 from openpyxl import Workbook
 from openpyxl.chart import BarChart, LineChart, PieChart, Reference
 from openpyxl.chart.label import DataLabelList
 from openpyxl.styles import Alignment, Font, PatternFill
+from excel_output_utils import format_literature_worksheet
 
 
 BASE_DIR = Path(__file__).resolve().parent
@@ -439,6 +443,7 @@ def write_major_sheet(ws, major_counts: pd.DataFrame) -> None:
     ws.column_dimensions["C"].width = 12
     ws.column_dimensions["D"].width = 12
     ws.freeze_panes = "A2"
+    format_literature_worksheet(ws)
 
     max_row = len(display_df) + 1
     category_ref = Reference(ws, min_col=1, min_row=2, max_row=max_row)
@@ -471,6 +476,7 @@ def write_removal_sheet(ws, removal_counts: pd.DataFrame) -> None:
     ws.column_dimensions["C"].width = 12
     ws.column_dimensions["D"].width = 12
     ws.freeze_panes = "A2"
+    format_literature_worksheet(ws)
 
     max_row = len(display_df) + 1
     category_ref = Reference(ws, min_col=1, min_row=2, max_row=max_row)
@@ -506,6 +512,7 @@ def write_monthly_sheet(
     ws.column_dimensions["B"].width = 12
     ws.column_dimensions["C"].width = 46
     ws.freeze_panes = "A2"
+    format_literature_worksheet(ws)
 
     line_chart = LineChart()
     line_chart.style = 10
@@ -619,6 +626,7 @@ def write_news_sheet(ws, news: pd.DataFrame) -> None:
     ws.column_dimensions["E"].width = 18
     ws.column_dimensions["F"].width = 80
     ws.freeze_panes = "A2"
+    format_literature_worksheet(ws)
 
 
 def build_workbook(

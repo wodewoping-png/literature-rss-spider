@@ -1,12 +1,16 @@
 from __future__ import annotations
 
 from pathlib import Path
+import sys
 
 import pandas as pd
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from openpyxl import Workbook
 from openpyxl.chart import BarChart, LineChart, PieChart, Reference
 from openpyxl.chart.label import DataLabelList
 from openpyxl.styles import Alignment, Font, PatternFill
+from excel_output_utils import format_literature_worksheet
 from openpyxl.utils import get_column_letter
 
 
@@ -180,6 +184,7 @@ def build_excel_report(q1: pd.DataFrame, category_counts: pd.DataFrame, monthly_
     detail_export = q1[detail_cols].copy().sort_values(["pub_date_str", "category", "title"])
     detail_export.columns = ["标题", "分类", "日期", "来源", "链接"]
     write_df(detail_ws, detail_export)
+    format_literature_worksheet(detail_ws)
 
     bar_chart = BarChart()
     bar_chart.title = "2026 Q1 各领域文献数"
