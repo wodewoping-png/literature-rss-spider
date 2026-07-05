@@ -22,6 +22,7 @@ from zoneinfo import ZoneInfo
 
 import openpyxl
 import pandas as pd
+from excel_output_utils import format_literature_worksheet
 from openpyxl.styles import Alignment
 
 
@@ -381,6 +382,7 @@ def fill_sheet(ws, articles: pd.DataFrame) -> None:
     if col_count:
         merge_equal_runs(ws, col_count, [col_pub, col_jour])
     merge_equal_runs(ws, col_pub, [col_pub])
+    format_literature_worksheet(ws)
     adjust_sheet_layout(ws, headers)
 
 
