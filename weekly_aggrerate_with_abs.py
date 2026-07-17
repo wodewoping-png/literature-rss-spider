@@ -1,6 +1,6 @@
 # weekly_aggregate_with_abs.py
 from pathlib import Path
-from datetime import datetime, timedelta, timezone
+from datetime import date, datetime, timedelta, timezone
 from urllib.parse import urlsplit, urlunsplit
 import pandas as pd
 
@@ -19,6 +19,33 @@ def daily_file_for(d):
         return f_new
     f_old = OUTPUT_DIR / f"news_{d.strftime('%Y-%m-%d')}.csv"
     return f_old
+
+
+def calculate_rolling7_windows(run_date: date):
+    """Return the input-file and publication-date windows for a weekly run.
+
+    The daily spider names each CSV after its run date, while the newest
+    publication date in that CSV is normally the previous UTC day. Therefore
+    seven run-date files and seven publication dates are offset by one day.
+    """
+    input_end_date = run_date
+    input_start_date = input_end_date - timedelta(days=6)
+    publication_end_date = run_date - timedelta(days=1)
+    publication_start_date = publication_end_date - timedelta(days=6)
+    return (
+        input_start_date,
+        input_end_date,
+        publication_start_date,
+        publication_end_date,
+    )
+
+
+def print_windows(input_start_date, input_end_date, publication_start_date, publication_end_date):
+    print(f"Input files: {input_start_date} to {input_end_date} (UTC run dates)")
+    print(
+        f"Publication window: {publication_start_date} to "
+        f"{publication_end_date} (UTC dates)"
+    )
 
 def normalize_link(url: str) -> str:
     """
@@ -242,20 +269,26 @@ def merge_group_rows(g: pd.DataFrame) -> dict:
         "abstract_source": abstract_source,
     }
 
-def aggregate_rolling7_dedupe_by_link():
-    today_utc = datetime.now(timezone.utc).date()
-    start_date = today_utc - timedelta(days=6)
-    end_date = today_utc
+def aggregate_rolling7_dedupe_by_link(run_date=None):
+    if run_date is None:
+        run_date = datetime.now(timezone.utc).date()
+
+    (
+        input_start_date,
+        input_end_date,
+        publication_start_date,
+        publication_end_date,
+    ) = calculate_rolling7_windows(run_date)
 
     files = []
-    d = start_date
-    while d <= end_date:
+    d = input_start_date
+    while d <= input_end_date:
         f = daily_file_for(d)
         if f.exists():
             files.append(f)
         d += timedelta(days=1)
 
-    out = WEEKLY_DIR / f"weekly_news_with_abstract_{end_date.strftime('%Y-%m-%d')}.csv"
+    out = WEEKLY_DIR / f"weekly_news_with_abstract_{run_date.strftime('%Y-%m-%d')}.csv"
 
     # ✅ 输出列：加回 last_author（可选也带 last_author_source）
     empty_cols = [
@@ -267,7 +300,7 @@ def aggregate_rolling7_dedupe_by_link():
     if not files:
         pd.DataFrame(columns=empty_cols).to_csv(out, index=False, encoding="utf-8-sig")
         print(f"Rolling7 aggregate: 0 records → {out}")
-        print(f"Window: {start_date} to {end_date} (UTC dates)")
+        print_windows(input_start_date, input_end_date, publication_start_date, publication_end_date)
         return
 
     dfs = []
@@ -294,14 +327,14 @@ def aggregate_rolling7_dedupe_by_link():
     if not dfs:
         pd.DataFrame(columns=empty_cols).to_csv(out, index=False, encoding="utf-8-sig")
         print(f"Rolling7 aggregate: 0 records → {out}")
-        print(f"Window: {start_date} to {end_date} (UTC dates)")
+        print_windows(input_start_date, input_end_date, publication_start_date, publication_end_date)
         return
 
     all_df = pd.concat(dfs, ignore_index=True)
 
     # ====== 过滤 pub_date 落在滚动7天窗口内 ======
-    start_dt = pd.Timestamp(start_date, tz="UTC")
-    end_dt_exclusive = pd.Timestamp(end_date + timedelta(days=1), tz="UTC")
+    start_dt = pd.Timestamp(publication_start_date, tz="UTC")
+    end_dt_exclusive = pd.Timestamp(publication_end_date + timedelta(days=1), tz="UTC")
     all_df["pub_date"] = pd.to_datetime(all_df["pub_date"], utc=True, errors="coerce")
 
     in_window = all_df["pub_date"].notna() & (all_df["pub_date"] >= start_dt) & (all_df["pub_date"] < end_dt_exclusive)
@@ -314,7 +347,7 @@ def aggregate_rolling7_dedupe_by_link():
     if all_df.empty:
         pd.DataFrame(columns=empty_cols).to_csv(out, index=False, encoding="utf-8-sig")
         print(f"Rolling7 aggregate: 0 records after pub_date filtering → {out}")
-        print(f"Window: {start_date} to {end_date} (UTC dates)")
+        print_windows(input_start_date, input_end_date, publication_start_date, publication_end_date)
         return
 
     # ====== 核心：link_norm 分组补齐合并 ======
@@ -342,7 +375,7 @@ def aggregate_rolling7_dedupe_by_link():
 
     dedup.to_csv(out, index=False, encoding="utf-8-sig")
     print(f"Rolling7 aggregate: {len(dedup)} records from {len(files)} files → {out}")
-    print(f"Window: {start_date} to {end_date} (UTC dates)")
+    print_windows(input_start_date, input_end_date, publication_start_date, publication_end_date)
 
 if __name__ == "__main__":
     aggregate_rolling7_dedupe_by_link()
