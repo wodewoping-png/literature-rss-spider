@@ -55,6 +55,10 @@ REQ_TIMEOUT = 15
 API_SLEEP = 0.5
 NCBI_TOOL = "literature_bot"
 NCBI_EMAIL = os.getenv("NCBI_EMAIL", "qiaochuzhang@outlook.com")
+ELSEVIER_API_KEY = os.getenv("ELSEVIER_API_KEY", "").strip()
+THIRD_PARTY_READER_ENABLED = os.getenv("THIRD_PARTY_READER_ENABLED", "1") == "1"
+THIRD_PARTY_READER_BASE = os.getenv("THIRD_PARTY_READER_BASE", "https://r.jina.ai").rstrip("/")
+THIRD_PARTY_READER_MAX_PER_HOST = int(os.getenv("THIRD_PARTY_READER_MAX_PER_HOST", "5"))
 RSS_REQUEST_HEADERS = {
     "User-Agent": "Mozilla/5.0 (compatible; literature-rss-spider/1.0; +https://github.com/)",
     "Accept": "application/rss+xml, application/xml, text/xml, */*",
@@ -144,8 +148,9 @@ TITLE_EXCLUDE_KEYWORDS = [
 
 # OUP(NSR) RSS description 抽摘要
 OUP_ABS_RE = re.compile(
-    r'boxTitle"\s*>\s*Abstract\s*<\s*/\s*div\s*>\s*(.*?)\s*(?:</span>\s*</description>|$)',
-    flags=re.IGNORECASE | re.DOTALL
+    r'<div\b[^>]*class=["\'][^"\']*\bboxTitle\b[^"\']*["\'][^>]*>'
+    r'\s*Abstract\s*</div>\s*(.*?)(?:</span>|$)',
+    flags=re.IGNORECASE | re.DOTALL,
 )
 
 # ✅ Nature 页面源码里抓作者（你给的示例）
@@ -166,6 +171,25 @@ def clean_html_text(s: str) -> str:
     s = TAG_RE.sub("", s)
     s = re.sub(r"\s+", " ", s)
     return s.strip()
+
+def get_entry_description_html(entry) -> str:
+    """Return the richest RSS summary body, including content:encoded feeds."""
+    for key in ("summary", "description"):
+        value = entry.get(key) or ""
+        if isinstance(value, str) and value.strip():
+            return value
+
+    content = entry.get("content") or []
+    if isinstance(content, dict):
+        content = [content]
+    for item in content:
+        if isinstance(item, dict):
+            value = item.get("value") or ""
+        else:
+            value = str(item or "")
+        if value.strip():
+            return value
+    return ""
 
 def fix_mojibake(s: str) -> str:
     if not s:
@@ -467,6 +491,32 @@ def extract_oup_abstract_from_rss(desc_html: str) -> str:
         return ""
     return clean_html_text(m.group(1))
 
+def is_nature_record(source_title: str, link: str) -> bool:
+    raw = " ".join([source_title or "", link or ""]).lower()
+    return "nature.com" in raw or "nature communications" in raw
+
+def extract_nature_abstract_from_rss(desc_html: str, title: str = "") -> str:
+    if not desc_html:
+        return ""
+    # Nature content:encoded starts with a citation paragraph followed by the
+    # publisher-provided standfirst/abstract. Remove only that boilerplate.
+    body = re.sub(
+        r"^\s*<p\b[^>]*>.*?(?:published\s+online|doi\s*:).*?</p>\s*",
+        "",
+        desc_html,
+        count=1,
+        flags=re.IGNORECASE | re.DOTALL,
+    )
+    return extract_rss_description_abstract(body, title)
+
+def extract_pnas_abstract_from_rss(desc_html: str, title: str = "") -> str:
+    if not desc_html:
+        return ""
+    # PNAS descriptions start with volume/issue boilerplate. The remaining
+    # text is an official Significance statement or abstract excerpt.
+    body = re.sub(r"^.*?<br\s*/?>\s*", "", desc_html, count=1, flags=re.IGNORECASE | re.DOTALL)
+    return extract_rss_description_abstract(body, title)
+
 def is_trusted_rss_abstract_source(feed_url: str, source_title: str, link: str) -> bool:
     raw = " ".join([feed_url or "", source_title or "", link or ""]).lower()
     return any(
@@ -480,6 +530,10 @@ def is_trusted_rss_abstract_source(feed_url: str, source_title: str, link: str) 
             "rss.sciencedirect.com/publication/science/03702693",
         )
     )
+
+def extract_sciencedirect_pii(link: str) -> str:
+    m = re.search(r"/pii/([A-Z0-9]+)", link or "", flags=re.IGNORECASE)
+    return (m.group(1) if m else "").upper()
 
 def extract_rss_description_abstract(desc_html: str, title: str = "") -> str:
     text = fix_mojibake(clean_html_text(desc_html))
@@ -707,6 +761,103 @@ def merge_crossref_fallback_record(base: dict, prev_by_key, prev_has_abs_keys, p
 
     base["must_have_abstract"] = key in prev_no_abs_recent3_keys
     return base
+def parse_elsevier_article_xml(xml_text: str) -> dict:
+    try:
+        root = ET.fromstring(xml_text or "")
+    except Exception:
+        return {}
+
+    values: dict[str, list[str]] = {}
+    for el in root.iter():
+        local_name = el.tag.rsplit("}", 1)[-1].lower()
+        text = " ".join("".join(el.itertext()).split()).strip()
+        if text:
+            values.setdefault(local_name, []).append(text)
+
+    doi = ""
+    for value in values.get("doi", []) + values.get("identifier", []):
+        m = re.search(r"10\.\d{4,9}/\S+", value, flags=re.IGNORECASE)
+        if m:
+            doi = m.group(0).rstrip(".,;)")
+            break
+
+    abstract = ""
+    for key in ("description", "abstract"):
+        for value in values.get(key, []):
+            candidate = clean_html_text(value)
+            if len(candidate) >= 80:
+                abstract = candidate
+                break
+        if abstract:
+            break
+
+    return {"doi": doi, "abstract": abstract, "source": "elsevier_api"}
+
+def query_elsevier_pii_info(pii: str) -> dict:
+    if not pii:
+        return {}
+    url = f"https://api.elsevier.com/content/article/PII:{pii}"
+    params = {"httpAccept": "text/xml"}
+    headers = {
+        "Accept": "text/xml",
+        "User-Agent": f"literature-rss-spider/1.0 (mailto:{NCBI_EMAIL})",
+    }
+    if ELSEVIER_API_KEY:
+        headers["X-ELS-APIKey"] = ELSEVIER_API_KEY
+    resp = safe_get(url, params=params, headers=headers)
+    time.sleep(API_SLEEP)
+    if not resp:
+        return {}
+    return parse_elsevier_article_xml(resp.text)
+
+def extract_reader_markdown_abstract(markdown: str, title: str = "") -> tuple[str, bool]:
+    text = (markdown or "").strip()
+    lowered = text.lower()
+    blocked_markers = (
+        "are you a robot?",
+        "requiring captcha",
+        "captcha challenge",
+        "just a moment...",
+        "access denied",
+    )
+    if any(marker in lowered for marker in blocked_markers):
+        return "", True
+
+    match = re.search(
+        r"(?ims)^#{1,6}\s+(?:abstract|summary)\s*$\s*(.+?)(?=^#{1,6}\s+|\Z)",
+        text,
+    )
+    if not match:
+        return "", False
+
+    abstract = match.group(1)
+    abstract = re.sub(r"!\[[^\]]*\]\([^)]*\)", " ", abstract)
+    abstract = re.sub(r"\[([^\]]+)\]\([^)]*\)", r"\1", abstract)
+    abstract = re.sub(r"[`*_>#]", " ", abstract)
+    abstract = re.sub(r"\s+", " ", abstract).strip()
+    if title and abstract.lower() == title.strip().lower():
+        return "", False
+    if len(abstract) < 80:
+        return "", False
+    return abstract, False
+
+def query_third_party_reader_abstract(link: str, title: str = "") -> dict:
+    if not THIRD_PARTY_READER_ENABLED or not link:
+        return {}
+    url = f"{THIRD_PARTY_READER_BASE}/{link}"
+    headers = {
+        "Accept": "text/plain",
+        "User-Agent": "literature-rss-spider/1.0",
+        "X-Retain-Images": "none",
+        "X-Retain-Links": "text",
+        "X-Max-Tokens": "6000",
+    }
+    resp = safe_get(url, headers=headers)
+    time.sleep(API_SLEEP)
+    if not resp:
+        return {}
+    abstract, blocked = extract_reader_markdown_abstract(resp.text, title)
+    return {"abstract": abstract, "source": "jina_reader", "blocked": blocked}
 
 def query_semanticscholar_abstract(doi: str) -> dict:
     url = f"https://api.semanticscholar.org/graph/v1/paper/DOI:{doi}"
@@ -1166,7 +1317,7 @@ def collect_rss_records(prev_by_key, prev_has_abs_keys, prev_no_abs_recent3_keys
                 continue
 
             link = entry.get("link") or ""
-            desc_html = entry.get("summary") or entry.get("description") or ""
+            desc_html = get_entry_description_html(entry)
             doi = extract_doi_from_entry(entry)
             key = record_key(doi, link)
 
@@ -1243,6 +1394,16 @@ def collect_rss_records(prev_by_key, prev_has_abs_keys, prev_no_abs_recent3_keys
                 if abs_txt:
                     abstract = abs_txt
                     abstract_source = "rss_oup"
+            elif not abstract and is_nature_record(source_title, link):
+                abs_txt = extract_nature_abstract_from_rss(desc_html, title)
+                if abs_txt:
+                    abstract = abs_txt
+                    abstract_source = "rss_nature"
+            elif not abstract and is_pnas(source_title, link):
+                abs_txt = extract_pnas_abstract_from_rss(desc_html, title)
+                if abs_txt:
+                    abstract = abs_txt
+                    abstract_source = "rss_pnas_summary"
             elif not abstract and is_trusted_rss_abstract_source(feed_url, source_title, link):
                 abs_txt = extract_rss_description_abstract(desc_html, title)
                 if abs_txt:
@@ -1380,10 +1541,26 @@ def enrich_with_html_then_api(records: list[dict]):
     pubmed_cache: dict[str, dict] = {}
     openalex_cache: dict[str, dict] = {}
     s2_cache: dict[str, dict] = {}
+    elsevier_cache: dict[str, dict] = {}
+    reader_blocked_hosts: set[str] = set()
+    reader_host_attempts: dict[str, int] = {}
 
     print(f"\n🔧 API阶段：补全剩余摘要 + Wiley日期复核（canonical在最近{WILEY_CANONICAL_RECENT_DAYS}天内则不改RSS；否则drop）...")
     for r in records:
         doi = (r.get("doi") or "").strip()
+
+        pii = extract_sciencedirect_pii(r.get("link", ""))
+        if pii and (not doi or not (r.get("abstract") or "").strip()):
+            info = elsevier_cache.get(pii)
+            if info is None:
+                info = query_elsevier_pii_info(pii)
+                elsevier_cache[pii] = info
+            if not doi and (info.get("doi") or "").strip():
+                doi = info["doi"].strip()
+                r["doi"] = doi
+            if not (r.get("abstract") or "").strip() and (info.get("abstract") or "").strip():
+                r["abstract"] = info["abstract"].strip()
+                r["abstract_source"] = "elsevier_api"
 
         # Wiley 日期复核（仅对已入池的 Wiley：即RSS已是昨天/前天）
         if doi and is_wiley_record(r.get("source",""), r.get("link",""), doi):
@@ -1439,19 +1616,54 @@ def enrich_with_html_then_api(records: list[dict]):
                 r["last_author_source"] = a_src
                 _dbg_author(f" [AUTHOR] api ✅ {last_author} via {a_src}")
 
+        current_abstract = (r.get("abstract") or "").strip()
+        provisional_rss = (r.get("abstract_source") or "") in {"rss_nature", "rss_pnas_summary"}
+        if current_abstract and not provisional_rss:
+            continue
+
+        if doi:
+            aggressive = is_acs_energy_letters(r.get("source",""), r.get("link",""))
+            abs_txt, src = get_abstract_via_apis(doi, aggressive=aggressive)
+            if abs_txt and (not current_abstract or len(abs_txt.strip()) > len(current_abstract)):
+                r["abstract"] = abs_txt.strip()
+                r["abstract_source"] = src
+
         if (r.get("abstract") or "").strip():
             continue
 
-        if not doi:
+        link = (r.get("link") or "").strip()
+        host = urlsplit(link).netloc.lower()
+        attempts = reader_host_attempts.get(host, 0)
+        if not link or host in reader_blocked_hosts or attempts >= THIRD_PARTY_READER_MAX_PER_HOST:
             continue
-
-        aggressive = is_acs_energy_letters(r.get("source",""), r.get("link",""))
-        abs_txt, src = get_abstract_via_apis(doi, aggressive=aggressive)
-        if abs_txt:
-            r["abstract"] = abs_txt.strip()
-            r["abstract_source"] = src
+        reader_host_attempts[host] = attempts + 1
+        reader_info = query_third_party_reader_abstract(link, r.get("title", ""))
+        if reader_info.get("blocked"):
+            reader_blocked_hosts.add(host)
+            print(f" [READER] blocked by challenge page; disabling host for this run: {host}")
+            continue
+        reader_abstract = (reader_info.get("abstract") or "").strip()
+        if reader_abstract:
+            r["abstract"] = reader_abstract
+            r["abstract_source"] = reader_info.get("source", "jina_reader")
 
 # ================== 导出（只保留9列） ==================
+
+def print_missing_abstract_report(records: list[dict]):
+    missing = [r for r in records if not (r.get("abstract") or "").strip()]
+    if not missing:
+        print("\nAbstract completeness: 100%")
+        return
+
+    counts: dict[str, int] = {}
+    for r in missing:
+        source = (r.get("source") or "(unknown source)").strip()
+        counts[source] = counts.get(source, 0) + 1
+    print(f"\nMissing abstracts: {len(missing)}/{len(records)}")
+    for source, count in sorted(counts.items(), key=lambda item: (-item[1], item[0])):
+        print(f" - {source}: {count}")
+    if any(extract_sciencedirect_pii(r.get("link", "")) for r in missing) and not ELSEVIER_API_KEY:
+        print(" Info: configure ELSEVIER_API_KEY for complete ScienceDirect abstracts; public APIs remain enabled as fallback.")
 
 def export_records(today_records: dict):
     if not today_records:
@@ -1597,6 +1809,7 @@ def main():
     if drop:
         print(f"🧹 丢弃 must_have_abstract 且无摘要：{len(drop)} 条")
 
+    print_missing_abstract_report(list(today_records.values()))
     export_records(today_records)
 
 if __name__ == "__main__":
