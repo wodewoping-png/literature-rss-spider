@@ -60,6 +60,7 @@ jobs:
         run: python spider0301.py
         env:
           PLAYWRIGHT_HEADLESS: "1"
+          ELSEVIER_API_KEY: ${{ secrets.ELSEVIER_API_KEY }}
 
       - name: Commit daily results (rebase-safe)
         env:
