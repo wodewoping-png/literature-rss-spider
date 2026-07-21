@@ -4,6 +4,7 @@ https://www.nature.com/nnano.rss
 https://www.nature.com/nenergy.rss
 https://pubs.acs.org/action/showFeed?type=etoc&feed=rss&jc=aelccp
 https://www.nature.com/natsustain.rss
+https://www.nature.com/nclimate.rss
 https://onlinelibrary.wiley.com/feed/15213773/most-recent
 https://www.nature.com/nmat.rss
 https://www.nature.com/natchemeng.rss
