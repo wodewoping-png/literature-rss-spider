@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+from copy import copy
 from datetime import date, datetime
 from typing import Any
 
@@ -20,6 +21,15 @@ DATE_HEADERS = {
 }
 DOI_HEADERS = {"doi", "DOI"}
 LINK_HEADERS = {"link", "链接", "url", "URL"}
+HYPERLINK_FONT_COLOR = "0563C1"
+
+
+def _format_hyperlink_font(cell) -> None:
+    """Apply hyperlink typography without replacing the cell's existing fill or border."""
+    font = copy(cell.font)
+    font.color = HYPERLINK_FONT_COLOR
+    font.underline = "single"
+    cell.font = font
 
 
 def doi_to_url(doi: Any, link: Any = "") -> str:
@@ -87,11 +97,11 @@ def format_literature_worksheet(ws) -> None:
             if url:
                 cell.value = url
                 cell.hyperlink = url
-                cell.style = "Hyperlink"
+                _format_hyperlink_font(cell)
 
         for col_idx in link_cols:
             cell = ws.cell(row=row_idx, column=col_idx)
             url = doi_to_url("", cell.value)
             if url:
                 cell.hyperlink = url
-                cell.style = "Hyperlink"
+                _format_hyperlink_font(cell)
