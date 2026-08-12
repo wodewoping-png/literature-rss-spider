@@ -1,8 +1,0 @@
-feedparser
-pandas
-python-dateutil
-requests
-chardet
-playwright
-beautifulsoup4
-lxml
