@@ -56,13 +56,12 @@ import random
 import re
 import time
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import datetime
 from pathlib import Path
 from typing import Dict, List, Tuple, Optional, Any
 
 import pandas as pd
 from excel_output_utils import format_literature_worksheet
-from gemini_client import build_gemini_client, generate_content as gemini_generate_content
 from docx import Document
 from docx.enum.text import WD_ALIGN_PARAGRAPH, WD_LINE_SPACING
 from docx.oxml import OxmlElement
@@ -90,12 +89,14 @@ GOOGLE_AI_BASE_URL = (
     or "https://generativelanguage.googleapis.com/v1beta"
 ).strip().rstrip("/")
 GOOGLE_AI_TIMEOUT = int(os.getenv("GOOGLE_AI_TIMEOUT", os.getenv("GEMINI_TIMEOUT", "120")))
+GEMINI_TRANSLATE_MAX_RETRIES = int(os.getenv("GEMINI_TRANSLATE_MAX_RETRIES", "2"))
 GEMINI_CLASSIFY_MAX_RETRIES = int(os.getenv("GEMINI_CLASSIFY_MAX_RETRIES", os.getenv("GOOGLE_AI_MAX_RETRIES", "3")))
 
 MAX_ABSTRACT_CHARS_TO_TRANSLATE = int(os.getenv("MAX_ABSTRACT_CHARS_TO_TRANSLATE", "1600"))
 TRANSLATE_BATCH_SIZE_TITLE = int(os.getenv("TRANSLATE_BATCH_SIZE_TITLE", "12"))
 TRANSLATE_BATCH_SIZE_ABSTRACT = int(os.getenv("TRANSLATE_BATCH_SIZE_ABSTRACT", "3"))
 TRANSLATE_PROVIDER = os.getenv("TRANSLATE_PROVIDER", "google").strip().lower()
+GEMINI_TRANSLATE_FALLBACK_PROVIDER = os.getenv("GEMINI_TRANSLATE_FALLBACK_PROVIDER", "google").strip().lower()
 GOOGLE_TRANSLATE_MAX_RETRIES = int(os.getenv("GOOGLE_TRANSLATE_MAX_RETRIES", "4"))
 
 CLASSIFY_BATCH_SIZE = int(os.getenv("CLASSIFY_BATCH_SIZE", "12"))
@@ -225,7 +226,7 @@ def _load_classification_checkpoint(path: Path, allowed_labels: set) -> Dict[str
 
 def _save_classification_checkpoint(path: Path, labels_by_id: Dict[str, List[str]]):
     payload = {
-        "updated_at": datetime.now(timezone.utc).isoformat(timespec="seconds").replace("+00:00", "Z"),
+        "updated_at": datetime.utcnow().isoformat(timespec="seconds") + "Z",
         "labels_by_id": labels_by_id,
     }
     _atomic_write_text(path, json.dumps(payload, ensure_ascii=False, indent=2))
@@ -320,18 +321,86 @@ def build_text_for_classify(title: str, abstract: str, max_chars: int = 1600) ->
 # Gemini client
 # ============================
 def _build_gemini_client():
-    return build_gemini_client(GOOGLE_AI_MODEL)
+    api_key = (
+        os.getenv("GOOGLE_AI_API_KEY")
+        or os.getenv("GEMINI_API_KEY")
+        or ""
+    ).strip()
+    if not api_key:
+        raise RuntimeError(
+            "Missing GOOGLE_AI_API_KEY or GEMINI_API_KEY in environment. "
+            "For GitHub Actions, add it in repo Settings -> Secrets and variables -> Actions."
+        )
+
+    if not GOOGLE_AI_MODEL:
+        raise RuntimeError("GOOGLE_AI_MODEL is empty. Set GOOGLE_AI_MODEL or GEMINI_MODEL.")
+
+    return {"api_key": api_key, "model": GOOGLE_AI_MODEL}
 
 
 def _gemini_generate_content(client, messages, json_object: bool = True) -> str:
-    return gemini_generate_content(
-        client,
-        messages,
-        base_url=GOOGLE_AI_BASE_URL,
-        temperature=GOOGLE_AI_TEMPERATURE,
+    import requests
+
+    system_parts = []
+    user_parts = []
+    for msg in messages:
+        role = msg.get("role", "user")
+        content = msg.get("content", "")
+        if role == "system":
+            system_parts.append(str(content))
+        else:
+            user_parts.append(str(content))
+
+    model = client["model"]
+    model_path = model if model.startswith("models/") else f"models/{model}"
+    url = f"{GOOGLE_AI_BASE_URL}/{model_path}:generateContent"
+
+    payload = {
+        "contents": [
+            {
+                "role": "user",
+                "parts": [{"text": "\n\n".join(user_parts)}],
+            }
+        ],
+        "generationConfig": {
+            "temperature": GOOGLE_AI_TEMPERATURE,
+        },
+    }
+    if system_parts:
+        payload["systemInstruction"] = {"parts": [{"text": "\n\n".join(system_parts)}]}
+    if json_object:
+        payload["generationConfig"]["responseMimeType"] = "application/json"
+
+    resp = requests.post(
+        url,
+        headers={
+            "Content-Type": "application/json",
+            "x-goog-api-key": client["api_key"],
+        },
+        json=payload,
         timeout=GOOGLE_AI_TIMEOUT,
-        json_object=json_object,
     )
+    try:
+        resp.raise_for_status()
+    except requests.HTTPError as e:
+        raise RuntimeError(f"Gemini API HTTP {resp.status_code}: {resp.text[:1000]}") from e
+
+    data = resp.json()
+    candidates = data.get("candidates") or []
+    if not candidates:
+        raise RuntimeError(f"Gemini API returned no candidates: {json.dumps(data, ensure_ascii=False)[:1000]}")
+
+    parts = candidates[0].get("content", {}).get("parts") or []
+    text = "".join(str(p.get("text", "")) for p in parts).strip()
+    if not text:
+        raise RuntimeError(f"Gemini API returned empty content: {json.dumps(data, ensure_ascii=False)[:1000]}")
+    return text
+
+
+def _extract_content(resp) -> str:
+    if isinstance(resp, str):
+        return resp
+    return resp.choices[0].message.content
 
 
 def _call_with_retries(client, messages, label: str, json_object: bool = True, max_retries: Optional[int] = None):
@@ -517,7 +586,7 @@ def _cosine_sim_matrix(a, b):
 
 
 # ============================
-# Translation (Google Translate only)
+# Gemini translation
 # ============================
 def google_translate_texts(texts, label: str) -> List[str]:
     if not texts:
@@ -564,7 +633,35 @@ def google_translate_texts(texts, label: str) -> List[str]:
     return out
 
 
-def translate_texts_with_provider(texts, label: str, provider: str) -> List[str]:
+def translate_texts(client, texts, label: str) -> List[str]:
+    if not texts:
+        return []
+
+    system = (
+        "You are a professional scientific translator. "
+        "Translate English into Simplified Chinese. Preserve abbreviations, formulas, proper nouns, and units."
+    )
+    user = (
+        "Return ONLY JSON in this schema: {\"translations\": [\"...\", \"...\"]}\n"
+        "Array length must equal input length and order must match.\n"
+        f"inputs={json.dumps(texts, ensure_ascii=False)}"
+    )
+    messages = [{"role": "system", "content": system}, {"role": "user", "content": user}]
+    resp = _call_with_retries(client, messages, f"translate:{label}", json_object=True, max_retries=GEMINI_TRANSLATE_MAX_RETRIES)
+    content = _clean_json_text(_extract_content(resp))
+
+    try:
+        data = json.loads(content)
+        out = data.get("translations", [])
+    except Exception:
+        out = []
+
+    if not isinstance(out, list) or len(out) != len(texts):
+        raise RuntimeError(f"Translation output invalid for {label}.")
+    return [str(x) for x in out]
+
+
+def translate_texts_with_provider(client, texts, label: str, provider: str) -> List[str]:
     provider = (provider or "google").strip().lower()
     if provider in {"none", "skip"}:
         return ["" for _ in texts]
@@ -577,7 +674,7 @@ def enrich_translation(df: pd.DataFrame, provider: str = "google", checkpoint_pa
     df = df.copy()
     df = ensure_base_columns(df)
     df = ensure_stable_id_column(df)
-    provider = (provider or "google").strip().lower()
+    provider = (provider or "gemini").strip().lower()
 
     if checkpoint_path is not None:
         df = _load_translation_checkpoint(df, checkpoint_path)
@@ -593,13 +690,15 @@ def enrich_translation(df: pd.DataFrame, provider: str = "google", checkpoint_pa
         print("[plan] nothing to translate", flush=True)
         return df
 
+    client = None
+
     if need_title_idx:
         start = time.time()
         total = len(need_title_idx)
         done = 0
         for batch_idx in _chunked(need_title_idx, TRANSLATE_BATCH_SIZE_TITLE):
             batch = df.loc[batch_idx, "title"].tolist()
-            translated = translate_texts_with_provider(batch, "title", provider)
+            translated = translate_texts_with_provider(client, batch, "title", provider)
             for idx, zh in zip(batch_idx, translated):
                 df.at[idx, "title_zh"] = zh
             done += len(batch_idx)
@@ -621,7 +720,7 @@ def enrich_translation(df: pd.DataFrame, provider: str = "google", checkpoint_pa
                 if len(x) > MAX_ABSTRACT_CHARS_TO_TRANSLATE:
                     x = x[:MAX_ABSTRACT_CHARS_TO_TRANSLATE]
                 batch.append(x)
-            translated = translate_texts_with_provider(batch, "abstract", provider)
+            translated = translate_texts_with_provider(client, batch, "abstract", provider)
             for idx, zh in zip(batch_idx, translated):
                 df.at[idx, "abstract_zh"] = zh
             done += len(batch_idx)
@@ -689,7 +788,7 @@ def gemini_classify_by_id(
         json_object=True,
         max_retries=GEMINI_CLASSIFY_MAX_RETRIES,
     )
-    content = _clean_json_text(resp)
+    content = _clean_json_text(_extract_content(resp))
 
     try:
         data = json.loads(content)
@@ -744,10 +843,13 @@ def classify_hybrid(
     titles = [_normalize_cell(r.get("title", "")) for r in records]
 
     cat_names = [r.name for r in rules]
+    name_to_rule = {r.name: r for r in rules}
+
     # Rule layer: exclude blocking + include strong assign
     blocked: List[set] = [set() for _ in records]
     include_hits: List[Dict[str, int]] = [dict() for _ in records]
     auto_labels: List[List[str]] = [[] for _ in records]   # from strong keyword or strong embedding
+    need_model_idx: List[int] = []
 
     for i, text in enumerate(texts):
         t = (titles[i] + " " + text).lower()
@@ -770,6 +872,8 @@ def classify_hybrid(
         strong_sorted = [cn for cn in cat_names if cn in strong]
         if strong_sorted:
             auto_labels[i] = strong_sorted
+        else:
+            need_model_idx.append(i)
 
     print(f"[gate] auto-labeled by keyword strong: {sum(1 for x in auto_labels if x)} / {len(records)}", flush=True)
 
@@ -847,6 +951,7 @@ def classify_hybrid(
     # Gemini final confirmation for those not auto-labeled
     final_labels: Dict[str, List[str]] = {ids[i]: auto_labels[i] for i in range(len(records)) if auto_labels[i]}
     still_missing_ids: List[str] = []
+    checkpoint_labels: Dict[str, List[str]] = {}
     if checkpoint_path is not None:
         checkpoint_labels = _load_classification_checkpoint(checkpoint_path, set(cat_names))
         for _id, labs in checkpoint_labels.items():
