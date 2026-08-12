@@ -51,7 +51,7 @@ jobs:
       - name: Install Python dependencies
         run: |
           python -m pip install -U pip
-          pip install -r requirements-spider.txt
+          pip install -r requirements.txt
 
       - name: Install Playwright browsers (Chromium)
         run: python -m playwright install --with-deps chromium
@@ -126,7 +126,7 @@ jobs:
         if: steps.weekly_gate.outputs.run == 'true'
         run: |
           python -m pip install -U pip
-          pip install -r requirements-spider.txt
+          pip install -r requirements.txt
 
       - name: Install Playwright browsers (Chromium)
         if: steps.weekly_gate.outputs.run == 'true'

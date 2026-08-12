@@ -13,8 +13,3 @@ env/
 .DS_Store
 Thumbs.db
 
-output/codex/
-output/debug/
-output/monthly/*-bak.xlsx
-output/monthly/*-旧.xlsx
-output/monthly/*-本地修复备份.xlsx
