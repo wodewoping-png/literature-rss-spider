@@ -14,7 +14,7 @@ import time
 import json
 import random
 from pathlib import Path
-from datetime import datetime, timedelta, timezone
+from datetime import date, datetime, timedelta, timezone
 from html import unescape
 from urllib.parse import urlsplit, urlunsplit
 from xml.etree import ElementTree as ET
@@ -30,8 +30,19 @@ FEED_LIST_FILE = Path("feeds1211.txt")
 OUTPUT_DIR = Path("output")
 OUTPUT_DIR.mkdir(exist_ok=True)
 
-# 抓“昨天+前天”（UTC）
-today_utc = datetime.now(timezone.utc).date()
+# 抓“运行基准日的昨天+前天”（UTC）。RUN_DATE 供缺失日报补抓使用；
+# 未设置时保持原有行为，使用当前 UTC 日期。
+def get_run_date() -> date:
+    raw = os.getenv("RUN_DATE", "").strip()
+    if not raw:
+        return datetime.now(timezone.utc).date()
+    try:
+        return datetime.strptime(raw, "%Y-%m-%d").date()
+    except ValueError as exc:
+        raise ValueError("RUN_DATE must use YYYY-MM-DD format") from exc
+
+
+today_utc = get_run_date()
 yesterday_utc = today_utc - timedelta(days=1)
 day_before_utc = today_utc - timedelta(days=2)
 TARGET_DATES = {yesterday_utc, day_before_utc}
@@ -1814,4 +1825,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-

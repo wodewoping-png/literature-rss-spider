@@ -32,6 +32,7 @@ jobs:
   run-rss-spider:
     if: github.event.schedule == '0 2 * * *' || github.event.inputs.task == 'daily' || github.event.inputs.task == 'all'
     runs-on: ubuntu-latest
+    timeout-minutes: 120
     steps:
       - name: Checkout repo
         uses: actions/checkout@v6
@@ -51,15 +52,13 @@ jobs:
       - name: Install Python dependencies
         run: |
           python -m pip install -U pip
-          pip install -r requirements.txt
-
-      - name: Install Playwright browsers (Chromium)
-        run: python -m playwright install --with-deps chromium
+          pip install -r requirements-spider.txt
 
       - name: Run spider (headless)
         run: python spider0301.py
         env:
           PLAYWRIGHT_HEADLESS: "1"
+          PLAYWRIGHT_CHANNEL: "chrome"
           ELSEVIER_API_KEY: ${{ secrets.ELSEVIER_API_KEY }}
 
       - name: Commit daily results (rebase-safe)
@@ -86,6 +85,7 @@ jobs:
     needs: run-rss-spider
     if: always() && (github.event_name == 'schedule' || github.event.inputs.task == 'weekly' || github.event.inputs.task == 'all')
     runs-on: ubuntu-latest
+    timeout-minutes: 60
     steps:
       - name: Decide whether to run weekly aggregate
         id: weekly_gate
@@ -126,11 +126,7 @@ jobs:
         if: steps.weekly_gate.outputs.run == 'true'
         run: |
           python -m pip install -U pip
-          pip install -r requirements.txt
-
-      - name: Install Playwright browsers (Chromium)
-        if: steps.weekly_gate.outputs.run == 'true'
-        run: python -m playwright install --with-deps chromium
+          pip install pandas
 
       - name: Weekly aggregate with abstracts (UTC)
         if: steps.weekly_gate.outputs.run == 'true'
@@ -158,3 +154,28 @@ jobs:
           git fetch origin main
           git pull --rebase origin main
           git push origin HEAD:main
+
+  notify-on-failure:
+    needs:
+      - run-rss-spider
+      - run-weekly-aggregate-with-abs
+    if: >-
+      always() &&
+      (contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled'))
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout alert helper
+        uses: actions/checkout@v6
+
+      - name: Send DingTalk failure alert
+        env:
+          DINGTALK_WEBHOOK: ${{ secrets.DINGTALK_WEBHOOK || secrets.DINGTALK_WEBHOOK_URL }}
+          DINGTALK_SECRET: ${{ secrets.DINGTALK_SECRET }}
+          DAILY_RESULT: ${{ needs.run-rss-spider.result }}
+          WEEKLY_RESULT: ${{ needs.run-weekly-aggregate-with-abs.result }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: >-
+          python scripts/send_dingtalk_alert.py
+          --title "Literature RSS workflow failed"
+          --message "repository=${GITHUB_REPOSITORY}; daily=${DAILY_RESULT}; weekly=${WEEKLY_RESULT}; run=${RUN_URL}"
