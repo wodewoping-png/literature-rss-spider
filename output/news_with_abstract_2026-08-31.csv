@@ -1,0 +1,769 @@
+﻿title,link,source,published_str,pub_date,doi,last_author,abstract,abstract_source,must_have_abstract
+Multiscale fractal-LLM synergy for secure synchrophasor data authentication in smart grids,https://www.sciencedirect.com/science/article/pii/S0306261926014091?dgcid=rss_sd_all,ScienceDirect Publication: Applied Energy,2026-08-29 00:00:00 UTC,2026-08-29 00:00:00+00:00,10.1016/j.apenergy.2026.128753,Feifei Bai,"Synchrophasor Data (SD), which captures the states and dynamics of transmission and distribution power networks, is recorded by dispersed Phasor Measurement Units (PMUs) that are connected through advanced communication infrastructures in cyber-physical systems. While the source information of SD is critical for PMU-based applications, it remains susceptible to data integrity attacks. Reliable SD source authentication must be performed efficiently before any SD analytics to ensure application integrity. Existing machine learning authentication methods are focused on sparse SD across vast regions and fail to represent realistic network conditions. This study presents a data-driven SD source authentication of dense PMUs at intra-state locations without requiring detailed power network topology, parameters, or costly upgrades to PMU hardware and data infrastructure. It offers a practical data-driven approach through multiscale fractal - Large Language Models (LLMs) synergy for secure SD authentication. Specifically, Multiscale Vector Visibility Height Correlation Analysis (MVVHCA) is developed to extract long-term fractal correlations from SD with multiple attributes simultaneously and pinpoint scales exhibiting peak multifractality. Then, high-fidelity synthetic SD is reconstructed through Adaptive Multifractal Interpolation (AMFI). These synthetic SD are further processed by LLMs to achieve robust, real-time source authentication. Validation on extensive real-world SD from multiple intra-state locations confirms superior accuracy and computational efficiency, which establishes a scalable solution for secure operation of renewable-dominated smart grids.",openalex,0
+Global rice methane emissions tripled over six decades amid declining emission intensity,https://academic.oup.com/nsr/advance-article/doi/10.1093/nsr/nwag555/8774597?rss=1,National Science Review Advance Access,2026-08-29 00:00:00 UTC,2026-08-29 00:00:00+00:00,10.1093/nsr/nwag555,Shilong Piao,"Rice paddies are among the largest anthropogenic sources of methane (CH4), yet substantial uncertainties persist in the long-term magnitude and spatiotemporal dynamics of the emissions. Here we show a spatially explicit global estimate of rice CH4 emissions from 1961 to 2020, leveraging a new high-resolution dataset and two Tier 3 modeling approaches (process-based and machine-learning-based). We find that global emissions have more than tripled over the past six decades, reaching a record high of 38.8 Tg CH4 yr−1 in 2020 based on the mean of the two Tier 3 estimates, both the rate and magnitude are substantially higher than conventional emission-factor-based inventories. Traditional rice-producing regions (e.g. Asia) dominated the increase due to expanded cultivation and intensified organic inputs, while Africa emerged as a rapidly growing source. Beyond trends in absolute emissions, the CH4 emission intensity (per unit of rice yield) declined across 70% of the global paddy area, mainly reflecting yield-driven efficiency gains. Notably, 44% of global rice production in the 2010 s occurs in countries with below-average emission intensity, with China being the largest contributor. By resolving long-term spatial heterogeneity with new data and models, this study provides a robust reassessment of the global rice methane budget and highlights pathways to reconcile food production with climate mitigation.",rss_oup,0
+Deep learning for scalable atomic electron tomography,https://academic.oup.com/nsr/advance-article/doi/10.1093/nsr/nwag561/8774596?rss=1,National Science Review Advance Access,2026-08-29 00:00:00 UTC,2026-08-29 00:00:00+00:00,10.1093/nsr/nwag561,Jianwei Miao,"Jianwei Miao; Deep learning for scalable atomic electron tomography, National Science Review, , nwag561, https://doi.org/10.1093/nsr/nwag561",openalex,1
+A life in paleomagnetism: an interview with lisa tauxe,https://academic.oup.com/nsr/advance-article/doi/10.1093/nsr/nwag554/8774590?rss=1,National Science Review Advance Access,2026-08-29 00:00:00 UTC,2026-08-29 00:00:00+00:00,10.1093/nsr/nwag554,Weijie Zhao,"Lisa introduced the field of paleomagnetism, shared several fascinating research stories, and recounted the challenges and setbacks, as well as the heartwarming moments, that she has experienced throughout her own scientific career.",crossref,0
+Market power and distributed solar integration in microgrids under limited regulation,https://www.sciencedirect.com/science/article/pii/S0306261926013590?dgcid=rss_sd_all,ScienceDirect Publication: Applied Energy,2026-08-29 00:00:00 UTC,2026-08-29 00:00:00+00:00,10.1016/j.apenergy.2026.128703,Sebastian Zwickl-Bernhard,"Decentralized electricity systems increasingly emerge where centralized grids fail to provide reliable supply. In such settings, privately operated neighborhood microgrids, often based on diesel generators, exhibit significant market power, limited regulatory oversight, and high environmental externalities. In parallel, households increasingly deploy off-grid solar photovoltaic (PV) systems to gain control over electricity supply. However, these systems suffer from curtailed excess generation during peak solar hours and unreliable access at other times. While prior studies have optimized microgrids in low-reliability grid contexts from a techno-economic perspective, they largely neglect the market power exerted by monopolistic private generators. This paper addresses this gap by developing a bi-level game-theoretic model that enables household-generated electricity to be fed into the microgrid while explicitly accounting for the market power of a neighborhood diesel generator company (DGC). The regulator sets price and feed-in-tariff caps to maximize household economic surplus (HES), while the DGC acts as a profit-maximizing agent controlling access and supply. The model is illustrated using high-resolution empirical data from Lebanon. Results show that: (i) price and feed-in-tariff caps substantially increase HES and consistently induce significant household PV feed-in to the microgrid; (ii) higher DGC budgets or greater PV-owner penetration lead to pronounced gains in HES; and (iii) the renewable energy share reaches 60% under base conditions and approaches 100% at sufficiently high budgets or PV-owner penetration levels, compared to 0% under the status quo.",semanticscholar,0
+Integrative analysis of the embryonic origin of adult neural stem cells in forebrain subventricular zones,https://academic.oup.com/nsr/advance-article/doi/10.1093/nsr/nwag516/8774603?rss=1,National Science Review Advance Access,2026-08-29 00:00:00 UTC,2026-08-29 00:00:00+00:00,10.1093/nsr/nwag516,Shaorong Gao,"In the mammalian brain, adult neural stem cells (NSCs) located in ventricular-subventricular zone (V-SVZ) of lateral ventricles and dentate gyrus continuously generate new neurons and glia throughout life. The adult NSCs in V-SVZ are derived from ventricular radial glial cells (RGCs) which become quiescent during embryonic development. However, the origin and establishment of this adult NSC pool remain elusive, primarily due to the challenge of tracing the lineage from embryonic RGCs to their quiescent adult successors. Here, by leveraging Vcam1—a marker continuously expressed from embryonic RGCs to adult NSCs—we unravel the dynamic process and regulatory mechanism underlying the fate bifurcation that gives rise to quiescent seed cells. We demonstrate that Vcam1+ embryonic RGCs directly contribute to the adult NSC pool. A subpopulation of quiescent Vcam1+ RGCs emerges early and is maintained throughout development, while a parallel population of proliferative Vcam1+ progenitors actively replenishes this quiescent reservoir. Through the combinatory analysis of single-cell multi-omics and clonal lineage tracing of Vcam1+ cells, we identified the TGF-β/Smad3 pathway as a critical regulator of quiescence. Our work thus provides a mechanistic dissection of how the foundational adult NSC pool is established through precisely regulated fate decisions during embryogenesis, offering new insights into the principles of lifelong neurogenesis.",rss_oup,0
+A dynamic electrochemical impedance spectroscopy extraction method for PEM water electrolyzers considering time resolution,https://www.sciencedirect.com/science/article/pii/S0306261926013036?dgcid=rss_sd_all,ScienceDirect Publication: Applied Energy,2026-08-29 00:00:00 UTC,2026-08-29 00:00:00+00:00,10.1016/j.apenergy.2026.128647,Daniel Hissel,"Electrochemical impedance spectroscopy (EIS) is an efficient in-operando characterization tool for analyzing the internal processes of proton exchange membrane water electrolyzers (PEMWE). However, conventional EIS requires the system to operate under steady-state conditions, which limits its applicability in real-world systems. Dynamic EIS (DEIS) provides a potential approach to capture the variation of internal physical states caused by changes in operating conditions over time. However, existing impedance calculation methods, such as fast Fourier transform and wavelet transform-based approaches, are limited in their ability to analyse nonstationary signals across the entire frequency range. To address these limitations, this paper proposes a hybrid method that combines the advantages of several existing time–frequency and instantaneous feature extraction techniques to accurately obtain DEIS under dynamic conditions. This study segments the perturbation signals based on operating variations and applies adaptive processing to ensure accurate impedance extraction. Simulation and experimental verification under different input power profiles to a PEMWE are conducted in this work. The results demonstrate that the proposed hybrid method achieves a DEIS accuracy exceeding 96%, verifying its effectiveness for PEMWE applications and potential for other electrochemical devices.",openalex,0
+Multiparametric optimization based decision making approach in energy systems planning under uncertainty,https://www.sciencedirect.com/science/article/pii/S030626192601370X?dgcid=rss_sd_all,ScienceDirect Publication: Applied Energy,2026-08-29 00:00:00 UTC,2026-08-29 00:00:00+00:00,10.1016/j.apenergy.2026.128714,Efstratios N. Pistikopoulos,"Energy infrastructure planning confronts a fundamental temporal asymmetry in which capacity decisions must be committed before uncertainty materializes and yet must remain robust across all future operational scenarios. Traditional approaches either adopt worst-case hedging or ignore operational uncertainty. We address this through a Robust Optimization framework integrating data-driven uncertainty quantification with multiparametric programming, enabling design strategies as explicit functions of realized uncertainty without iterative re-optimization. We quantify forecasting errors via probabilistic deep learning technique to inform uncertainty bounds. Rather than worst-case designs, we model it as bilevel problem solved multiparametrically, deriving ""wait-and-see"" operations as piecewise affine functions of ""here-and-now"" decisions and uncertainty realizations.Applied to a multi-source, multi-sink energy system (wind, nuclear, natural gas, battery, electricity and hydrogen demands) under joint supply-demand uncertainty, the framework reveals a strategic shift in technology prioritization as uncertainty quantiles increase, optimal designs preferentially allocate capacity to expensive-but-reliable dispatchables even though economical renewables remain available. The complete parametric solution enables upfront cost-robustness trade-off exploration, providing a tractable and generalizable tool for risk-aware capacity expansion, supporting strategic investment decisions in uncertain and rapidly evolving energy landscape.",openalex,0
+Ultrahigh‑resolution quantum dot light‑emitting diodes,https://academic.oup.com/nsr/advance-article/doi/10.1093/nsr/nwag549/8774606?rss=1,National Science Review Advance Access,2026-08-29 00:00:00 UTC,2026-08-29 00:00:00+00:00,10.1093/nsr/nwag549,Wei Huang,"Next-generation near-eye augmented reality (AR)/virtual reality (VR) display hardware puts forward growing requirements for high-performance, high-resolution luminous sources. Benefiting from outstanding luminous efficiency, tunable emission wavelength and convenient fabrication procedures, quantum dot light-emitting diodes (QLEDs) have gained extensive application prospects. However, achieving ultrahigh resolution without compromising device performance requires a balance between them, which is a major challenge for practical applications. In this Perspective, we introduce advanced patterning techniques for ultrahigh-resolution QLEDs, elaborate on the latest advancements in display technology, and summarize the key challenges and prospective research trends.",rss_oup,0
+Topographic decoupling of tree-mortality disturbances drives contrasting soil carbon fates via divergent microbial strategies,https://www.nature.com/articles/s41467-026-77237-1,Earth and environmental sciences : Nature Communications subject feeds,2026-08-29 00:00:00 UTC,2026-08-29 00:00:00+00:00,,Juyu Lian,"Climate change is exacerbating tree mortality worldwide, threatening the stability of forest soil organic carbon (SOC) stocks. However, how SOC responds to tree mortality amid co-occurring disturbances remains mechanistically unresolved. Here, we demonstrate that topography spatially decouples the canopy-opening and detrital-legacy effects of tree mortality and transforms these co-occurring disturbances into distinct selective pressures on soil microbial communities, thereby driving SOC toward contrasting fates through divergent microbial strategies for carbon and energy acquisition. On ridges, canopy-opening effects co-select for exo-enzyme and aerobic-respiration traits, alongside SOC loss associated with reduced heavy-fraction organic carbon. In valleys, detrital-legacy effects promote light-fraction-associated SOC gain while co-enriching endo-enzyme and anaerobic-respiration traits, potentially strengthening SOC retention. By integrating amplicon sequencing with genome-informed functional traits, our study provides genomic evidence for the microbial mechanisms underlying divergent SOC responses to tree mortality and highlights the potential of genome-based microbial traits for predicting ecosystem-scale biogeochemical processes.",nature_html,0
+Sustained algal-bacterial interactions promote accumulation of recalcitrant particulate carbon with accelerated radiocarbon aging signatures,https://www.nature.com/articles/s41467-026-77300-x,Earth and environmental sciences : Nature Communications subject feeds,2026-08-29 00:00:00 UTC,2026-08-29 00:00:00+00:00,,Yongyu Zhang,"Algal-bacterial interactions regulate the production and fate of marine particulate organic carbon (POC), yet their capacity to generate long-lived carbon sinks remains unclear. Using a two-year, nutrient-self-sustaining co-culture of Synechococcus and its mutualistic microbiota, we demonstrate that sustained algal-bacterial interactions promote the progressive accumulation of recalcitrant POC. Continuous release of algal-derived organic substrates, coupled with repeated microbial enzymatic reworking, produced inert organic particles, with ~26% resisting remineralization and forming a stable recalcitrant particulate carbon pool. Radiocarbon (Δ14C) analyses revealed an apparent age offset exceeding 400 years for POC formed within only two-year experiment. This “aged” signature likely results from algal assimilation of fossil-fuel-14C-depleted atmospheric CO2 followed by accumulation in generated recalcitrant POC. By demonstrating that apparent radiocarbon age can become decoupled from actual residence time, these results provide insights into the interpretation of “old” marine POC and highlight the important roles of algal-bacterial interactions in ocean particulate carbon sequestration.",nature_html,0
+Six-fold reduction in ocean heat content estimate uncertainty since 1960,https://www.nature.com/articles/s41467-026-76436-0,Earth and environmental sciences : Nature Communications subject feeds,2026-08-29 00:00:00 UTC,2026-08-29 00:00:00+00:00,,Ning Liu,"Ocean heat content (OHC) dominates Earth’s energy imbalance, but its uncertainty has not been fully understood. Here, we construct a Large-Ensemble to comprehensively quantify the OHC uncertainty from global to regional scales since 1955, and consider eight groups of error sources based on the community’s efforts. The global upper 2000 m OHC estimated uncertainty (defined as 5–95% quartile error range) has reduced six-fold since 1955 from ~111 ZJ (1955–1965) to ~19 ZJ (2014–2023), mainly due to reduced mapping/sampling uncertainty. This indicates a robust upper 2000 m OHC increase since 1955 of 449 [385, 519] ZJ. Quality-Control (QC) has become a primary error source recently, due to the difficulties detecting outliers in eddy-rich regions. Trend uncertainty sources differ from annual OHC: for 2005–2023, the upper 2000m trend is 10.9 [9.2, 11.4] ZJ yr−1 (0.68 [0.57, 0.71] Wm−2), with uncertainties from spatial gaps, mapping, QC, and climatology choice. The ocean warming rate increase from 2005–2023 is small but robust: 0.34 [0.19, 0.46] Wm−2 dec−1. These comprehensive uncertainty estimates guide future improvements in the global ocean observing system.",nature_html,0
+Hydrophobicity strategy drives contact-electro-catalysis on natural silicate minerals,https://www.nature.com/articles/s41467-026-77246-0,Earth and environmental sciences : Nature Communications subject feeds,2026-08-29 00:00:00 UTC,2026-08-29 00:00:00+00:00,,Yizhi Sheng,"Contact-electro-catalysis (CEC) at catalyst-water interfaces shows promise for wastewater purification, metal recovery, and H2O2 production, but catalyst design has mainly emphasized electron-withdrawing ability while overlooking interfacial water transfer. Here, we develop a hydrophobicity engineering strategy for natural silicate minerals to optimize catalyst-water contact by balancing the water approach and removal. As a representative non-fluorinated system, alkyl-modified minerals with moderate hydrophobicity (water contact angle of 125–148°) achieve a H2O2 yield of 350.0 μmol·L–1·h–1 under ultrasonication, outperforming fluorinated minerals. Mechanistic analysis indicates that this enhancement arises from improved interfacial contact efficiency rather than stronger electron-withdrawing ability alone. This strategy also remains effective under weak-force conditions, enabling self-powered CEC in a natural river. The modified minerals selectively enriched microorganisms associated with oxidative stress resistance and oxidized organic carbon utilization, including Novosphingobium sp. Together, these findings identify hydrophobicity regulation as an effective contact-optimization strategy for CEC.",nature_html,0
+Widespread genomic islands are hotspots of genome variations and mosaicism in giant viruses,https://www.nature.com/articles/s41467-026-77295-5,Earth and environmental sciences : Nature Communications subject feeds,2026-08-29 00:00:00 UTC,2026-08-29 00:00:00+00:00,,Mohammad Moniruzzaman,"Giant viruses in the phylum Nucleocytoviricota possess exceptionally large and mosaic genomes, yet the mechanisms underlying their remarkable plasticity remain poorly understood. Genomic islands are dynamic genomic regions that are major drivers of diversification and adaptation in bacteria. However, their contribution to giant virus evolution remains largely unexplored. Here, we characterize the genomic island landscape of giant viruses using 369 high-quality genomes spanning cultured isolates and long-read metagenome-assembled genomes. We identify 307 genomic islands across >50% of the genomes, demonstrating that these regions are pervasive across Nucleocytoviricota. These genomic islands are frequently associated with genomic hypervariability and enriched in genes involved in host interaction, particularly surface adhesion proteins, suggesting roles in host adaptation during the virus-host arms race. Comparative analyses further reveal these islands as hotspots of genome diversification, exhibiting frequent gain/loss and rearrangement even among highly similar genomes. Notably, many genomic islands are enriched in bacterial homologs, and several exhibit striking synteny with genomic regions recovered from co-occurring bacterial genomes, supporting large-scale genetic exchange between bacteria and giant viruses. Together, these findings identify genomic islands as pervasive and dynamic drivers of giant virus genome evolution, providing a framework for genome plasticity, mosaicism, and adaptive potential of giant viruses.",nature_html,0
+Pulse-based state-of-charge and state-of-health estimation of randomly retired lithium-ion batteries for second-life applications,https://www.sciencedirect.com/science/article/pii/S0306261926013589?dgcid=rss_sd_all,ScienceDirect Publication: Applied Energy,2026-08-29 00:00:00 UTC,2026-08-29 00:00:00+00:00,10.1016/j.apenergy.2026.128702,Torsten Wik,"Retired lithium-ion batteries are an important resource for second-life energy storage, but their practical reuse requires rapid and efficient state assessment under unknown usage histories. To address this problem, we develop a pulse-based framework for joint state-of-health (SOH) and state-of-charge (SOC) estimation of randomly retired lithium-ion battery cells. A set of voltage-response features is extracted from short bipolar pulse tests and used as diagnostic descriptors. Based on these features, two machine learning models, extremely randomized trees (ExtraTrees) and a tabular prior-data fitted network (TabPFN), are employed for battery state estimation and evaluated using data from 270 retired cells that cover three chemistry types and four capacity classes. The results show that TabPFN clearly outperforms ExtraTrees and achieves mean absolute errors ranging from 0.0076 to 0.0306 for SOH estimation and below 0.01 for SOC estimation across all cell groups. To reduce the testing burden, a subset of SOC-dependent pulse tests is removed, and the missing feature points are reconstructed using interpolation methods. The reduced-test results show that near-baseline estimation accuracy can be retained even after removing 40%–70% of SOC-dependent pulse tests, depending on the target state and accuracy requirements. These results demonstrate a practical route toward faster, lower-cost, and scalable state assessment for second-life battery applications.",openalex,0
+Health and nutrition returns to clean cooking fuel access across the rural-urban divide,https://www.sciencedirect.com/science/article/pii/S0301421526004854?dgcid=rss_sd_all,ScienceDirect Publication: Energy Policy,2026-08-29 00:00:00 UTC,2026-08-29 00:00:00+00:00,10.1016/j.enpol.2026.115551,Camille Massié Gamard,"Access to clean cooking fuels is central to advancing health, equity, and environmental sustainability worldwide. However, despite sustained policy efforts, a substantial share of households, especially in developing countries, still rely on polluting fuels, with adverse effects on health, environmental quality, and economic well-being. This paper draws on a panel dataset of 102 developing countries spanning 2000–2022 to assess the relationship between access to clean cooking fuels and human well-being. Using fixed-effects and instrumental-variable estimators, we address potential endogeneity concerns. We further explore heterogeneity across rural and urban settings and show that improvements in access are associated with larger gains in health and nutrition outcomes in urban areas. Focusing on sub-Saharan Africa, we conduct scenario-based simulations to quantify the potential benefits of expanding access to clean cooking fuels. Increasing rural access from 10% to 25% is estimated to prevent around 84,000 infant deaths and reduce child stunting by approximately 1.68 million cases. In urban areas, achieving universal access from a baseline of 35% coverage could avert up to 377,000 infant deaths and generate more than 11 million disability-adjusted life years saved, reflecting a substantial reduction in disease burden linked to household air pollution. These results point to the need to accelerate progress toward universal access to clean cooking fuels through targeted, context-specific policies. While rural populations remain underserved and require continued attention, the magnitude of potential gains in urban areas underscores the case for a balanced strategy in clean energy policy design.",openalex,0
+A Receptor‐Mediated Endolysosomal Recycling Chimera Enables Catalytic TNF‐α Degradation for Sustained Treatment of Mucosal Inflammation,https://advanced.onlinelibrary.wiley.com/doi/10.1002/adma.74818?af=R,Wiley: Advanced Materials: Table of Contents,2026-08-29 03:38:01 UTC,2026-08-29 03:38:01+00:00,10.1002/adma.74818,Jiaxu Hong,"ABSTRACT
+                  Mucosal inflammatory disorders such as dry eye disease (DED) and inflammatory bowel disease (IBD), driven by TNF‐α‐mediated immune‐epithelial crosstalk, remain therapeutically challenging. Conventional inhibitors often suffer from poor mucosal permeability and transient efficacy with 1:1 binding. Although extracellular protein degradation (eTPD) technologies can eliminate pathogenic proteins, most of them operate stoichiometrically, limiting dosage efficiency and durability. Here, we report a receptor‐mediated endolysosomal recycling chimera (RECYC) platform that enables catalytic, recyclable degradation of TNF‐α with multiple turnovers, achieving sustained suppression of mucosal inflammation. RECYC integrates a pH‐responsive peptide that binds TNF‐α at physiological pH and releases it in acidic endosomes, with a CI‐M6PR‐targeting aptamer that remains pH‐stable to drive continuous recycling. The anti‐TNF‐α RECYC achieved efficient uptake and recyclable clearance of extracellular TNF‐α across conjunctival and colonic epithelial cells and macrophages, achieving superstoichiometric TNF‐α clearance with up to 7.5 catalytic turnovers. The ∼30 kDa RECYC exhibited superior tissue penetration in murine cornea and colon compared to inhibitory antibodies. In murine DED and IBD models, RECYC restored ocular surface homeostasis and reduced colon inflammation with low‐dose, infrequent administration. Human corneal limbus organoids further confirmed prolonged anti‐inflammatory activity. Together, RECYC establishes a modular, recyclable eTPD platform for sustained treatment of TNF‐α‐driven mucosal inflammation.",crossref,0
+Wafer‐Scale Hyper‐Porous Graphene Network With Intrinsic Ferromagnetism at Room‐Temperature,https://advanced.onlinelibrary.wiley.com/doi/10.1002/adma.74568?af=R,Wiley: Advanced Materials: Table of Contents,2026-08-29 03:39:54 UTC,2026-08-29 03:39:54+00:00,10.1002/adma.74568,Dongfeng Diao,"ABSTRACT
+                  
+                    We report a wafer‐scale hyper‐porous graphene network (HGN) with room‐temperature intrinsic magnetism, which was revealed by both XMCD spectra at C K‐edge and M‐H curve, corresponding to a magnetic moment density of ∼0.06 μ
+                    B
+                    /atom, 1000 times higher than in defected HOPG. The impurity effects on magnetism were excluded by XMCD and ICP‐MS measurements. Atomic‐resolution observations unveiled that the magnetism originate from dangling zigzag edges within HGN pores apart over 1.4 nm, which was proved by annealing treatment and DFT calculations. This work confirms that intrinsic carbon ferromagnetism with the same physical mechanism as in the microscale can be obtained in bulk carbon systems. It provides a novel platform to further explore the spintronic and magnetic applications of carbon allotropes.",crossref,0
+Olefin‐Linked Ionic Covalent Organic Frameworks with Carbenium Backbones for High‐Performance Neuromorphic Computing,https://advanced.onlinelibrary.wiley.com/doi/10.1002/adma.74807?af=R,Wiley: Advanced Materials: Table of Contents,2026-08-29 03:41:24 UTC,2026-08-29 03:41:24+00:00,10.1002/adma.74807,Xiaodong Zhuang,"ABSTRACT
+                  
+                    Olefin‐linked covalent organic frameworks (
+                    cc
+                    COFs) have shown great advantages in the community since discovery. However, the synthesis of ccCOFs highly relies on unsaturated heteroatom‐involved segments (uSHS) to activate C─H bond to produce carbanion and to further condense with aldehydes. Such electron‐withdrawing uSHS have long hindered the wide applications of ccCOFs in optoelectronic devices due to the strong electron‐withdrawing effect. In this work, we report a carbenium‐involved synthesis of
+                    cc
+                    COFs without uSHS’ participating. As‐synthesized ionic
+                    cc
+                    COFs show good crystallinity and ultra‐narrow bandgap down to 1.03 eV without introducing complicated donor‐acceptor building blocks. Such
+                    cc
+                    COFs can also be directly synthesized as uniform films on different substrates, for example, glass, silicon wafer, Au, and so on. Most impressively, the device Au/2DPPPV‐102/Al exhibits 32 distinct conductance states under low‐voltage sweeps and each conductance state demonstrated excellent non‐volatility and could be maintained stably for over 5000 s, which are typical features of memristor. A convolutional neural network was implemented using a 32‐conductance‐state memristor array and applied to image recognition, yielding recognition accuracies exceeding 90% for five randomly selected images.",crossref,0
+Presynaptic Optical Modulation Enabled by Dielectric‐Embedded Type‐II PbS/PbSe Quantum Dots for Near‐Infrared Neuromorphic Vision,https://advanced.onlinelibrary.wiley.com/doi/10.1002/adma.74345?af=R,Wiley: Advanced Materials: Table of Contents,2026-08-29 03:43:09 UTC,2026-08-29 03:43:09+00:00,10.1002/adma.74345,Chun Zhao,"ABSTRACT
+                  
+                    In nighttime perception and near‐infrared (NIR) neuromorphic vision, a central challenge lies in encoding weak optical inputs into stable and controllable temporal states at the sensor front end. In nocturnal mammalian retinas, AII amacrine cells achieve this function by relying on stable chemical intermediate states, presynaptic modulation, and subthreshold temporal integration. Functionally inspired by selected information‐processing principles of this mechanism, we propose and demonstrate a bio‐inspired device design strategy. Through a chemical‐structural codesign approach, type‐II PbS/PbSe core–shell quantum dots (QDs) are used for the first time and embedded into the dielectric layer of flexible carbon‐nanotube (CNT) synaptic transistors, forming stable yet decaying photo‐generated intermediate states. These states modulate the CNT channel conductance via photogating, realizing a presynaptic, nonconductive modulation. The synaptic device exhibits NIR perception covering 395–808 nm and operates with an energy consumption of 0.325 fJ per synaptic event. An 8 × 8 synaptic array enables history‐dependent temporal processing, generating 32 distinguishable output states under five‐bit optical inputs. Based on these properties, a reservoir computing (RC) framework is validated on a dataset exceeding 10
+                    5
+                    samples, achieving 94.6% accuracy in nighttime human action recognition tasks. These results establish a bio‐inspired material‐device‐system pathway for NIR near‐sensor temporal perception and computation.",crossref,0
+Ion Concentration and Voltage Imaging With Fluorescent Nanodiamonds,https://advanced.onlinelibrary.wiley.com/doi/10.1002/adma.74728?af=R,Wiley: Advanced Materials: Table of Contents,2026-08-29 03:43:46 UTC,2026-08-29 03:43:46+00:00,10.1002/adma.74728,Philipp Reineck,"ABSTRACT
+                  
+                    The nitrogen‐vacancy (NV) center in diamond exists in different charge states with distinct photoluminescence properties, which are sensitive to the nanoscale electrochemical environment. Hence, the NV charge state is emerging as a powerful all‐optical platform for nanoscale sensing and imaging. Although significant progress has been made in engineering near‐surface NV centers in bulk diamond, controlling the NV charge state in fluorescent nanodiamonds (FNDs) has proven challenging, limiting the sensitivity and reliability of FND‐based charge state sensing. Here, we demonstrate reliable, reversible switching between the fluorescent NV
+                    0
+                    and a dark state, likely NV
+                    +
+                    , in sub‐30 nm FNDs via surface oxidation and hydrogenation, respectively, for single particles and particle powder. In aqueous electrochemical cells, we demonstrate voltage and ion concentration imaging based on the NV charge state in self‐assembled FND layers on transparent substrates. Applied voltages reliably modulate the FND PL with a sensitivity of up to 16 mV Hz
+                    −1/2
+                    . FND PL is also modulated by local changes in salt concentration with a sensitivity of up to 1.8% per millimolar NaCl, enabling all‐optical imaging of ion concentration gradients at the microscale. Our results represent a significant step toward realizing fast, stable, and scalable nanoscale charge‐ and voltage‐imaging technologies with sub‐micrometer spatial resolution.",crossref,0
+Growing Fiber Sensors Enable Continuous In Vivo Monitoring of Plant Hormones,https://advanced.onlinelibrary.wiley.com/doi/10.1002/adma.74856?af=R,Wiley: Advanced Materials: Table of Contents,2026-08-29 03:44:18 UTC,2026-08-29 03:44:18+00:00,10.1002/adma.74856,Ye Zhang,"ABSTRACT
+                  Plant stress during growth, caused by extreme environments and biotic attacks, threatens global biodiversity and crop production, necessitating urgent elucidation of plant adaptation mechanisms. Endogenous hormones of plant growth serve as master regulators and earliest indicators of stress adaptation, making it crucial to monitor their dynamics continuously. However, existing methods, including chromatography and electrochemical probes, fail because of their mismatch with the irreversible and plastic nature of plant growth. Here, we unexpectedly find a growing fiber sensor based on an electrode consisting of a dynamic polymer network infiltrated with liquid metal, termed metalgel. The sensor undergoes irreversible elongation ∼up to 10 times its original length under just 3.2 kPa tensile stress, at least 2 orders of magnitude lower than existing electronic conductive systems, thus achieving synchronous deformation with plant growth without inducing mechanical damage or hormonal disturbances. Hormone dynamics and relevant signaling pathways during plant growth in response to pathogen infection, salt stress, and even extreme ultraviolet radiation are thus revealed by the sensor. This work provides quantitative insights into plant stress resilience mechanisms and offers a feasible route to alleviate the food and ecological crises.",crossref,0
+Real Time Self‐Monitoring of Adhesion State via Machine Learning‐Assisted Traffic Light Color‐Coding in Silicone‐Based Smart Superglue,https://advanced.onlinelibrary.wiley.com/doi/10.1002/adma.74834?af=R,Wiley: Advanced Materials: Table of Contents,2026-08-29 03:45:23 UTC,2026-08-29 03:45:23+00:00,10.1002/adma.74834,Jintao Zhu,"ABSTRACT
+                  
+                    Despite significant advancements in robust adhesive materials, convenient monitoring adhesion strength under service conditions before adhesion failure is essential yet challenging. In this study, structurally novel silicone‐based conductive adhesive from comb‐shaped supramolecular elastomers is reported, featuring self‐monitoring of adhesion state in real time manner via machine learning‐assisted traffic light color‐coding approach. Comb‐shaped supramolecular ion‐conducting polysiloxane P(Ba‐
+                    co
+                    ‐Apy‐
+                    co
+                    ‐DMS) are first constructed via effective hydrosilylation, yielding pendant H‐bonding barbiturate (Ba) and ionic liquids (Apy) moieties. Adhesion‐sensitive electrical properties and experimental database are therefore constructed from P(Ba‐
+                    co
+                    ‐Apy‐
+                    co
+                    ‐DMS) via digitally transforming of adhesion strength into capacitance signals. Such database is further used to train a hybrid deep learning architecture that integrates 1D convolutional neural networks (1D‐CNN) with long short‐term memory (LSTM) units. This model learns the capacitance‐adhesion mapping and translates the encoded signal features into States 1, 2, and 3. Moreover, a traffic light color‐coding approach on the perceptions of adhesion strength is developed, green, orange, and red LED light symbols are respectively associated with States 1, 2, and 3 leveraged from deep learning architecture, reflecting tight, stretched, and fractured adhesion. Our conductive adhesives illustrate the Internet of Things‐empowered adhesion state and structural health monitoring, offering promising opportunity to boost intelligentization and informatization of classical materials.",crossref,0
+Superspace Architecture‐Driven Energy Funneling in Layered Halide Perovskite Nanoplatelets,https://advanced.onlinelibrary.wiley.com/doi/10.1002/adma.74826?af=R,Wiley: Advanced Materials: Table of Contents,2026-08-29 03:47:24 UTC,2026-08-29 03:47:24+00:00,10.1002/adma.74826,Sayan Bhattacharyya,"ABSTRACT
+                  
+                    Layered hybrid perovskites offer a versatile platform for tailoring light‐matter interactions, where alternative stacking of inorganic and organic layers creates complex couplings that disrupt the conventional crystal symmetry. Standard crystallographic models fall short of capturing the temperature‐dependent stacking disorder and multiplet excitonic features in these systems. Here, we introduce a four‐dimensional superspace framework, employing a phenomenological atomic modulation function, to describe the symmetry‐breaking interactions in Ruddlesden–Popper L
+                    2
+                    FA
+                    
+                      n
+                    
+                    ‐1
+                    [Sn
+                    0.022
+                    Pb
+                    0.978
+                    ]
+                    
+                      n
+                    
+                    I
+                    3
+                    
+                      n
+                    
+                    +1
+                    (L: oleylamine,
+                    n
+                    ≥ 2) nanoplatelet superlattices. Temperature‐tunable optical spectra reveal microcavity‐like excitonic confinement, while ultrafast transient absorption spectroscopy uncovers sub‐picosecond energy funneling through modulated quantum wells, facilitating a measurable and stable self‐powered photoresponse across a broad spectral range at room temperature. A rare coexistence of negative thermal expansion and quenching arises from anisotropic octahedral distortions and electron–phonon interactions. These findings establish a new structure‐function paradigm for designing thermally reconfigurable optoelectronic materials via engineered lattice modulation in hybrid perovskite superstructures.",crossref,0
+Upscaling the Fabrication of Rod‐Shaped Microgels: A Microfluidic Method Combining Step‐Emulsification With Consecutive Droplet Confinement in Parallelized Microchannels,https://advanced.onlinelibrary.wiley.com/doi/10.1002/adma.74822?af=R,Wiley: Advanced Materials: Table of Contents,2026-08-29 03:51:02 UTC,2026-08-29 03:51:02+00:00,10.1002/adma.74822,Laura De Laporte,"ABSTRACT
+                  Anisometric rod‐shaped microgels are an emerging material class holding potential for tissue engineering. Their anisotropic shape has proven advantageous in the fabrication of granular hydrogels and microporous annealed particle scaffolds (MAPs), featuring larger pore sizes in comparison to their spherical counterparts. However, to enable the use of rod‐shaped microgels as building blocks for high‐throughput tissue models, a robust and scalable production method is needed. Here, we report a microfluidic fabrication method to produce rod‐shaped microgels by combining step‐emulsification (SE) and droplet confinement. We highlight the development of the microfluidic chip design, and characterize the properties of the microgel rods produced via on‐chip gelation, using two light‐induced polymerization chemistries. Compared to single‐channel microfluidic techniques, rod‐shaped microgels are generated in eight parallelized microchannels in a relevant size range for tissue engineering applications, holding potential for further upscaling.",crossref,0
+Non‐Destructive and High‐Fidelity Sensing of Plant Water Content Enabled by Near‐Infrared Luminescent Metal Halides,https://advanced.onlinelibrary.wiley.com/doi/10.1002/adma.74821?af=R,Wiley: Advanced Materials: Table of Contents,2026-08-29 03:51:40 UTC,2026-08-29 03:51:40+00:00,10.1002/adma.74821,Jun Lin,"ABSTRACT
+                  
+                    Real‐time, accurate water monitoring is a crucial technical foundation for industrial, environmental, and biological research. However, traditional detection methods typically include destructive processes and suffer from response delays. Near‐infrared (NIR) luminescent metal halides offer a novel solution to this challenge, but they still face issues such as ultraviolet excitation and low photoelectric conversion efficiency. Herein, a luminescent material was synthesized based on the blue‐light‐excited lead‐free perovskite Cs
+                    2
+                    HfCl
+                    6
+                    :Te
+                    4+
+                    /Mo
+                    4+
+                    , in which energy transfer (ET) from Te
+                    4+
+                    to Mo
+                    4+
+                    enables highly efficient NIR luminescence in the 800–1200 nm wavelength range. Upon encapsulation with a commercial blue light chip, the fabricated NIR light‐emitting diode device achieved a photoelectric conversion efficiency of up to 16.1%. By utilizing the absorption characteristics of water molecules in the NIR spectrum and receiving signals via a sensor. An interactive learning process based on a neural network machine learning algorithm was employed, achieving an estimation accuracy of up to 98.6% for plant water content. This non‐destructive and precise NIR detection module provides a new solution for the real‐time monitoring of crop physiological status and holds broad application prospects in the fields of precision agriculture and plant science.",crossref,0
+Bifunctional Catalysis Drives Efficient and Ethanol‐Producing Aqueous Zn‐CO2 Batteries,https://advanced.onlinelibrary.wiley.com/doi/10.1002/adma.74846?af=R,Wiley: Advanced Materials: Table of Contents,2026-08-29 03:52:18 UTC,2026-08-29 03:52:18+00:00,10.1002/adma.74846,Zaiping Guo,"ABSTRACT
+                  
+                    Bifunctional electrocatalysts that simultaneously drive CO
+                    2
+                    reduction (CO
+                    2
+                    RR) and oxygen evolution (OER) in neutral electrolytes are essential for aqueous Zn‐CO
+                    2
+                    batteries (AZCBs), but conventional designs prioritize CO
+                    2
+                    RR and are often incompatible with OER, resulting in low energy efficiency, poor reversibility, and rapid degradation of batteries. Here, we introduce a unified catalyst architecture integrating Cu and Ni single atoms with boron‐, nitrogen‐co‐doped carbon (CuNi@BNC‐T). Heteroatom co‐doping stabilizes high single‐atom loadings, enhances metal‐support interactions, and suppresses carbon corrosion, while N‐coordinated Cu
+                    +
+                    and Ni
+                    3+
+                    sites cooperatively boost CO
+                    2
+                    RR‐OER, enabling ethanol formation and low‐overpotential OER. This strategy achieves a 0.7 V voltage gap at 5 mA cm
+                    −2
+                    , 522 h cycling at 20 mA cm
+                    −2
+                    , and first ethanol production via AZCBs with energy efficiency of 88% (flow‐cell). By elucidating previously unresolved degradation pathways, this work also correlates catalyst dynamics with battery failure, establishing design principles for durable bifunctional catalysts in aqueous Zn‐CO
+                    2
+                    systems.",crossref,0
+Incorporating π‐Conjugated Amino Acids Into Multi‐Functional Amorphous Materials,https://advanced.onlinelibrary.wiley.com/doi/10.1002/adma.74865?af=R,Wiley: Advanced Materials: Table of Contents,2026-08-29 03:54:02 UTC,2026-08-29 03:54:02+00:00,10.1002/adma.74865,Pengyao Xing,"ABSTRACT
+                  The controlled fabrication of amorphous materials from small organic molecules and their translation into high‐performance functional materials remain long‐standing challenges. Here, we introduce a multicomponent assembly strategy to developed amorphous materials from π‐conjugated amino acids, offering a versatile platform for high‐performance adhesive and optical applications. The incorporation of proline‐based building blocks into multicomponent networks bypasses the crystallization‐induced self‐assembly that otherwise dominates in solution, thereby driving liquid‐liquid phase separation‐like pathways to yield amorphous aggregates. These aggregates exhibit exceptional thermoreversible adhesion to iron‐based substrates, with their densely packed architecture facilitating rarely observed excimer emission of fluorene. Furthermore, enhanced charge‐transfer interactions with 1,2,4,5‐tetracyanobenzene shift the photoluminescence from indigo to green, increase the quantum yield by orders of magnitude, and transition the emission from short‐lived prompt fluorescence to long‐lived thermally activated delayed fluorescence. Through supercooling, amorphous glasses with high hardness and optical transparency were successfully fabricated, wherein increasing the number of components enables systematic tuning of surface roughness, wettability, quantum yield, emission wavelength, and excited‐state lifetime. This work establishes a novel paradigm for synthesizing amorphous materials within multicomponent high‐entropy systems, positioning amino acid and short peptide derivatives as a versatile class of biomolecular building blocks for advanced adhesive and photonic applications.",crossref,0
+Scintillating Fibers From Stable Heteroleptic Hybrid Glasses for Remote X‑Ray Detection,https://advanced.onlinelibrary.wiley.com/doi/10.1002/adma.74844?af=R,Wiley: Advanced Materials: Table of Contents,2026-08-29 03:55:10 UTC,2026-08-29 03:55:10+00:00,10.1002/adma.74844,Zhiguo Xia,"ABSTRACT
+                  
+                    Long‐distance and flexible optical fiber scintillators are essential under extreme operating conditions including interventional radiology and remote nuclear reactor monitoring, etc. Organic–inorganic hybrid glass fibers offer a promising solution, yet transforming cluster glasses into stable photonic architectures remains challenging. Here we report a heteroleptic strategy that exploits steric hindrance effects to precisely modulate the thermodynamic properties of hybrid Cu
+                    4
+                    I
+                    4
+                    cluster glass, further enabling ultralong, fracture‐free, and perturbation‐free TPP
+                    2
+                    MDP
+                    2
+                    Cu
+                    4
+                    I
+                    4
+                    (TPP = Triphenylphosphine; MDP = Methyldiphenylphosphine) glass fibers. The heteroleptic TPP
+                    2
+                    MDP
+                    2
+                    Cu
+                    4
+                    I
+                    4
+                    core glass not only overcomes the stability limitations of hybrid systems, but also exhibits a notable light yield of 38598 photons MeV
+                    −1
+                    and a low detection limit of 62.2 nGy s
+                    −1
+                    . We assemble these fibers into a flexible scintillation fiber array capable of imaging internal defects in confined spaces. This heteroleptic design principle in cluster glass platform can be extended to other hybrid glass fibers for emerging photonic applications.",crossref,0
+Fabrication of High Magnetic Susceptibility Nano‐FeS2 via Electronic Reconstruction Induced by Alternating Magnetic Field,https://advanced.onlinelibrary.wiley.com/doi/10.1002/adma.74842?af=R,Wiley: Advanced Materials: Table of Contents,2026-08-29 03:55:43 UTC,2026-08-29 03:55:43+00:00,10.1002/adma.74842,Jianfei Sun,"ABSTRACT
+                  
+                    Magnetic materials, such as
+                    Ferumoxytol
+                    and Gd‐DTPA, have played an important role in biomedical areas. The relentless pursuit of novel magnetic materials that are clinically applicable is an eternal theme in biomedical engineering. Pyrite (FeS
+                    2
+                    ) is a mineral drug in China that has been used for a long history. Besides the inherent biocompatibility proved in the human body as well as the donor of H
+                    2
+                    S, pyrite also belongs to the family of transition metal dichalcogenides, which endows it with flexible functional tunability of magnetism to be a promising candidate for novel magnetic nanodrug. However, the nano‐FeS
+                    2
+                    synthesized by common coprecipitation often shows poor magnetic susceptibility, so its application has greatly been limited. Herein, we reported an innovative strategy to prepare nano‐FeS
+                    2
+                    with high magnetic susceptibility (HS‐nano‐FeS
+                    2
+                    ) via alternating magnetic field‐assisted coprecipitation. AMF treatment effectively regulated electronic reconstruction of Fe
+                    2+
+                    in nano‐FeS
+                    2
+                    without foreign‐element doping, and super‐exchange interaction is proposed as the dominant factor for the optimized magnetic susceptibility toward a favorable spin‐polarized configuration. The HS‐nano‐FeS
+                    2
+                    is suitable for long‐term MR angiography imaging with excellent biosafety. We believe HS‐nano‐FeS
+                    2
+                    provides a novel magnetic candidate for clinical translation and demonstrates an innovative strategy at the electronic level.",crossref,0
+Laser‐Defined Reaction Topology Enables Controllable Solid‐State Transformations for Scalable Perovskite Photovoltaics,https://advanced.onlinelibrary.wiley.com/doi/10.1002/adma.74828?af=R,Wiley: Advanced Materials: Table of Contents,2026-08-29 03:57:15 UTC,2026-08-29 03:57:15+00:00,10.1002/adma.74828,Jianning Ding,"ABSTRACT
+                  
+                    Controlling reaction pathways in solids is critical for scalable semiconductor fabrication, yet remains fundamentally challenging in solution‐processed systems due to constrained mass transport and diffusion‐limited conversion. In perovskite photovoltaics, the widely adopted sequential two‐step deposition method is particularly limited by dense PbI
+                    2
+                    precursor layers, which impede ion diffusion and lead to incomplete conversion and defect formation. Here we report a photonic strategy to spatially regulate solid‐state reaction pathways by engineering micro‐ and nanoscale channels within PbI
+                    2
+                    layers. Laser‐induced structures act as deterministic diffusion pathways, enabling controlled ion transport and spatially guided infiltration of organic salts, thereby transforming a diffusion‐limited process into a spatially coordinated reaction. Mechanistic investigations reveal that photonic structuring redistributes the local electronic environment and lowers the activation barrier for phase transformation, resulting in accelerated conversion, enhanced crystallinity, and reduced defect density. The resulting perovskite films exhibit improved carrier dynamics. Perovskite solar modules with an aperture area of 22.95  cm
+                    2
+                    achieve a record power conversion efficiency of 22.83%, retaining over 90% of their initial performance after 1,500 h under maximum power point tracking. This work establishes photonic control of reaction pathways as a general framework for controlled solid‐state transformations.",crossref,0
+Versatile Sacrificial Mold‐Assisted 3D Printing for High‐Performance Mechanoluminescent Structures Toward Impact Protection and Visualization Monitoring,https://advanced.onlinelibrary.wiley.com/doi/10.1002/adma.74840?af=R,Wiley: Advanced Materials: Table of Contents,2026-08-29 04:00:20 UTC,2026-08-29 04:00:20+00:00,10.1002/adma.74840,Xinglong Gong,"ABSTRACT
+                  
+                    Mechanoluminescence (ML) materials exhibit significant potential for visual sensing and structural monitoring owing to their self‐powered operation and capability for real‐time stress mapping. However, the fabrication of complex and high‐aspect‐ratio 3D ML geometries remains challenging, primarily constrained by poor rheological control in direct ink writing and the limited adaptability of conventional demolding. Herein, this study proposes an indirect 3D printing strategy based on sacrificial molds to fabricate complex ZnS:Cu/polydimethylsiloxane (PDMS) structures with exceptional structural fidelity. By integrating digital image correlation (DIC) technology, a quantitative correlation between strain fields and ML intensity fields is successfully established. Furthermore, a 3D negative Poisson's ratio ML structure (NPR‐ML/PDMS) filled with silicone is designed for complex service scenarios, enabling the synergistic integration of impact protection and real‐time visualized impact sensing. NPR‐ML/PDMS reduces peak impact force by 60% and enhances ML intensity by 89%, demonstrating its potential for intelligent protective systems. Finally, this sacrificial mold method is successfully extended to ZnS/CaZnOS:Mn
+                    2
+                    +
+                    /epoxy resin and CaZnOS:Pr, Li‐based composite systems to achieve stress visualization in rigid load‐bearing structures, validating its broad universality across various polymer matrices. This work provides valuable guidance for the development and application of complex, high‑performance ML structures in impact protection and visualization monitoring fields.",crossref,0
+Pd(II)‐TADF Complexes With Metal‐Perturbed Intraligand Charge Transfer State: Emitters and Sensitizers for High‐Efficiency Red OLEDs,https://advanced.onlinelibrary.wiley.com/doi/10.1002/adma.74823?af=R,Wiley: Advanced Materials: Table of Contents,2026-08-29 04:04:28 UTC,2026-08-29 04:04:28+00:00,10.1002/adma.74823,Kai Li,"ABSTRACT
+                  
+                    The metal‐perturbed intraligand charge transfer (MPICT) excited state has proven to be a viable design strategy for thermally activated delayed fluorescence (TADF) complexes featuring a metal–donor–acceptor configuration. However, the structure‐photophysics correlation and the applications of such complexes for organic light‐emitting diodes (OLEDs) remain largely unexplored. Herein, we report a series of Pd(II) complexes (
+                    Pd3
+                    –
+                    Pd6
+                    ) having dibenzo[
+                    a
+                    ,
+                    c
+                    ]phenazine (DBPZ)‐substituted carbazolyl ligands with varied torsion angles. The energy gap between the lowest singlet and triplet excited states is tuned from 0.05 eV to 0.26 eV, which governs the emission mechanism and radiative decay rate. Complex
+                    Pd3
+                    exhibits strong red TADF with a photoluminescence quantum yield of 82% and a lifetime of 1.13 µs. In bottom‐emitting OLEDs,
+                    Pd3
+                    affords red electroluminescence with a peak at 617 nm, a maximum external quantum efficiency (EQE
+                    max
+                    ) of 30.15%, and a small efficiency roll‐off of 2.32% at 1000 cd m
+                    −2
+                    . In top‐emitting ITO‐free OLEDs,
+                    Pd3
+                    shows pure‐red emission with CIE
+                    x
+                    &gt; 0.68 and an EQE
+                    max
+                    of 38.68%.
+                    Pd3
+                    is also demonstrated as an efficient sensitizer for a red‐emitting multi‐resonance emitter, enabling hyperfluorescence OLEDs with an EQE
+                    max
+                    of 27.06% and suppressed efficiency roll‐off. These results highlight the potential of MPICT‐type Pd(II) complexes for high‐performance OLED displays.",crossref,0
+Ha L. Nguyen,https://onlinelibrary.wiley.com/doi/10.1002/anie.7114284?af=R,Wiley: Angewandte Chemie International Edition: Table of Contents,2026-08-29 04:26:10 UTC,2026-08-29 04:26:10+00:00,10.1002/anie.7114284,Ha L. Nguyen,"""I advise my students to keep asking themselves ""why"" and to strive for excellence in everything they do… The most exciting thing about my research is sharing my passion for science with students and watching them become excited about their own work…"" Find out more about Ha L. Nguyen in his Introducing… Profile.",pubmed,0
+DogMask: A Genetically Encoded Switch for Conditional Protein Conjugation,https://onlinelibrary.wiley.com/doi/10.1002/anie.5004113?af=R,Wiley: Angewandte Chemie International Edition: Table of Contents,2026-08-29 04:27:18 UTC,2026-08-29 04:27:18+00:00,10.1002/anie.5004113,Wilfred Chen,"ABSTRACT
+                  Protein conjugation enables the modular assembly of functional proteins but is largely incompatible with stimulus‐responsive platforms due to spontaneous reactivity. Here, we present DogMask, a genetically encoded platform that achieves input‐triggered protein conjugation by autoinhibiting a spontaneous conjugation platform, DogCatcher, with a competitive inhibitor mask. DogMask exhibits no detectable background conjugation and rapid activation in response to distinct inputs—including clinically relevant proteases and a photocleavable non‐standard amino acid variant achieving 70% cleavage efficiency, exceeding prior benchmarks—properties enabling robust intracellular control of transcription, RNA editing, and enzyme reconstitution, with both substantially reduced background and enhanced response relative to inducible dimerization systems.",crossref,0
+Achieving Near‐Unity Glyoxylate Selectivity in Ethylene Glycol Oxidation by Spatiotemporal Coupling of Pulsed Electrolysis and Interface Engineering,https://onlinelibrary.wiley.com/doi/10.1002/anie.3451661?af=R,Wiley: Angewandte Chemie International Edition: Table of Contents,2026-08-29 04:44:08 UTC,2026-08-29 04:44:08+00:00,10.1002/anie.3451661,Xiaobin Fan,"ABSTRACT
+                  
+                    Electrochemical cascade reactions suffer from suboptimal selectivity toward high‐value intermediates due to the uncontrollable sequential conversion inherent in conventional steady‐state electrolysis. To transcend the intrinsic limitations of one‐dimensional control, we propose a spatiotemporal synergy strategy for precision electrocatalysis. In this framework, the temporal dimension is governed by pulsed electrolysis, facilitating the rhythmic generation and rapid liberation of target intermediates. Simultaneously, the spatial dimension is engineered via molecular steric modifiers (
+                    p
+                    ‐toluidine) to create a persistent hydrophobic interface that effectively suppresses deleterious hydration‐driven overoxidation pathways. Synergistically, this dual‐dimensional orchestration achieves unprecedented precision, as evidenced by a dramatic leap in glyoxylate selectivity from 25.5% to &gt;99.0%. This work demonstrates a promising and transferable design principle for precision electrocatalysis in complex reaction networks. The spatiotemporal decoupling strategy, integrating temporal pulsed electrolysis for intermediate release and spatial interface engineering for overconsumption suppression, is demonstrated here for ethylene glycol oxidation and provides a rational basis for addressing similar selectivity challenges in other electrocatalytic systems.",crossref,0
+A Bidentate Chelation Strategy for Breaking the Thermodynamic Hydrophobicity‐Activity Trade‐Off to Boost the Electroreduction of CO2 to Formate,https://onlinelibrary.wiley.com/doi/10.1002/anie.9439653?af=R,Wiley: Angewandte Chemie International Edition: Table of Contents,2026-08-29 04:46:22 UTC,2026-08-29 04:46:22+00:00,10.1002/anie.9439653,Lixue Zhang,"ABSTRACT
+                  
+                    Achieving industrially relevant electrochemical CO
+                    2
+                    reduction (CO
+                    2
+                    RR) to formic acid requires catalyst that simultaneously exhibits high intrinsic activity and surface hydrophobicity. However, high intrinsic activity is considered thermodynamically contradictory on a hydrophobic surface since high hydrophobicity corresponds to low surface energy, thereby leading to low intrinsic activity. Here we overcome this hydrophobicity‐activity trade‐off via a bidentate chelation strategy that grafts carboxylic acid molecules with tunable alkyl chain lengths on Bi
+                    2
+                    O
+                    2
+                    CO
+                    3
+                    (XC‐BOC, where X denotes the carbon number). The obtained 10C‐BOC sustains high hydrophobicity without sacrificing activity. This hydrophobicity‐activity balance is achieved by restructuring the interfacial hydrogen‐bond (HB) network to suppress the undesired hydrogen evolution reaction (HER) and ensure the timely hydrogenation rate for the key *OCHO intermediate, in conjunction with modulating the Bi site electronic structure via the carboxyl‐O/Bi bidentate chelation to guarantee the high intrinsic activity. Consequently, 10C‐BOC achieves ampere‐level performance with FE
+                    HCOO‐
+                    &gt; 90% from 100–1000 mA cm
+                    −2
+                    , with an optimal FE
+                    HCOO‐
+                    of 97.7% at 600 mA cm
+                    −2
+                    (vs. 83.2% for bare BOC), and maintains FE
+                    HCOO‐
+                    &gt; 93% at 200 mA cm
+                    −2
+                    for 200 h. This work offers a general strategy to decouple hydrophobicity from intrinsic activity for advanced CO
+                    2
+                    RR electrocatalysts.",crossref,0
+Neural Engineering Tailored by Molecular Motors With Self‐Reporting for Neuron Activation and Depression Treatment,https://onlinelibrary.wiley.com/doi/10.1002/anie.2883647?af=R,Wiley: Angewandte Chemie International Edition: Table of Contents,2026-08-29 04:47:03 UTC,2026-08-29 04:47:03+00:00,10.1002/anie.2883647,Limin Zhang,"ABSTRACT
+                  The discovery of mechanical regulation to neuronal behavior offers a novel perspective for understanding nervous system function and advancing neural engineering. A key challenge lies in achieving precise mechanical control of neurons while simultaneously monitoring their activity in real time. Here, we engineered a novel molecular machine equipped with self‐reporting capability, MM‐VSD1, enabling stable anchoring into the plasma membrane. This integrated molecular tool comprises a light‐driven rotary molecular motor (MM), which delivers localized mechanical force to neuronal membranes. Concurrently, a tethered near‐infrared voltage‐sensitive dye (VSD1) module provides real‐time fluorescent feedback on changes in membrane potentials with millisecond temporal and subcellular spatial resolution. Utilizing this bifunctional molecular device, we demonstrate that MM‐VSD1 effectively activates mechanosensitive TRPV1 ion channels in hippocampal neurons, triggering calcium influx and action potential (AP) firing. This mechanical modulation induced by MM‐VSD1 is persistent and can be evoked in vivo up to one week, providing the potential of MM‐VSD1 for alleviating depression‐like behaviors in mice. By bridging mechanical manipulation with functional readouts at high spatiotemporal resolution, our work opens an avenue for mechano‐based therapeutic interventions in neurological disorders.",crossref,0
+Porous Solid Electrolyte Reactors for Function‐Oriented Off‐Electrode Electrosynthesis,https://onlinelibrary.wiley.com/doi/10.1002/anie.5622879?af=R,Wiley: Angewandte Chemie International Edition: Table of Contents,2026-08-29 04:48:44 UTC,2026-08-29 04:48:44+00:00,10.1002/anie.5622879,Zhichuan J. Xu,"ABSTRACT
+                  Electrosynthesis offers an attractive route to sustainable chemical manufacturing when coupled with renewable electricity. As electrosynthesis capability advances towards high‐purity products, the traditional proximity of reaction products to the electrode surface, where the reaction happens, increasingly becomes a limiting factor. In addition, the formation and transport of reactive species are confined in the same chamber, resulting in electrolyte contamination of the product. Porous solid electrolyte (PSE) reactors address this spatial constraint by introducing an additional ion‐conductive middle layer between the cathode and anode, enabling a versatile off‐electrode space for product formation and transportation. Here, we frame PSE reactors as function‐oriented platforms for off‐electrode electrosynthesis, in which the PSE middle layer serves as a functional reaction space that enables ionic recombination, reaction‐environment regulation, and improved management of reactive intermediates. By linking the underlying ionic‐species transport mechanisms and reactor design principles, we establish a structure‐transport‐function framework for understanding how PSE reactors extend electrosynthesis beyond the electrode surface confinement and guide the rational design of scalable electrosynthesis reactors as on‐site chemical manufacturing platforms.",crossref,0
+Magnesium‐Retention Assisted Synthesis of High‐Performance Zintl Thermoelectrics,https://onlinelibrary.wiley.com/doi/10.1002/anie.9935383?af=R,Wiley: Angewandte Chemie International Edition: Table of Contents,2026-08-29 04:52:04 UTC,2026-08-29 04:52:04+00:00,10.1002/anie.9935383,Zhi‐Gang Chen,"ABSTRACT
+                  
+                    For decades, performance optimization of Mg
+                    3
+                    (Bi, Sb)
+                    2
+                    ‐based thermoelectric materials has mainly relied on doping and alloying strategies, while the influence of synthesis‐process innovation on thermoelectric mechanisms and properties has remained largely unexplored. Here, we develop a magnesium‐retention assisted synthesis (MRAS) strategy that stabilizes Mg through a sacrificial Mg reservoir and an inert‐gas‐regulated melting environment, effectively suppressing Mg volatilization and chemical instability during high‐temperature synthesis. MRAS enables scalable fabrication of phase‐pure, compositionally uniform Mg‐based alloys without costly tantalum encapsulation. The resulting Mg‐rich Mg
+                    3.15
+                    Bi
+                    1.5
+                    Sb
+                    0.49
+                    Te
+                    0.01
+                    features interconnected Mg‐rich regions and multiscale defects that synergistically promote electrical transport and suppress lattice thermal conductivity, delivering an ultrahigh power factor of 41.7 µW cm
+                    −1
+                    K
+                    −2
+                    , a
+                    ZT
+                    of 1.2 ± 0.1 at 323 K, and a peak
+                    ZT
+                    of 1.8 ± 0.1 at 523 K. MRAS is also compatible with conventional compositional engineering: Ba doping at the Mg site further reduces thermal conductivity through point‐defect scattering while largely preserving the power factor, yielding a
+                    ZT
+                    around 1.9 ± 0.1 at 523 K in Mg
+                    3.144
+                    Ba
+                    0.006
+                    Bi
+                    1.5
+                    Sb
+                    0.49
+                    Te
+                    0.01
+                    . Moreover, successful extension to MgCu
+                    2
+                    and MgAgSb highlights the broad applicability of MRAS as a scalable synthesis platform for high‐performance Mg‐based materials.",crossref,0
+Odd‐Even Alkyl Chain Effect of Aromatic Monoammoniums on the Interlayer Architecture and Stability of Ruddlesden–Popper 2D Perovskites,https://onlinelibrary.wiley.com/doi/10.1002/anie.6772439?af=R,Wiley: Angewandte Chemie International Edition: Table of Contents,2026-08-29 04:53:42 UTC,2026-08-29 04:53:42+00:00,10.1002/anie.6772439,Qiuju Liu,"ABSTRACT
+                  
+                    Ruddlesden–Popper (RP) 2D perovskites with organic bilayers attract great interest for optoelectronics owing to their high stability and tunable functionality. However, the relationship between the interlayer architecture, molecular configuration of aromatic cations, and resulting stability remains poorly understood. Herein, we systematically investigate phenyl alkylammonium‐based RP 2D perovskites with varying alkyl chain lengths (─(CH
+                    2
+                    )
+                    m
+                    NH
+                    3
+                    +
+                    with m = 1–4) of organic cations. We find that odd‐carbon cations (m = 1, 3) preferentially form type‐I 2D perovskites featuring interdigitated organic cations, which induces substantial inorganic distortion and lower octahedral symmetry to the
+                    C
+                    1
+                    point group. Even‐carbon cations (m = 2, 4) favor type‐II 2D perovskites with well‐defined interlayer gaps, wherein the alkylammonium groups rotate to optimize registry with the inorganic sublattice, minimizing distortion and yielding higher‐symmetry
+                    
+                      D
+                      2
+                    
+                    h
+                    octahedra. Furthermore, we demonstrate that intrinsic structural stability of RP 2D perovskites is primarily governed by π–π packing within the organic layer, whereas air stability of the thin films is determined by surface hydrophobicity. The type‐II films exhibit higher hydrophobicity, conferring enhanced stability under ambient conditions compared to type‐I films. These findings establish odd‐even alkyl chain parity as a design principle for tailoring structurally diverse yet stable RP 2D perovskites.",crossref,0
+Breaking the Surface: Buoyant Metal–Polymer Open–Cell Hybrid Lattice Metamaterials,https://advanced.onlinelibrary.wiley.com/doi/10.1002/adma.74641?af=R,Wiley: Advanced Materials: Table of Contents,2026-08-29 04:54:18 UTC,2026-08-29 04:54:18+00:00,10.1002/adma.74641,Ma Qian,"ABSTRACT
+                  
+                    Metallic lattice metamaterials have demonstrated transformative potential across biomedical, aerospace, defense, and thermal engineering. Yet their application in buoyant marine structures has remained elusive, as their open‐cell architectures inherently prevent flotation, even at densities below that of water. Here, we present the first buoyant metal–polymer open‐cell hybrid lattice metamaterial. The design is guided by a novel skeletal density framework, built around an environment‐independent buoyancy parameter that excludes externally accessible porosity. The resulting hybrid architecture combines Ti‐6Al‐4V hollow‐strut lattices (HSLs)—fabricated by laser‐based powder bed fusion (PBF‐LB)—with expandable polyurethane (PU) foam injected into the internal channels of each strut. This architecture retains external open‐cell permeability while achieving skeletal densities below 1.0 g/cm
+                    3
+                    , enabling reliable buoyancy prediction and control. Real‐world applicability is demonstrated using a Ti‑6Al‑4V+PU hybrid buoy that floats stably in natural seawater. This hybrid architecture exhibits higher specific strength than conventional marine materials such as high‑density polyethylene (HDPE) and 316L stainless steel (SS316L). Seawater immersion tests further demonstrate corrosion resistance and water‑exclusion capability. Finite‑element simulations elucidate fracture initiation and predict failure modes consistent with experimental observations. Importantly, these hybrid buoyant architectures preserve flotation even after severe structural damage. This work introduces a new class of buoyant metamaterials and establishes skeletal density as a general design principle for open‑cell structures in targeted liquid media.",crossref,0
+"Titanium‐Catalyzed Synthesis of Multisubstituted Glutarimides Bearing Quaternary Carbon Centers‐Scope, Mechanism, and Bioactivity Studies",https://onlinelibrary.wiley.com/doi/10.1002/anie.6119479?af=R,Wiley: Angewandte Chemie International Edition: Table of Contents,2026-08-29 04:54:53 UTC,2026-08-29 04:54:53+00:00,10.1002/anie.6119479,Lipeng Wu,"ABSTRACT
+                  
+                    Glutarimides possess prominent pharmacological activities. Nevertheless, general and facile synthetic approaches toward multisubstituted glutarimides remain scarce, particularly for analogues with α, α‐disubstituted structures and substitutions at diverse sites of the imide core. In this work, we developed a radical alkylation/cyclization cascade of α‐tertiary haloamides and acrylates using earth‐abundant titanium as the catalyst. This transformation provides a practical route to glutarimides featuring quaternary carbon centers and multi‐functionalized imide skeletons. Both
+                    N
+                    ‐unsubstituted glutarimides and derivatives with tunable
+                    N
+                    ‐substituents can be readily accessed, including analogues derived from bioactive and pharmaceutical scaffolds. Furthermore, the antiproliferative potency of these newly synthesized glutarimides was assessed using HeLa and glioblastoma U87 cell lines.",crossref,0
+Conjugation‐Controlled Ion Response in One‐Dimensional Covalent Organic Frameworks for Seawater Photocatalysis,https://onlinelibrary.wiley.com/doi/10.1002/anie.7279758?af=R,Wiley: Angewandte Chemie International Edition: Table of Contents,2026-08-29 04:55:37 UTC,2026-08-29 04:55:37+00:00,10.1002/anie.7279758,Bo Tang,"ABSTRACT
+                  
+                    Photocatalytic hydrogen evolution from seawater offers a sustainable route for energy production, yet the role of dissolved ions in modulating carrier dynamics remains poorly understood. Herein, we demonstrate conjugation‐controlled ion responses that regulate charge separation in one‐dimensional covalent organic frameworks (1D COFs) through ion‐induced polarization for seawater photocatalysis. Two COFs featuring localized (DHP‐COF) and extended (DHPD‐COF) conjugation are constructed. In natural seawater, DHP‐COF achieves 246.9 mmol g
+                    −1
+                    h
+                    −1
+                    for hydrogen evolution, 5.03‐fold higher than in pure water (49.1 mmol g
+                    −1
+                    h
+                    −1
+                    ), whereas DHPD‐COF shows only 2.48‐fold enhancement (from 38.9 to 96.5 mmol g
+                    −1
+                    h
+                    −1
+                    ), revealing markedly stronger ion‐responsive sensitivity in the locally conjugated framework. Mechanistic investigations reveal that localized conjugation preserves spatially inhomogeneous polar domains arising from segmented π‐electron distribution, enabling strong coupling with seawater ions and thereby amplifying local dipoles to generate enhanced internal electric fields for efficient charge separation. In contrast, extended π‐delocalization leads to electronic homogenization that attenuates ion‐induced polarization. Beyond hydrogen production, this system simultaneously achieves chemoselective hydrogenation of
+                    α
+                    ,
+                    β
+                    ‐unsaturated carbonyl compounds to high‐value pharmaceutical intermediates in natural seawater/CH
+                    3
+                    OH. These findings establish conjugation‐controlled ion response as a key design principle for charge separation in saline photocatalysis and provide general guidelines for environment‐adaptive catalysts.",crossref,0
+A Plasmonic S‐Scheme Heterojunction Achieves Broadband Response and Ultralow Overpotential of Photo‐Assisted Li─O2 Batteries,https://onlinelibrary.wiley.com/doi/10.1002/anie.2006350?af=R,Wiley: Angewandte Chemie International Edition: Table of Contents,2026-08-29 04:57:29 UTC,2026-08-29 04:57:29+00:00,10.1002/anie.2006350,Zhong‐Shuai Wu,"ABSTRACT
+                  
+                    Li─O
+                    2
+                    batteries (LOBs) offer an ultrahigh theoretical energy density but suffer from a large overpotential. Photocathodes can lower this overpotential, but most of them cannot achieve efficient charge separation, sufficient redox capability, and broadband photoresponse at the same time. Here, a plasmonic S‐scheme heterojunction photocathode (W
+                    18
+                    O
+                    49
+                    /
+                    g
+                    ‐C
+                    3
+                    N
+                    4
+                    , WOCN) is constructed. W
+                    18
+                    O
+                    49
+                    serves as the oxidation semiconductor of the heterojunction and a noble‐metal‐free plasmonic absorber, forming a continuous plasmonic heterointerface with
+                    g
+                    ‐C
+                    3
+                    N
+                    4
+                    . The intrinsic localized surface plasmon resonance (LSPR) of W
+                    18
+                    O
+                    49
+                    originates from periodically arranged lattice‐localized electrons in W
+                    5+
+                    clusters. Photogenerated carriers with strong redox capability and LSPR‐generated hot electrons are separated by the S‐scheme carrier transfer pathway. Under AM 1.5G illumination, the WOCN‐based LOBs exhibit an ultralow overpotential of 0.04 V and a round‐trip efficiency of 98.75%. Even under NIR illumination, an overpotential of 0.34 V and a round‐trip efficiency of 90.12% are achieved, demonstrating an effective NIR response in photo‐assisted LOBs for the first time. This work opens a new avenue for designing plasmonic S‐scheme heterojunctions toward next‐generation energy storage systems with full solar spectrum utilization.",crossref,0
+ALDH Inhibition‐Primed Photocatalysis Disrupts Cancer Stemness Plasticity,https://onlinelibrary.wiley.com/doi/10.1002/anie.5856873?af=R,Wiley: Angewandte Chemie International Edition: Table of Contents,2026-08-29 04:58:40 UTC,2026-08-29 04:58:40+00:00,10.1002/anie.5856873,Jong Seung Kim,"ABSTRACT
+                  
+                    Light‐driven photoredox catalysis can shift intracellular NADH/NAD
+                    +
+                    balance by oxidizing NADH, but intracellular NADH pools are dynamically replenished through enzyme‐coupled redox metabolism. We show that ALDH‐mediated restoration of NADH/NAD
+                    +
+                    balance can buffer photoredox‐induced NADH depletion, providing a design rationale for coupling enzyme inhibition with photoredox catalysis. To counteract this redox‐buffering process, we introduce an enzymatic–photocatalytic strategy, termed E–PC, that integrates ALDH inhibition with NIR‐driven photocatalytic NADH oxidation within a single molecular construct. A small‐molecule conjugate,
+                    DE‐Et
+                    , was constructed by covalently linking DEAB, which can inhibit ALDH, to a near‐infrared (NIR)–active Nile Blue Sulfide–derived photocatalyst (NBS) through a ROS‐cleavable thioacetal linker. Upon NIR irradiation,
+                    DE‐Et
+                    releases DEAB while catalytically oxidizing intracellular NADH through single‐electron transfer, thereby attenuating ALDH‐mediated redox restoration and sustaining NADH/NAD
+                    +
+                    imbalance. This dual action compromises mitochondrial ATP production and activates caspase‐3/GSDME‐dependent pyroptosis. In stemness‐enriched tumor models,
+                    DE‐Et
+                    suppresses ALDH activity, clonogenic growth, spheroid integrity, and tumor growth in vivo. Local photoactivation further promotes systemic antitumor immune responses, consistent with immunogenic pyroptotic cell death. E–PC thus establishes a chemical strategy for light‐activated co‐delivery of photoredox catalysis and inhibition of a tumor‐overexpressed enzyme, converting an adaptive enzymatic buffer into a therapeutic vulnerability.",crossref,0
+Modular and Stereoselective Synthesis of Cyclobutane β‐Amino Alcohols,https://onlinelibrary.wiley.com/doi/10.1002/anie.1530338?af=R,Wiley: Angewandte Chemie International Edition: Table of Contents,2026-08-29 05:00:31 UTC,2026-08-29 05:00:31+00:00,10.1002/anie.1530338,Shih‐Yuan Liu,"ABSTRACT
+                  
+                    Cyclobutane
+                    β
+                    ‐amino alcohols are valuable structural motifs, yet their development has lagged behind that of five‐ and six‐membered analogs due to limited synthetic accessibility. In this work, we report a general and modular strategy for the synthesis of diversely substituted cyclobutane
+                    β
+                    ‐amino alcohols. The electronic structure of 1,2‐azaborines is leveraged to achieve regioselective mono‐ and difunctionalization at all four carbon positions. The installed functionalities are subsequently translated into cyclobutane
+                    β
+                    ‐amino alcohol frameworks through a tandem photoisomerization–hydrogenation–oxidation sequence. This strategy provides access to eight distinct substitution patterns with high levels of modularity and diastereoselectivity.",crossref,0
+Carbonyl‐Enriched Nonionic Covalent Organic Framework Nanochannels for High‐Salinity Ionic Thermoelectrics,https://onlinelibrary.wiley.com/doi/10.1002/anie.4046032?af=R,Wiley: Angewandte Chemie International Edition: Table of Contents,2026-08-29 05:05:54 UTC,2026-08-29 05:05:54+00:00,10.1002/anie.4046032,Qi Sun,"ABSTRACT
+                  
+                    High‐salinity electrolytes coupled with low‐grade heat offer an attractive opportunity for ionic thermoelectric conversion, yet conventional fixed‐charge membranes rapidly lose ion permselectivity in concentrated media because Donnan exclusion is strongly screened. Here, we report an isoreticular series of nonionic covalent organic framework membranes with comparable one‐dimensional nanochannels but systematically varied pore‐wall oxygen chemistry. Hydroxyl‐substitution‐regulated hydrazone‐to‐β‐ketoenamine tautomerism generates carbonyl‐enriched BthTb‐3OH nanochannels, which preferentially partition and transport cations while suppressing anion migration without relying on covalently anchored charges. Across diverse electrolytes, BthTb‐3OH exhibits broadly cation‐favored transport, with particularly strong cation/anion mobility contrasts in sulfate‐ and phosphate‐containing media. Experiments and molecular dynamics simulations further reveal that the carbonyl‐rich channels couple high K
+                    +
+                    permselectivity with rapid K
+                    +
+                    conduction under concentrated‐salt conditions. K
+                    3
+                    PO
+                    4
+                    preconditioning reorganizes the confined transport landscape through retained phosphate/K
+                    +
+                    species within the carbonyl‐rich nanochannels, facilitating K
+                    +
+                    transport and amplifying thermodiffusive cation/anion contrast in sulfate media. Consequently, the conditioned membrane delivers a peak power density of 224.2 W m
+                    −2
+                    in saturated K
+                    2
+                    SO
+                    4
+                    under a 50 K temperature difference, establishing nonionic COF nanochannels as a charge‐screening‐resistant platform for high‐salinity ionic thermoelectrics.",crossref,0
+"Orthogonal Photochemistry‐Confined Crystallization Enables Mechanically Robust, Printable Shape‐Programmable Polymers",https://onlinelibrary.wiley.com/doi/10.1002/anie.7052006?af=R,Wiley: Angewandte Chemie International Edition: Table of Contents,2026-08-29 05:36:56 UTC,2026-08-29 05:36:56+00:00,10.1002/anie.7052006,Hongqiu Wei,"ABSTRACT
+                  
+                    Shape‐programmable polymers are promising for soft robotics, minimally invasive medicine, and deployable structures. However, integrating high mechanical robustness, versatile shape programmability, and excellent printability into a single material system remains challenging. Here, an orthogonal photochemistry‐confined crystallization strategy is developed to fabricate mechanically robust, printable shape‐programmable polymers. This approach utilizes a rationally designed photochemical process to trigger radical polymerization and phenol coupling synchronously yet orthogonally, enabling one‐step formation of a covalent double‐network that efficiently confines polymer crystallization during solvent evaporation. The resulting homogeneous, refined crystalline domains greatly enhance stretchability (1891%) and toughness (41 MJ m
+                    −
+                    3
+                    ) by up to 63‐ and 103‐fold, respectively, compared to counterparts lacking network confinement, while also maintaining fatigue resistance over 1500 stretching cycles. The synergy between confined crystallization and double‐network confinement further confers shape reconfiguration and shape‑memory morphing, affording robust shape programmability under thermal stimuli. Moreover, the efficient photo‑mediated gelation, coupled with solvent evaporation, enables rapid and controllable solidification fully compatible with additive manufacturing. Leveraging these capabilities, and as a proof‐of‐concept, the developed polymers are printed and assembled into bioinspired soft actuators capable of integrated active actuation and precise sensing. This work provides new insight into the photochemical design of high‐performance shape‐programmable polymers and advanced soft devices.",crossref,0
+Lysine Oxidation by LOXL2 in Single Strands Versus Triple Helices: Implications for Collagen‐Related Diseases,https://onlinelibrary.wiley.com/doi/10.1002/anie.1329257?af=R,Wiley: Angewandte Chemie International Edition: Table of Contents,2026-08-29 05:38:22 UTC,2026-08-29 05:38:22+00:00,10.1002/anie.1329257,Helma Wennemers,"ABSTRACT
+                  Collagen cross‐linking is essential for the structural integrity of the extracellular matrix. In several pathological conditions, the triple‐helical core of collagen is disrupted, and proline‐rich single strands occur. Lysyl oxidases (LOXs), enzymes that initiate cross‐linking by catalyzing the oxidative deamination of lysine to allysine residues, are upregulated in disease. Surprisingly little is known about the selectivity of LOXs. LOX‐initiated cross‐linking is believed to occur exclusively in the unstructured terminal domains of collagen, the telopeptides. But is this really the case? Herein, we show, with a combination of tailored chemical probes, enzymatic assays, CD and NMR spectroscopic analyses, that LOXL2 oxidizes Lys in proline‐rich single strands but not in triple helices. A comparison of Lys‐containing collagen model peptides (CMPs) with Lys‐containing telopeptides revealed comparable or higher oxidation rates in proline‐rich segments. The data suggest that LOXL2‐initiated cross‐linking occurs in pathologically disrupted triple‐helical domains, offering insights into aberrant extracellular matrix stiffening.",crossref,0
+Strain‐Buffering Layered/Rocksalt Heterostructure Constructed via Oxygen Redox Activation for Durable O3‐Type Layered Transition Metal Oxides,https://onlinelibrary.wiley.com/doi/10.1002/anie.7544135?af=R,Wiley: Angewandte Chemie International Edition: Table of Contents,2026-08-29 05:39:31 UTC,2026-08-29 05:39:31+00:00,10.1002/anie.7544135,Haiyan Wang,"ABSTRACT
+                  
+                    Harnessing anionic oxygen redox is pivotal for boosting the capacity of O3‐type layered transition metal oxides for sodium ion batteries (SIBs), yet it often triggers severe lattice distortion and irreversible oxygen release. Herein, we propose an in situ electrochemical surface reconstruction strategy to stabilize the O3‐type NaNi
+                    1/3
+                    Fe
+                    1/3
+                    Mn
+                    1/3
+                    O
+                    2
+                    (NFM) cathode. By strictly controlling the initial anionic redox reactions at an ultra‐high potential of 4.6 V, a robust heterostructure comprising an ordered layered core and a disordered rocksalt shell is constructed. This unique surface architecture serves as an isotropic strain buffer that effectively mitigates particle cracking and provides dense surface passivation to suppress interfacial side reactions. Furthermore, the induced rocksalt phase stabilizes the surface TM‐O coordination, thereby preventing lattice oxygen loss during subsequent cycling. Consequently, when cycled within 2.0–4.0 V, the electrochemically pretreated cathode (DRS(4.6)@NFM) exhibits significantly reduced lattice distortion and superior electrochemical durability (capacity retention ratio of 90.77% after 300 cycles) with negligible voltage decay (retaining 98.56% of the initial voltage). Even when cycled up to 4.2 V, a capacity retention ratio of 87.4% after 300 cycles is still maintained. This work elucidates the interplay between electrochemical pretreatment and structural evolution, providing a decisive foundation for designing high‐voltage and durable sodium‐ion cathodes.",crossref,0
+A Triple‐Site Engineered Heterojunction Photocatalyst for Full‐Spectrum NH3 Synthesis via Synergistic Promotion of Water Oxidation and Nitrate Reduction,https://onlinelibrary.wiley.com/doi/10.1002/anie.9657393?af=R,Wiley: Angewandte Chemie International Edition: Table of Contents,2026-08-29 05:40:45 UTC,2026-08-29 05:40:45+00:00,10.1002/anie.9657393,Chao Liu,"ABSTRACT
+                  
+                    Photocatalytic nitrate reduction reaction (NitRR) represents a sustainable approach to convert nitrate pollutants to valuable NH
+                    3
+                    . However, the performance of state‐of‐the‐art photocatalysts is hampered by insufficient near‐infrared (NIR) light utilization and sluggish kinetics of hydrogenation steps and coupled water‐oxygen reaction (WOR). Herein, we report a NIR‐response S‐scheme heterojunction photocatalyst with engineered triple‐active sites for NH
+                    3
+                    production. The integration of narrow‐bandgap CuS and Co‐based metal–organic framework (Co‐MOF) into an S‐scheme heterojunction enhances the NIR light harvesting and charge separation. At the heterointerface, the Cu and Co sites drive WOR and NitRR, respectively. Acting as a dynamic proton relay, the bridging S sites capture protons from H
+                    2
+                    O to facilitate its dissociation at Cu sites and sequentially transport the protons to Co sites to promote the hydrogenation steps. The synergy of Cu, S, and Co sites thereby induces an interfacial dynamic proton transfer mechanism for balancing the kinetics of the two coupled reactions. Taken together, an NH
+                    3
+                    production rate of 5750.06 µmol g
+                    −1
+                     h
+                    −1
+                    is achieved with an apparent quantum yield of 13.27% at 600 nm and 11.63% at 1000 nm, and a solar‐to‐chemical conversion efficiency of 0.11%. This work provides valuable perspectives into the design principles of advanced nitrate reduction photocatalysts.",crossref,0
+Synthesis of Isoquinolines Through Isochromenylium Intermediates Captured by Nitriles and a CO‐to‐CN Switch,https://onlinelibrary.wiley.com/doi/10.1002/anie.5898322?af=R,Wiley: Angewandte Chemie International Edition: Table of Contents,2026-08-29 05:41:54 UTC,2026-08-29 05:41:54+00:00,10.1002/anie.5898322,Wen‐Bo Liu,"ABSTRACT
+                  
+                    Isochromenylium ions have emerged as versatile intermediates for the rapid construction of molecular complexity through cascade reactions. However, their application in catalytic annulation processes with nitriles to form isoquinolines remains largely unexplored, despite the prevalence of nitrile motifs and isoquinoline frameworks in bioactive molecules and functional materials. Here we report a catalytic cascade strategy for the efficient synthesis of isoquinolines, including enantioenriched variants, from readily available substrates. The reaction includes palladium‐catalyzed cyclization of
+                    ortho‐
+                    alkynylaryl aldehydes to generate an isochromenylium palladium species, which is captured by indium‐promoted 1,2‐addition of nitriles. Subsequent water‐assisted ring opening furnishes a Zincke‐type intermediate, followed by intramolecular condensation to deliver the isoquinoline products. This cascade process achieves a net conversion of a carbonyl (CO) unit into a nitrile‐derived carbon‐nitrogen (CN) linkage at an intermediate‐stage in a single operation. Notably, the use of malononitrile‐tethered substrates enables the synthesis of enantioenriched isoquinolines with high enantioselectivity. Mechanistic studies indicate a cooperative role of palladium and indium in promoting the 1,2‐addition of isochromenylium palladium species to the nitrile. The method exhibits excellent atom economy, good functional group tolerance, and scalability, highlighting its potential application for heterocycle synthesis.",crossref,0
+TADF‐Active Tetrazole Luminophores for Visible‐Light Functionalization of Nanoparticles and Surfaces,https://onlinelibrary.wiley.com/doi/10.1002/anie.9410589?af=R,Wiley: Angewandte Chemie International Edition: Table of Contents,2026-08-29 05:42:34 UTC,2026-08-29 05:42:34+00:00,10.1002/anie.9410589,Zachary M. Hudson,"ABSTRACT
+                  Thermally activated delayed fluorescence (TADF) materials have found broad use in technologies spanning displays, bioimaging, and photocatalysis. In parallel, tetrazoles have become powerful “click” reagents for light‐activated, bioorthogonal ligations, yet remain unexplored in reagents with delayed emission lifetimes. Here we report the design and synthesis of TADF‐active tetrazole luminophores with photochemical reactivity for the rapid functionalization of nanoparticles and surfaces. The combination of electron‐rich phenoxazine donors with electron‐deficient tetrazole acceptors yields luminophores with bright emission and tunable TADF lifetimes, governed by the 1,3‐dipolar cycloaddition partner. Cycloaddition with alkene dipolarophiles affords saturated dihydropyrazoles that undergo photoinduced aerobic aromatization to generate pyrazole products exhibiting pronounced turn‐on TADF behavior. Leveraging their charge‐transfer character, we also demonstrate a gold surface modified with TADF luminophores, wherein we propose the first example of reversible visible light‐induced surface adsorption. Furthermore, we demonstrate the surface functionalization of organic nanoparticles using TADF‐active materials. This work introduces a class of functional materials that combine photochemical reactivity with TADF properties, introducing a light‐driven platform for surface functionalization using TADF materials.",crossref,0
+Identification of Senescence‐Associated β‐Galactosidase With Single‐Molecule Resolution,https://onlinelibrary.wiley.com/doi/10.1002/anie.5443283?af=R,Wiley: Angewandte Chemie International Edition: Table of Contents,2026-08-29 05:45:02 UTC,2026-08-29 05:45:02+00:00,10.1002/anie.5443283,Yuan Guo,"ABSTRACT
+                  The majority of human senescent cells exhibit overexpression of senescence‐associated β‐galactosidase (SA‐β‐gal), rendering this enzyme the most extensively utilized biomarker of senescence and a key prodrug target for intervening in aging. However, strategies for the authentic in situ identification of SA‐β‐gal with single‐molecule resolution have not been established, limiting the accuracy of senescence targeting. Here we present an unprecedented molecular approach to identify SA‐β‐gal in a manner that avoids dissociation from the target enzyme, which integrates the atomic hybridization of SA‐β‐gal substrates with protein‐environment‐sensitive fluorescence technology. Using this design principle, we created nine fluorescent probes with distinct working modes for the single‐molecule (target enzyme)‐resolved identification of SA‐β‐gal. Five of them formed crystal complexes with the wild‐type β‐galactosidase by binding at the active site, clearly evidencing their single‐molecule resolution capability. Our strategy, capable of both identifying and locating SA‐β‐gal, facilitated its application in dynamic single‐molecule localization microscopic imaging, achieving the in situ tracking of SA‐β‐gal in living cells at the nanoscale. Significantly, the probing of SA‐β‐gal with high fidelity enabled the precise evaluation of the aging degree in mice. As such, our research provides a promising method for the authentic in situ identification of this senescence‐associated protein with single‐molecule resolution.",crossref,0
+Visible Light‐Mediated Photoclick and Thermally Reversible Furanic Dithioacetal Chemistry for Circular 3D Printing,https://onlinelibrary.wiley.com/doi/10.1002/anie.3093462?af=R,Wiley: Angewandte Chemie International Edition: Table of Contents,2026-08-29 05:45:41 UTC,2026-08-29 05:45:41+00:00,10.1002/anie.3093462,Ning Zheng,"ABSTRACT
+                  Photoclick chemistry has become essential for photocurable 3D printing due to its rapid, selective, and spatiotemporally controlled bond formation. Advancing toward circular manufacturing, however, requires photoclick systems that also enable thermally reversible bond cleavage for material recycling. To meet this requirement, we report a furanic dithioacetal‐based photoclick platform that integrates visible‐light‐induced polymerization with intrinsic thermal reversibility. The monomers, derived from bio‐based furanic aldehydes and thiols, are solvent‐free liquids, ensuring homogeneous formulations well‐suited for 3D printing. To address the spectral mismatch of conventional photocatalysts, a thioxanthone‐based photoacid system is investigated, enabling efficient bond formation under visible light compatible with commercial digital light processing (DLP) printing. The resulting polymer networks exhibit tunable crosslinking densities, allowing precise control over mechanical properties. Crucially, the dynamic furanic dithioacetal linkages enable depolymerization of the printed materials into re‐printable oligomers, with no loss of performance over multiple recycling cycles. This work establishes a chemically integrated strategy that unifies visible‐light processability, solvent‐free formulation, bio‐based origin, and closed‐loop recyclability, thus establishing a robust foundation for circular photopolymer platforms.",crossref,0
+Soft‐Rigid Liquid Metal‐SiC Hybrid Fillers Enable Superior Nonlinear Conductivity and Electric Field Regulation of Composite Dielectrics,https://advanced.onlinelibrary.wiley.com/doi/10.1002/adma.74306?af=R,Wiley: Advanced Materials: Table of Contents,2026-08-29 07:14:48 UTC,2026-08-29 07:14:48+00:00,10.1002/adma.74306,Shenli Jia,"ABSTRACT
+                  
+                    Nonlinear dielectrics with superior electric field regulation capabilities are essential for advanced power equipment. However, traditional nonlinear dielectric materials depend on an electrical percolation mechanism, requiring high concentrations of nonlinear conductive filler that degrade insulation and mechanical properties. Herein, we propose a synergistic strategy using a hybrid filler of soft liquid metal and rigid silicon carbide particles (LM‐SiCp) to develop insulating nonlinear composite dielectrics. The unique LM‐SiCp structure enables a favorable network of potential barriers at low fields and steep exponential current growth at high fields, yielding an excellent “low onset, high gain” nonlinear behavior. The resulting composites exhibit an impressive nonlinear coefficient of ∼7.55 and a markedly reduced threshold field strength from 4.81 to 3.41 kV/mm. It also achieves improved toughness (2.29 MJ/m
+                    3
+                    ), thermal conductivity (0.36 W/mK), high breakdown strength (∼33.4 kV/mm), and low dielectric loss (&lt;0.03), which ensure the stable performance of the composite dielectric under practical engineering conditions. This strategy offers a novel design concept for high‐performance composite dielectrics capable of effective electric field modulation in power equipment.",crossref,0
+Chloroplast‐Mimicking Interfaces on In Situ Derived La‐Ni Based Perovskite for Solar‐Driven CO2 Reduction to CH4,https://advanced.onlinelibrary.wiley.com/doi/10.1002/adma.74829?af=R,Wiley: Advanced Materials: Table of Contents,2026-08-29 07:24:36 UTC,2026-08-29 07:24:36+00:00,10.1002/adma.74829,Guisheng Li,"ABSTRACT
+                  
+                    Artificial photosynthesis technology holds great promise for sustainable energy conversion and value‐added chemical synthesis, yet integrating efficient light absorption with high product selectivity remains a major challenge. This study constructs an Ni‐La
+                    2
+                    O
+                    3
+                    /La
+                    2
+                    NiO
+                    4
+                    catalyst through in situ perovskite derivation that mechanistically and functionally mimics the chloroplast for artificial photosynthesis by coupling photo and photothermal catalysis with the integration of broad‐spectrum light harvesting, directional charge transfer, as well as CO
+                    2
+                    adsorption and hydrogenation. Three functional interfaces are formed: La
+                    2
+                    O
+                    3
+                    ‐La
+                    2
+                    NiO
+                    4
+                    (Z‐scheme), Ni‐La
+                    2
+                    NiO
+                    4
+                    (Schottky junction), and La
+                    2
+                    O
+                    3
+                    (adsorption)‐Ni(activation). The two heterojunctions facilitate electron transfer to metallic Ni nanoparticles, which activates H
+                    +
+                    to form an NADPH‐like surface Ni‐H species by enabling the collection of photo and photothermal generated electrons. Meanwhile, the Lewis‐basic La
+                    2
+                    O
+                    3
+                    captures CO
+                    2
+                    and promotes its activation at the La
+                    2
+                    O
+                    3
+                    ‐Ni interface. In CO
+                    2
+                    ‐to‐CH
+                    4
+                    conversion, Ni‐La
+                    2
+                    O
+                    3
+                    /La
+                    2
+                    NiO
+                    4
+                    demonstrates an exceptional CH
+                    4
+                    production rate of 9.96 µmol h
+                    −1
+                    g
+                    −1
+                    and a selectivity of 92.5% under natural conditions (i.e., AM 1.5 irradiation, ambient temperature, and atmospheric pressure) without external assistance, which outperforms pure La
+                    2
+                    NiO
+                    4
+                    by 10.2 and 4.6 times, respectively. This work advances a new strategy for efficient solar‐to‐fuel conversion.",crossref,0
+Conformation‐Locking in Thiazole‐Rich Mixed‐Linkage Covalent Organic Frameworks for Spontaneous Exciton Dissociation and Efficient Photocatalysis,https://onlinelibrary.wiley.com/doi/10.1002/anie.4914496?af=R,Wiley: Angewandte Chemie International Edition: Table of Contents,2026-08-29 12:08:39 UTC,2026-08-29 12:08:39+00:00,10.1002/anie.4914496,Jianmei Lu,"ABSTRACT
+                  
+                    The formidable exciton effect inherent in organic semiconductors fundamentally restricts free charge carrier generation, thereby impeding photocatalytic redox efficiency. Facilitating spontaneous exciton dissociation and lowering exciton binding energy are essential for maximizing charge utilization. Herein, we report a conformation‐locking strategy to engineer a thiazole‐rich mixed‐linkage donor–acceptor conjugated covalent organic framework (SBt‐Tapt) via post‐synthetic cyclization. The seamless integration of sulfur heteroatoms into a rigid, thiazole‐bridged framework significantly enhances π‐conjugated and electronic polarizability. Crucially, this structural reinforcement lowers the exciton activation energy below to 25 meV, triggering spontaneous exciton dissociation, extending carrier lifetimes, and yielding a proliferation of free charge carriers at room temperature. Mechanistic insights elucidate that the thiazole moieties synergistically activate adjacent phenyl units for O
+                    2
+                    reduction while simultaneously lowering the energy barrier for H
+                    2
+                    O oxidation at benzothiophene sites. This dual‐pathway mechanism drives efficient H
+                    2
+                    O
+                    2
+                    photosynthesis with robust operational stability exceeding 100 h. Notably, utilizing phenolic pollutants as proton donors, SBt‐Tapt delivers an exceptional H
+                    2
+                    O
+                    2
+                    evolution rate of 8.99 mmol g
+                    cat
+                    −1
+                    h
+                    −1
+                    alongside effective pollutant mineralization. This study elucidates a profound structure–activity relationship (SAR) and establishes conformation locking as a potent excitonic engineering paradigm for developing high performance organic photocatalysts.",crossref,0
+Iron‐Photocatalyzed Alkene Chloroaminoxylation: A Platform for Orthogonally Activatable Building Blocks,https://onlinelibrary.wiley.com/doi/10.1002/anie.5509453?af=R,Wiley: Angewandte Chemie International Edition: Table of Contents,2026-08-29 12:09:24 UTC,2026-08-29 12:09:24+00:00,10.1002/anie.5509453,Ala Bunescu,"ABSTRACT
+                  We report the development of an iron‐photocatalyzed 1,2‐chloroaminoxylation of alkenes that installs two orthogonal and independently activatable synthetic handles, a chlorine atom and an alkoxyamino group, across a diverse range of alkene substrates. The reaction is driven by iron's ability to generate chlorine radicals via photoinduced chloride‐to‐iron charge transfer, followed by addition across the carbon–carbon double bond and subsequent trapping by TEMPO derivatives. This operationally simple protocol exhibits broad functional group tolerance, exquisite chemo‐ and regioselectivity and efficiently converts a wide range of C═C bonds, such as styrene derivatives, unactivated alkenes, and Michael acceptors, into synthetically valuable chlorooxygenated scaffolds. The resulting products can be engaged with various nucleophiles through distinct modes of reactivity: the TEMPO‐derived alkoxyamino moiety undergoes photoredox activation, while the C–Cl bond participates in nucleophilic substitution. This dual‐reactivity platform enables a programmable incorporation of two different nucleophiles under complementary activation conditions, providing streamlined access to structurally diverse architectures. Comprehensive mechanistic studies, integrating reaction kinetics, UV–vis spectroscopy, high‐resolution mass spectrometry (HRMS), x‐ray crystallographic characterization of key catalytic intermediates, cyclic voltammetry (CV), and chronoamperometry, elucidate the underlying reaction pathway and reveal key features of the iron catalytic cycle.",crossref,0
+"Enantioselective Total Synthesis of (+)‐Dracocephalone A, (+)‐Dracocequinone A, and (−)‐Dracocequinone B by Oxabridge Construction With Oxygen",https://onlinelibrary.wiley.com/doi/10.1002/anie.3945602?af=R,Wiley: Angewandte Chemie International Edition: Table of Contents,2026-08-29 12:10:32 UTC,2026-08-29 12:10:32+00:00,10.1002/anie.3945602,Jun Huang,"ABSTRACT
+                  Oxa‐bridged 20‐norabietane diterpenoids, which are characterized by unique 6‐oxabicyclo[3.2.1]octane and 2‐oxabicyclo[2.2.2]octane frameworks in compact tetracyclic cores, exhibit high structural complexity and interesting biological activity. We report the enantioselective synthesis of (+)‐dracocephalone A, (+)‐dracocequinone A, and (−)‐dracocequinone B, featuring two strategic oxygen‐engaged transformations. The 2‐oxabicyclo[2.2.2]octane frameworks are constructed via a late‐stage oxygen‐mediated oxabridge reorganization of 6‐oxabicyclo[3.2.1]octane precursors. In this cascade reaction, a redox‐neutral disproportionation reaction generates reduced phenolic and oxidized cyclohexadienone intermediates simultaneously, followed by an oxabridge reorganization through selective C10–O bond cleavage and regiospecific 1,6‐conjugate addition. The 6‐oxabicyclo[3.2.1]octane framework is formed efficiently through an oxygen‐engaged oxabridge cyclization. The oxabridge construction strategy demonstrated in this work will allow streamlined syntheses of oxa‐bridged bioactive natural products and their structural analogs.",crossref,0
+An Engineering‐Editable Hybrid Membrane‑Camouflaged DNA Origami Drug Enables Checkpoint Blockade and Immune Activation for Triple‐Negative Breast Cancer Immunotherapy,https://onlinelibrary.wiley.com/doi/10.1002/anie.7162372?af=R,Wiley: Angewandte Chemie International Edition: Table of Contents,2026-08-29 12:11:56 UTC,2026-08-29 12:11:56+00:00,10.1002/anie.7162372,Mingming Song,"ABSTRACT
+                  The clinical response to immunotherapy in triple‐negative breast cancer (TNBC) is often limited by the immunosuppressive microenvironment, immune cell exhaustion, and multidrug resistance. Through a high‐throughput screen of 2,500 FDA‐approved drugs using a three‐dimensional tumor organoid platform, we identified thonzonium bromide (THO) as an inducer of gasdermin D (GSDMD)‐mediated pyroptosis, which results in the release of damage‐associated molecular patterns (DAMPs) to activate antitumor immunity. To achieve targeted delivery, we designed a core–shell‐structured biomimetic nanoparticle (THO/AMT‐si NP) consisting of a core formed by tetrahedral DNA (TDN NPs) constructed using DNA origami technology, which is loaded with THO and P‐gp siRNA, and an outer layer coated with a programmatically designed hybrid membrane (AREP). These findings indicate that THO/AMT‐Si NPs can effectively target TNBC tumors, convert “cold” tumors into “hot” tumors by inducing pyroptosis in cancer cells, reverse immune cell exhaustion, and simultaneously overcome cancer cell multidrug resistance, thereby achieving synergistic inhibition of tumor growth and metastasis. In summary, this biomimetic nanomedicine enhances immunotherapy for TNBC by combining synergistic cascade targeting, immune checkpoint blockade, and thermosis‐mediated immune activation.",crossref,0
+Engineering Atomically Precise Cu4I4 Nanoclusters With Integrated Adsorption and Hydrogenation Functions for Efficient Photocatalytic Nitrate‐to‐Ammonia Conversion,https://onlinelibrary.wiley.com/doi/10.1002/anie.5529008?af=R,Wiley: Angewandte Chemie International Edition: Table of Contents,2026-08-29 12:13:08 UTC,2026-08-29 12:13:08+00:00,10.1002/anie.5529008,Dengsong Zhang,"ABSTRACT
+                  
+                    Photocatalytic nitrate reduction to ammonia offers a sustainable route that couples environmental remediation with nitrogen resource utilization. However, this transformation suffers from sluggish kinetics and insufficient hydrogenation, leading to poor selectivity and efficiency. Herein, we report the deposition of Cu
+                    4
+                    I
+                    4
+                    nanocluster onto TiO
+                    2
+                    (Cu
+                    4
+                    I
+                    4
+                    /TiO
+                    2
+                    ) that achieves efficient and selective photocatalytic nitrate reduction to ammonia under mild conditions. The active site derived from an atomically precise Cu
+                    4
+                    I
+                    4
+                    Py
+                    4
+                    (Py = pyridine) nanocluster introduces sterically accessible copper sites with intrinsically unsaturated coordination and enhanced Lewis acidity for nitrate adsorption and activation. The iodide ligands in Cu
+                    4
+                    I
+                    4
+                    motif directly bonded to copper atoms are suggestive of promoting the generation of reactive hydrogen species (*H). The atomic‐scale proximity of copper and iodide sites facilitates efficient *H utilization in the multistep hydrogenation toward NH
+                    3
+                    . Consequently, Cu
+                    4
+                    I
+                    4
+                    /TiO
+                    2
+                    delivers an ammonia generation rate of 26.8 mmol·g
+                    cat
+                    −1
+                    ·h
+                    −1
+                    with good selectivity in a sacrificial‐reagent‐assisted photocatalytic nitrate reduction system. In situ characterizations and theoretical calculations support the plausible cooperative dual‐site mechanism, which synergistically ensures the deep hydrogenation of nitrate and its intermediates to ammonia. This work establishes an atomic‐level design paradigm for constructing multifunctional nanocluster catalysts that address the selectivity and efficiency challenges inherent to complex multiple proton/electron‐involved reactions.",crossref,0
+Local Acidity as a Corrosiveness Descriptor of Fluorinated Ether Solvents in Lithium–Metal Batteries,https://onlinelibrary.wiley.com/doi/10.1002/anie.1576222?af=R,Wiley: Angewandte Chemie International Edition: Table of Contents,2026-08-29 16:06:50 UTC,2026-08-29 16:06:50+00:00,10.1002/anie.1576222,Jang Wook Choi,"ABSTRACT
+                  
+                    Electrolyte engineering based on solvent fluorination has proven effective for stabilizing lithium (Li) metal batteries by weakening the Li
+                    +
+                    ‐solvent interaction. However, the influence of fluorination on the chemical reactivity of an electrolyte toward Li metal remains poorly understood. Here, the effects of fluorination are systematically investigated by increasing the degree of fluorination (from 2 to 5 substituents) of the terminal alkyl moieties of the 1‐ethoxy‐2‐methoxyethane (EME) and 1‐(2‐methoxyethoxy)propane (MEP) backbones (denoted F2EME, F4MEP, and F5MEP). Fluorination‐induced corrosion deviates from that suggested by conventionally calculated lowest unoccupied molecular orbital (LUMO)‐based rationales; instead, it is quantitatively described by the local
+                    
+                      pK
+                      a
+                    
+                    as a site‐specific thermodynamic descriptor of the fluorination‐induced electronic effect. Among the three derivatives, F4MEP is identified as the optimal solvent; it is sufficiently fluorinated to promote the formation of an anion‐rich solvation structure for an inorganic‐rich, protective Li metal interphase, yet it is not severely corrosive as it is not over‐fluorinated. Consequently, an F4MEP‐based 20 µm‐Li||LiNi
+                    0.8
+                    Co
+                    0.1
+                    Mn
+                    0.1
+                    O
+                    2
+                    (NCM811) full‐cell retains 80% of its capacity over 368 cycles. This study establishes the local
+                    
+                      pK
+                      a
+                    
+                    as a descriptor for evaluating the solvent corrosiveness and highlights the necessity of optimizing the degree of fluorination for high‐performance Li metal battery electrolytes.",crossref,0
+Switching HMF Oxidation Selectivity From FDCA to HMFCA via Carbon‐Induced Constructing Strong Metal–Support Interaction Between Gold Nanoparticles and Al2O3,https://onlinelibrary.wiley.com/doi/10.1002/anie.9891954?af=R,Wiley: Angewandte Chemie International Edition: Table of Contents,2026-08-29 16:08:18 UTC,2026-08-29 16:08:18+00:00,10.1002/anie.9891954,Lanhui Ren,"ABSTRACT
+                  
+                    Constructing strong metal–support interaction (SMSI) between gold nanoparticles and conventionally nonreducible oxide supports presents a significant challenge, and the mechanistic understanding of SMSI in selective catalytic reactions remains limited. Herein, we demonstrate a carbon induced SMSI between the irreducible oxide alumina and Au nanoparticles (Au/Al
+                    2
+                    O
+                    3
+                    @C‐SMSI). The resulting system exhibits electronic and geometric features analogous to classical SMSI, with the driving force inherently rooted in the nature of Au–Al and Au–O–Al interfacial bonding. The Au/Al
+                    2
+                    O
+                    3
+                    @C‐SMSI catalyst exhibits exceptional selectivity toward the partial oxidation product 5‐hydroxymethyl‐2‐furancarboxylic acid (HMFCA) in the oxidation of 5‐hydroxymethylfurfural (HMF), achieving a remarkable HMFCA yield of 98.5%. Advanced characterization combined with density functional theory calculations reveals that the high selectivity stems from the synergistic differential activation of C─H bonds and competitive adsorption of HMFCA on Au and Al sites. Furthermore, the Au/Al
+                    2
+                    O
+                    3
+                    @C‐SMSI catalyst maintain high activity without significant deactivation after six consecutive catalytic cycles using industrial‐grade HMF (85% purity) as the substrate, demonstrating strong antipoisoning capability and promising potential for industrial application. This study offers an innovative approach for establishing SMSI on nonreducible oxide supports and opens new avenues for designing highly active and selective heterogeneous catalysts.",crossref,0
+Chiral Nanostructured Cobalt Nanoparticles Confined in Zeolite for Syngas Conversion to Liquid Fuels at Low Temperature,https://onlinelibrary.wiley.com/doi/10.1002/anie.6583201?af=R,Wiley: Angewandte Chemie International Edition: Table of Contents,2026-08-29 16:09:52 UTC,2026-08-29 16:09:52+00:00,10.1002/anie.6583201,Yuxi Fang,"ABSTRACT
+                  
+                    Low‐temperature Fischer–Tropsch synthesis is an energy‐efficient process that converts nonpetroleum carbon sources into liquid hydrocarbon fuels. However, achieving C─C coupling under mild conditions is a significant challenge, primary due to the high energy barriers associated with C─O bond cleavage via conventional carbide or CO insertion mechanisms. In this study, we propose an alternative strategy for C─C coupling by chirality‐induced spin polarization in chiral nanostructured Co nanoparticles (CNCN) under mild temperature conditions. The *OCCO intermediate is hydrogenated to form C
+                    2+
+                    alcohols at lower temperatures. Subsequently, these alcohols are converted into hydrocarbons through the Brönsted acid sites of H‐type mesoporous
+                    MFI
+                    zeolite (HMMZ) support. The CNCN‐confined HMMZ catalyst exhibits significantly enhanced Co metal time yield of 96.3 mol
+                    CO
+                    kg
+                    Co
+                    −1
+                    h
+                    −1
+                    and C
+                    5+
+                    hydrocarbons selectivity of 85.6% at 443 K. This work demonstrates an effective strategy for the activation C
+                    1
+                    compounds and promotion of critical intermediate, paving the way for the production of multicarbon products.",crossref,0
+Autonomous Folding of Soft Matter From Living Polymers,https://advanced.onlinelibrary.wiley.com/doi/10.1002/adma.74348?af=R,Wiley: Advanced Materials: Table of Contents,2026-08-29 16:50:02 UTC,2026-08-29 16:50:02+00:00,10.1002/adma.74348,Yuhang Hu,"ABSTRACT
+                  Origami provides a versatile framework for shape‐morphing, yet existing systems are limited to transitions between an initial state and a predetermined folding outcome, offering little tunability after fabrication. Here we introduce a dynamic “living” polymer that continuously remodels its main‐chain network through a growth process, enabling post‐fabrication control over size, mechanical properties, and geometry. Incorporated as active crease layers, these polymers drive autonomous folding when supplied with “nutrient solutions” containing monomers, crosslinkers and catalysts. The associated dihedral angles are determined by growth kinetics and crease composition. Iterative regrowth reprograms folding pathways and increases mechanical stiffness up to 50 times. We demonstrate rigid (Miura) and non‐rigid patterns (square‐twist) that can be repeatedly reconfigured. Through this work, we establish a foundation for adaptive structures with unlimited re‐programmability, opening avenues for applications in biomedical wearable devices and multifunctional deployable systems.",crossref,0
+Unraveling the Synergistic Catalysis Effect in MOF‐Based Photocatalysts,https://advanced.onlinelibrary.wiley.com/doi/10.1002/adma.74863?af=R,Wiley: Advanced Materials: Table of Contents,2026-08-29 16:52:46 UTC,2026-08-29 16:52:46+00:00,10.1002/adma.74863,Tong‐Bu Lu,"ABSTRACT
+                  
+                    Metal–organic frameworks (MOFs) have emerged as promising porous crystalline catalysts for solar‐to‐chemical energy conversion, owing to their customizable structures, large specific surface areas, tunable active sites, and regulatable pore microenvironments. Nevertheless, they still suffer from limitations such as narrow light absorption, rapid charge recombination, insufficient active sites, and poor stability. Synergistic catalysis engineering represents a key strategy to overcome these bottlenecks and enhance the photocatalytic performance of MOF‐based photocatalysts. This review systematically summarizes recent advances in synergistic catalytic effects within MOF‐based materials, focusing on four core synergistic modes: metal‐ligand synergy, bimetallic sites synergy, ligand‐ligand synergy, and MOF‐based composite synergy. The underlying mechanisms of these synergies are elucidated from the perspectives of light absorption regulation, photogenerated charge separation and migration, band structure engineering, and active site modulation. Meanwhile, their applications in photocatalytic water splitting, selective CO
+                    2
+                    reduction to C
+                    1
+                    and C
+                    2+
+                    products, and organic transformations are overviewed, with an emphasis on elucidating the structure–activity relationship between synergistic configuration and photocatalytic performance. Finally, the challenges and future research directions are also proposed, aiming to provide guidance for the rational design of high‐efficiency MOF‐based photocatalysts for solar‐to‐chemical conversion.",crossref,0
+Switching Peroxymonosulfate Redox Routes by Manipulating Spinel Tetrahedral and Octahedral Site Activity for Multi‐Scenario Wastewater Treatment,https://advanced.onlinelibrary.wiley.com/doi/10.1002/adma.74854?af=R,Wiley: Advanced Materials: Table of Contents,2026-08-29 16:54:30 UTC,2026-08-29 16:54:30+00:00,10.1002/adma.74854,Sihui Zhan,"ABSTRACT
+                  
+                    For diverse wastewater treatment scenarios, achieving controllable switching of reactive oxygen species within a unified catalytic system remains a major challenge. Here, an inert cation substitution strategy is proposed to regulate tetrahedral and octahedral Co activity in Co
+                    3
+                    O
+                    4
+                    , enabling controllable switching between radical and nonradical pathways. Octahedral‐Co‐enriched ZnCo
+                    2
+                    O
+                    4
+                    (ZCO) selectively directs peroxymonosulfate (PMS) activation toward the
+                    1
+                    O
+                    2
+                    pathway (95.8% contribution), whereas tetrahedral‐Co‐dominated CoAl
+                    2
+                    O
+                    4
+                    (CAO) favors radical oxidation, with •OH (76.4%) and SO
+                    4
+                    •−
+                    (21.7%) dominating. This polyhedral‐dependent pathway control leads to distinct oxidation behaviors. Notably, the ZCO/PMS system achieved nearly 100% o‐nitrophenol (ONP) degradation within 4 min, with a
+                    k
+                    ‐value of 71.81 min
+                    −1
+                    M
+                    −1
+                    , 32.2 times that of Co
+                    3
+                    O
+                    4
+                    . Multiple lines of evidence reveal that polyhedral‐site engineering governs PMS adsorption geometry, interfacial charge redistribution, and O─O bond activation, thereby determining pathway selection. These differentiated functions were further translated into bench‐scale municipal wastewater treatment, with ZCO/PMS increasing the effluent Biochemical oxygen demand/chemical oxygen demand (BOD/COD) ratio from below 0.3 to consistently above 0.5 over 80 h and CAO/PMS decreasing the effluent TOC from ∼25 mg L
+                    −1
+                    to below 12 mg L
+                    −1
+                    over 60 h. Both systems exhibited low biotoxicity and favorable sustainability, offering a practical route toward selective energy‐efficient advanced oxidation.",crossref,0
+Advanced Materials for Biologics Delivery to Brain Tumors,https://advanced.onlinelibrary.wiley.com/doi/10.1002/adma.74760?af=R,Wiley: Advanced Materials: Table of Contents,2026-08-29 16:56:19 UTC,2026-08-29 16:56:19+00:00,10.1002/adma.74760,Amirali Popat,"ABSTRACT
+                  Brain cancer remains a major global health challenge due to its high morbidity and mortality. Current standard therapies are often limited by incomplete tumor resection, systemic toxicity, and the inability to effectively penetrate the blood‐brain barrier (BBB), which restricts drug delivery to the tumor site. These challenges underscore the urgent need for innovative therapeutic strategies that can overcome these barriers and improve treatment outcomes. Biological materials encompass a diverse range of molecules, from small peptides to monoclonal antibodies, either derived from living organisms or synthetically synthesized. Unlike traditional therapies, biologics provide a more targeted approach, including specific tumor targeting, immune system modulation, and regenerating damaged cells. Although biologics offer significant promise for brain cancer treatment, major challenges associated with blood–brain and tumour barriers continue to limit their translation, and comprehensive reviews bridging therapeutic advances with delivery technologies remain scarce. While individual biologic classes have been extensively studied, a unified assessment of these modalities and their delivery optimization is still needed. This review addresses the current gap by critically examining recent advances in biologic therapies and evaluating emerging invasive and non‐invasive delivery strategies to enhance their therapeutic efficacy in brain cancer.",crossref,0
+A generative-discriminative framework for distribution network topology identification,https://www.sciencedirect.com/science/article/pii/S0306261926013991?dgcid=rss_sd_all,ScienceDirect Publication: Applied Energy,2026-08-30 00:00:00 UTC,2026-08-30 00:00:00+00:00,10.1016/j.apenergy.2026.128743,Guangyu He,,,0
+Aggregated baseline load point-interval forecasting for virtual power plants in demand response programs: An adaptive decomposition and prediction system,https://www.sciencedirect.com/science/article/pii/S0306261926013486?dgcid=rss_sd_all,ScienceDirect Publication: Applied Energy,2026-08-30 00:00:00 UTC,2026-08-30 00:00:00+00:00,10.1016/j.apenergy.2026.128692,Zhiwu Li,,,0
+Reducing carbon footprints in China's steel industry through sector-coupled energy system modeling and regionally differentiated hydrogen strategies,https://www.sciencedirect.com/science/article/pii/S0306261926014005?dgcid=rss_sd_all,ScienceDirect Publication: Applied Energy,2026-08-30 00:00:00 UTC,2026-08-30 00:00:00+00:00,10.1016/j.apenergy.2026.128744,Hongtao Ren,,,0
+Strategic interconnect design for enhanced thermal management and thermo-electrochemical uniformity in direct ammonia solid oxide fuel cells,https://www.sciencedirect.com/science/article/pii/S0306261926013966?dgcid=rss_sd_all,ScienceDirect Publication: Applied Energy,2026-08-30 00:00:00 UTC,2026-08-30 00:00:00+00:00,10.1016/j.apenergy.2026.128740,Sanggyu Kang,,,0
+Energy and environmental impacts of two-seater battery electric microcars for sustainable urban mobility,https://www.sciencedirect.com/science/article/pii/S0306261926014029?dgcid=rss_sd_all,ScienceDirect Publication: Applied Energy,2026-08-30 00:00:00 UTC,2026-08-30 00:00:00+00:00,10.1016/j.apenergy.2026.128746,Dongyao Jia,,,0
+Urban geopolitical risk exposure and energy justice: Evidence from 278 Chinese cities,https://www.sciencedirect.com/science/article/pii/S0301421526005239?dgcid=rss_sd_all,ScienceDirect Publication: Energy Policy,2026-08-30 00:00:00 UTC,2026-08-30 00:00:00+00:00,10.1016/j.enpol.2026.115589,Zhengwei Li,,,0
+"Building energy performance regulation, energy poverty, and health: Evidence from Türkiye",https://www.sciencedirect.com/science/article/pii/S0301421526005148?dgcid=rss_sd_all,ScienceDirect Publication: Energy Policy,2026-08-30 00:00:00 UTC,2026-08-30 00:00:00+00:00,10.1016/j.enpol.2026.115580,Guillem Lopez Casasnovas,,,0
+Geopolitical risk exposure and resilience of energy support-chain trade: A multilayer network diagnosis,https://www.sciencedirect.com/science/article/pii/S0301421526004830?dgcid=rss_sd_all,ScienceDirect Publication: Energy Policy,2026-08-30 00:00:00 UTC,2026-08-30 00:00:00+00:00,10.1016/j.enpol.2026.115549,Xiangyu Wang,,,0
+Unveil the coal-to-nuclear retrofitting potential in China by a safety-first assessment,https://www.sciencedirect.com/science/article/pii/S0306261926014066?dgcid=rss_sd_all,ScienceDirect Publication: Applied Energy,2026-08-30 00:00:00 UTC,2026-08-30 00:00:00+00:00,10.1016/j.apenergy.2026.128750,Yaoli Zhang,,,0
+"The pulse of energy poverty in Greece: The role of financial stress, uncertainty, and institutional resilience",https://www.sciencedirect.com/science/article/pii/S0301421526004817?dgcid=rss_sd_all,ScienceDirect Publication: Energy Policy,2026-08-30 00:00:00 UTC,2026-08-30 00:00:00+00:00,10.1016/j.enpol.2026.115547,Kafait Ullah,,,0
+Energy resources and geopolitical conflicts: ARDL analysis of Iraq's socioeconomic dynamics,https://www.sciencedirect.com/science/article/pii/S0301421526004350?dgcid=rss_sd_all,ScienceDirect Publication: Energy Policy,2026-08-30 00:00:00 UTC,2026-08-30 00:00:00+00:00,10.1016/j.enpol.2026.115501,Foued Saâdaoui,,,0
+Lift-off! NASA launches Roman Space Telescope to tackle dark-energy mysteries,https://www.nature.com/articles/d41586-026-02727-7,Nature,2026-08-30 00:00:00 UTC,2026-08-30 00:00:00+00:00,10.1038/d41586-026-02727-7,Davide Castelvecchi,The space observatory will have an expansive view of the Universe as well as sharp resolution.,rss_nature,0
+AI models are being used to track zoonotic diseases. Will they prevent the next pandemic?,https://www.nature.com/articles/d41586-026-02684-1,Nature,2026-08-30 00:00:00 UTC,2026-08-30 00:00:00+00:00,10.1038/d41586-026-02684-1,Heather Richardson,Spread of diseases between humans and animals is an issue around the world. But AI models can be used to monitor their progress.,rss_nature,0
+"The rise of renewable energy: How it shapes dependency, diversity, and geopolitical risk in the European Union",https://www.sciencedirect.com/science/article/pii/S0301421526005045?dgcid=rss_sd_all,ScienceDirect Publication: Energy Policy,2026-08-30 00:00:00 UTC,2026-08-30 00:00:00+00:00,10.1016/j.enpol.2026.115570,Felix Müsgens,"As the European Union advances its shift toward cleaner energy to address climate challenges, a pressing question emerges: can this shift also strengthen energy security in an increasingly volatile global landscape? This study investigates the impact of renewable energy on energy security risks across 27 EU countries over the period 2010 to 2022. It measures energy security through three key dimensions—energy dependency risk, energy diversity risk, and geopolitical risk. The findings reveal that renewable energy significantly mitigates energy diversity risk and geopolitical risk across the EU. However, its impact on energy dependency risk is statistically insignificant in the overall sample. Notably, further non-linear analyses show that in countries with higher levels of renewable energy deployment, renewables significantly reduce dependency risk on foreign energy sources. This highlights the importance of reaching a critical threshold of renewable integration to unlock broader energy security benefits.",openalex,0
+AI-enabled remote sensing reveals two urban rooftop PV adoption pathways: household vs. large-roof,https://www.sciencedirect.com/science/article/pii/S0306261926014224?dgcid=rss_sd_all,ScienceDirect Publication: Applied Energy,2026-08-30 00:00:00 UTC,2026-08-30 00:00:00+00:00,10.1016/j.apenergy.2026.128766,Fengqi You,,,0
+"Innovation–energy coupling under non-default power-system configurations: Transition-neutral in design, fossil-linked in financial structure",https://www.sciencedirect.com/science/article/pii/S0306261926013668?dgcid=rss_sd_all,ScienceDirect Publication: Applied Energy,2026-08-30 00:00:00 UTC,2026-08-30 00:00:00+00:00,10.1016/j.apenergy.2026.128710,Pouriya Jahangard,,,0
+Reliability-constrained optimal sizing and energy management of off-grid PV–battery–green hydrogen microgrids for industrial energy autonomy,https://www.sciencedirect.com/science/article/pii/S0306261926013644?dgcid=rss_sd_all,ScienceDirect Publication: Applied Energy,2026-08-30 00:00:00 UTC,2026-08-30 00:00:00+00:00,10.1016/j.apenergy.2026.128708,Saleh Ba-swaimi,,,0
+Uncertainty-embedded concurrent optimization for carbon-aware RIES considering ladder pricing and EV user group -driven demand response,https://www.sciencedirect.com/science/article/pii/S0306261926013942?dgcid=rss_sd_all,ScienceDirect Publication: Applied Energy,2026-08-30 00:00:00 UTC,2026-08-30 00:00:00+00:00,10.1016/j.apenergy.2026.128738,Hongjie Jia,,,0
+"Identifying representative LV feeders, networks and reconfigurable test cases using European publicly available datasets",https://www.sciencedirect.com/science/article/pii/S030626192601408X?dgcid=rss_sd_all,ScienceDirect Publication: Applied Energy,2026-08-30 00:00:00 UTC,2026-08-30 00:00:00+00:00,10.1016/j.apenergy.2026.128752,Geert Deconinck,,,0
+Low carbon resource management and risk resilience assessment strategies under a policy trading operation coordinated game framework,https://www.sciencedirect.com/science/article/pii/S0306261926014042?dgcid=rss_sd_all,ScienceDirect Publication: Applied Energy,2026-08-30 00:00:00 UTC,2026-08-30 00:00:00+00:00,10.1016/j.apenergy.2026.128748,Junyong Liu,,,0
+Multi-scale physics-informed neural network-based temperature modeling and prediction for real vehicle battery systems,https://www.sciencedirect.com/science/article/pii/S0306261926014054?dgcid=rss_sd_all,ScienceDirect Publication: Applied Energy,2026-08-30 00:00:00 UTC,2026-08-30 00:00:00+00:00,10.1016/j.apenergy.2026.128749,Jichao Hong,,,0
+"Thermal runaway in lithium-ion batteries: a critical review of mechanisms, models, early warning systems, and safety strategies",https://www.sciencedirect.com/science/article/pii/S0306261926013620?dgcid=rss_sd_all,ScienceDirect Publication: Applied Energy,2026-08-30 00:00:00 UTC,2026-08-30 00:00:00+00:00,10.1016/j.apenergy.2026.128706,Qi Huang,,,0
+Comfort-aware brain-emotional-learning coordination of battery storage and inverter air-conditioner fleets for microgrid frequency regulation,https://www.sciencedirect.com/science/article/pii/S0306261926013796?dgcid=rss_sd_all,ScienceDirect Publication: Applied Energy,2026-08-30 00:00:00 UTC,2026-08-30 00:00:00+00:00,10.1016/j.apenergy.2026.128723,V.S.K.V. Harish,,,0
+Reasoning-enhanced probabilistic electricity price forecasting using parameter-efficient large language models,https://www.sciencedirect.com/science/article/pii/S0306261926013681?dgcid=rss_sd_all,ScienceDirect Publication: Applied Energy,2026-08-30 00:00:00 UTC,2026-08-30 00:00:00+00:00,10.1016/j.apenergy.2026.128712,Hongbin Sun,,,0
+Cooperative multi-EV aggregator strategy of V2G-enabled charging stations under shared interconnection limits,https://www.sciencedirect.com/science/article/pii/S0306261926013693?dgcid=rss_sd_all,ScienceDirect Publication: Applied Energy,2026-08-30 00:00:00 UTC,2026-08-30 00:00:00+00:00,10.1016/j.apenergy.2026.128713,Mahdi Jalili,"The widespread adoption of electric vehicles creates new opportunities for energy management through vehicle-to-grid participation. When multiple electric vehicle aggregators operate behind a shared point of common coupling, uncoordinated scheduling can cause congestion and inefficient use of interconnection capacity. This paper addresses their coordination when schedules are coupled by shared grid limits and aggregate-dependent electricity prices. A key finding is that coordinated scheduling alone cannot sustain cooperation when cooperative gains are unevenly distributed. Settlement mechanisms guaranteeing individual rationality at aggregator and vehicle levels are therefore required for implementable coordination. Accordingly, a cooperative multi-aggregator scheduling framework is proposed for V2G-enabled charging stations under shared grid-connection limits and aggregate-dependent pricing. The scheduling model minimizes energy procurement costs and battery degradation penalties while enforcing shared import and export limits at the point of common coupling. Cooperative gains are allocated through a two-level asymmetric Nash bargaining mechanism that preserves the coordinated physical dispatch whenever EV-level settlement is feasible. Otherwise, the framework returns the business-as-usual outcome, ensuring individual rationality at aggregator and vehicle levels. A distributed alternating direction method of multipliers solution is developed to preserve EV-level privacy with limited inter-aggregator information exchange. Numerical results for 10-vehicle, two-EVA and 80-vehicle, four-EVA systems show cost reductions of 3.7% and 13.9%, respectively, relative to the uncoordinated benchmark, with no-worse-off outcomes. Robustness is confirmed under parameter variations, alternative bargaining weights, and stochastic EV-demand uncertainty. The results demonstrate the value of cooperative multi-EVA strategies in reducing costs while preserving grid-connection constraints and privacy.",openalex,0
+Optimizing risk-aware bidding strategies for photovoltaic systems in electricity markets through integrated forecasting and risk propensity,https://www.sciencedirect.com/science/article/pii/S0306261926013838?dgcid=rss_sd_all,ScienceDirect Publication: Applied Energy,2026-08-30 00:00:00 UTC,2026-08-30 00:00:00+00:00,10.1016/j.apenergy.2026.128727,Yue Zhou,,,0
+Modelling nonlinear heat pump part-load efficiency for optimal investment planning,https://www.sciencedirect.com/science/article/pii/S0306261926013772?dgcid=rss_sd_all,ScienceDirect Publication: Applied Energy,2026-08-30 00:00:00 UTC,2026-08-30 00:00:00+00:00,10.1016/j.apenergy.2026.128721,Yannick Werner,"Heat pumps are a key technology for decarbonising the heating sector and achieving net-zero targets. In practice, however, their performance characteristics are inherently nonlinear, depending on factors such as minimum load constraints and part-load efficiency, particularly for inverter-driven systems. While advanced optimisation methods exist for operational scheduling (e.g., in model predictive control), investment planning models typically neglect part-load behaviour due to the computational challenges associated with solving nonlinear mixed-integer problems. Instead, simplified linear approximations are commonly employed. This work addresses this gap by presenting an integrated optimisation framework for heat pump investment planning that explicitly accounts for nonlinear part-load efficiency. The framework targets heat supply facilities at the building or building-complex level, modelled as a single-node energy hub that may comprise multiple heat pumps and additional generation technologies. To manage the resulting computational complexity, we develop both a relaxed piecewise-linear formulation and a novel second-order cone relaxation. The proposed approaches are evaluated using a real-world case study. Incorporating part-load efficiency into investment planning leads to structurally different capacity decisions compared to conventional formulations that neglect such effects. The resulting system design reduces electricity consumption by 4.5% and annual costs by 2.9%, confirmed in an ex-post validation on the full, unaggregated time horizon. Furthermore, computational performance analysis shows a 10.3-fold speed-up for the piecewise-linear relaxation and a 4.3-fold speed-up for the conic relaxation, measured in deterministic work units, paving the way for their application to larger energy hub and multi-technology investment problems. Overall, the proposed methods facilitate more accurate and computationally tractable investment decisions, thereby supporting informed decision-making in the transition towards clean and affordable heat.",openalex,0
+A review of environmental and techno-economic assessments of plastics to synthetic fuels and chemicals towards decarbonization,https://www.sciencedirect.com/science/article/pii/S030626192601367X?dgcid=rss_sd_all,ScienceDirect Publication: Applied Energy,2026-08-30 00:00:00 UTC,2026-08-30 00:00:00+00:00,10.1016/j.apenergy.2026.128711,Almar Postma,,,0
+Spectral intermittency regularization for photovoltaic ramp forecasting,https://www.sciencedirect.com/science/article/pii/S0306261926012821?dgcid=rss_sd_all,ScienceDirect Publication: Applied Energy,2026-08-30 00:00:00 UTC,2026-08-30 00:00:00+00:00,10.1016/j.apenergy.2026.128626,Lai Jiang,,,0
+Generalizable photovoltaic power forecasting under complex weather conditions: An adaptive decomposition-based hybrid network with physical consistency,https://www.sciencedirect.com/science/article/pii/S0306261926013711?dgcid=rss_sd_all,ScienceDirect Publication: Applied Energy,2026-08-30 00:00:00 UTC,2026-08-30 00:00:00+00:00,10.1016/j.apenergy.2026.128715,Yecang Chen,,,0
+Communication-dependent flexibility planning in digitalized distribution systems via dynamic storage reservation,https://www.sciencedirect.com/science/article/pii/S0306261926013929?dgcid=rss_sd_all,ScienceDirect Publication: Applied Energy,2026-08-30 00:00:00 UTC,2026-08-30 00:00:00+00:00,10.1016/j.apenergy.2026.128736,Ming Zhou,,,0
+Surrogate-conditioned optimizer ranking in block-scale urban energy design: A comparison of policy learning and Pareto search,https://www.sciencedirect.com/science/article/pii/S0306261926013899?dgcid=rss_sd_all,ScienceDirect Publication: Applied Energy,2026-08-30 00:00:00 UTC,2026-08-30 00:00:00+00:00,10.1016/j.apenergy.2026.128733,Wei Wang,,,0
+PMGT-Net: A physics-informed multi-scale graph transformer framework for explainable national energy dependency forecasting,https://www.sciencedirect.com/science/article/pii/S0306261926013802?dgcid=rss_sd_all,ScienceDirect Publication: Applied Energy,2026-08-30 00:00:00 UTC,2026-08-30 00:00:00+00:00,10.1016/j.apenergy.2026.128724,Yasin Ozkan,,,0
+Robust co-planning of nuclear power and pumped hydro storage considering multiple extreme weather events: Enhancing resource adequacy and operational flexibility,https://www.sciencedirect.com/science/article/pii/S0306261926013747?dgcid=rss_sd_all,ScienceDirect Publication: Applied Energy,2026-08-30 00:00:00 UTC,2026-08-30 00:00:00+00:00,10.1016/j.apenergy.2026.128718,Min Zhang,,,0
+Coordinated operation of power distribution networks considering impacts from electric taxi fleets under multi-stakeholder interactions,https://www.sciencedirect.com/science/article/pii/S0306261926013917?dgcid=rss_sd_all,ScienceDirect Publication: Applied Energy,2026-08-30 00:00:00 UTC,2026-08-30 00:00:00+00:00,10.1016/j.apenergy.2026.128735,Peng Li,,,0
+Data-driven pricing strategy for decentralized coordination of renewable-intensive distributed energy resource aggregations,https://www.sciencedirect.com/science/article/pii/S0306261926013759?dgcid=rss_sd_all,ScienceDirect Publication: Applied Energy,2026-08-30 00:00:00 UTC,2026-08-30 00:00:00+00:00,10.1016/j.apenergy.2026.128719,Soongeol Kwon,,,0
+Thermal‐Budget‐Decoupled Integration of Freestanding Hafnium‐Based Ferroelectric Dielectrics for van der Waals Memory Transistors,https://advanced.onlinelibrary.wiley.com/doi/10.1002/adma.74847?af=R,Wiley: Advanced Materials: Table of Contents,2026-08-30 07:02:06 UTC,2026-08-30 07:02:06+00:00,10.1002/adma.74847,Yen‐Fu Lin,"ABSTRACT
+                  
+                    Ferroelectric memories have emerged as promising candidates for nonvolatile memory and neuromorphic computing owing to their capability for direct channel modulation through polarization switching. However, the high thermal budget required for synthesis and post‐annealing processes hampers scalable integration and degrades interfacial quality. Here, we present a freestanding hafnium‐based ferroelectric strategy that enables the fabrication of high‐performance top‐gate ferroelectric field‐effect transistors (FeFETs) on van der Waals (vdW) MoS
+                    2
+                    channels at low temperatures without post‐annealing. The freestanding Hf
+                    0.5
+                    Zr
+                    0.5
+                    O
+                    2
+                    (FS‐HZO) FeFETs, featuring a metal–ferroelectric–metal–insulator–semiconductor (MFMIS) architecture, exhibit a pronounced anticlockwise normalized memory window of 0.56 V nm
+                    −1
+                    . They demonstrate proof‐of‐concept nonvolatile behavior with endurance exceeding 2 × 10
+                    3
+                    cycles, retention over 2 × 10
+                    3
+                    s, and stable operation up to 85°C, maintaining an on/off ratio of 10
+                    6
+                    and an extrapolated value of 10
+                    4
+                    after 10 years. Precise ferroelectric control of the MoS
+                    2
+                    channel conductance enables multilevel switching and synaptic plasticity, achieving high accuracy in image recognition tasks. This work provides a low‐thermal‐budget freestanding hafnium‐based integration strategy and a device‐level building block for future vdW FeFET arrays, offering a promising pathway toward energy‐efficient compute‐in‐memory and neuromorphic architectures.",crossref,0
