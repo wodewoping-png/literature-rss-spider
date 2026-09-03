@@ -74,6 +74,15 @@ def fallback_issn(url: str) -> str:
     return ""
 
 
+def fallback_prefix(url: str) -> str:
+    normalized = url.rstrip("/").lower()
+    if normalized in RSC_FALLBACKS:
+        return "10.1039"
+    if urlsplit(url).netloc.lower() == "pubs.acs.org" and fallback_issn(url):
+        return "10.1021"
+    return ""
+
+
 def is_direct_nature_feed(url: str) -> bool:
     parts = urlsplit(url)
     return (
@@ -82,23 +91,23 @@ def is_direct_nature_feed(url: str) -> bool:
     )
 
 
-def crossref_available(issn: str) -> tuple[bool, str]:
+def crossref_available(prefix: str) -> tuple[bool, str]:
     last_error = ""
     for attempt in range(1, 4):
         try:
             response = requests.get(
-                f"https://api.crossref.org/journals/{issn}/works",
+                f"https://api.crossref.org/prefixes/{prefix}/works",
                 params={"rows": 0},
                 headers=CROSSREF_HEADERS,
                 timeout=30,
             )
             response.raise_for_status()
-            return True, f"Crossref ISSN {issn} reachable"
+            return True, f"Crossref prefix {prefix} reachable"
         except Exception as exc:
             last_error = str(exc)
             if attempt < 3:
                 time.sleep(attempt * 2)
-    return False, f"Crossref ISSN {issn} failed after 3 attempts: {last_error}"
+    return False, f"Crossref prefix {prefix} failed after 3 attempts: {last_error}"
 
 
 def fetch_feed(url: str) -> tuple[list, str, str]:
@@ -144,12 +153,12 @@ def check_one(
     status = "ok"
     fallback_note = ""
     if problem:
-        issn = fallback_issn(url)
-        if issn:
+        prefix = fallback_prefix(url)
+        if prefix:
             available, fallback_note = (
-                fallback_status[issn]
-                if fallback_status is not None and issn in fallback_status
-                else crossref_available(issn)
+                fallback_status[prefix]
+                if fallback_status is not None and prefix in fallback_status
+                else crossref_available(prefix)
             )
             status = "fallback_ok" if available else "unhealthy"
         else:
@@ -183,11 +192,11 @@ def main() -> int:
     args = parser.parse_args()
     urls = [line.strip() for line in args.feed_list.read_text(encoding="utf-8").splitlines() if line.strip()]
 
-    # Multiple feed URLs can represent the same journal. Probe each fallback
-    # ISSN once, sequentially, to avoid self-inflicted Crossref 429 responses.
+    # Multiple feed URLs and journals share a publisher. Probe each publisher
+    # DOI prefix once to avoid self-inflicted Crossref 429 responses.
     fallback_status: dict[str, tuple[bool, str]] = {}
-    for issn in sorted({fallback_issn(url) for url in urls} - {""}):
-        fallback_status[issn] = crossref_available(issn)
+    for prefix in sorted({fallback_prefix(url) for url in urls} - {""}):
+        fallback_status[prefix] = crossref_available(prefix)
         time.sleep(0.5)
 
     with ThreadPoolExecutor(max_workers=max(1, args.workers)) as pool:

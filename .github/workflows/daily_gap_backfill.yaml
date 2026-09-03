@@ -190,6 +190,8 @@ jobs:
           git push origin HEAD:main
 
       - name: Send DingTalk gap alert
+        id: dingtalk_alert
+        continue-on-error: true
         if: >-
           always() &&
           (failure() ||
@@ -214,6 +216,11 @@ jobs:
           --title "Literature RSS daily gap alert"
           --message "repository=${GITHUB_REPOSITORY}; daily_gaps=${DETECTED_DATES:-none}; still_missing_dates=${FAILED_DATES:-none}; nature_journal_missing=${NATURE_MISSING_DOIS:-none}; nature_error=${NATURE_ERROR:-none}; unhealthy_feeds=${UNHEALTHY_FEEDS:-none}; active_fallbacks=${FALLBACK_FEEDS:-none}; run=${RUN_URL}"
 
+      - name: Report DingTalk delivery failure
+        if: always() && steps.dingtalk_alert.outcome == 'failure'
+        run: >-
+          echo "::error title=DingTalk alert delivery failed::Check repository secrets DINGTALK_WEBHOOK (or DINGTALK_WEBHOOK_URL) and optional DINGTALK_SECRET, plus the robot keyword/IP policy."
+
       - name: Fail when gaps or source omissions remain after the single attempt
         if: >-
           always() &&
@@ -231,4 +238,5 @@ jobs:
           echo "Daily outputs still missing or invalid: $FAILED_DATES"
           echo "Direct Nature journal records still missing: $NATURE_MISSING_DOIS"
           echo "RSS endpoints/fallbacks still unhealthy: $UNHEALTHY_FEEDS"
+          echo "::error title=RSS feed health check failed::Unhealthy feeds: ${UNHEALTHY_FEEDS:-unknown}; missing dates: ${FAILED_DATES:-none}; Nature DOI gaps: ${NATURE_MISSING_DOIS:-none}"
           exit 1
