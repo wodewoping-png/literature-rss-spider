@@ -9,6 +9,7 @@ on:
       - ".github/workflows/rss_abs.yaml"
       - "requirements-spider.txt"
       - "scripts/check_daily_gaps.py"
+      - "scripts/check_nature_sustainability.py"
       - "scripts/send_dingtalk_alert.py"
       - "spider0301.py"
   schedule:
@@ -62,6 +63,21 @@ jobs:
           fi
           python scripts/check_daily_gaps.py "${args[@]}"
 
+      - name: Install source-health dependencies
+        run: pip install feedparser requests
+
+      - name: Detect Nature Sustainability omissions
+        id: nature_source
+        continue-on-error: true
+        env:
+          END_DATE: ${{ github.event.inputs.end_date }}
+        run: |
+          end_date="${END_DATE:-$(date -u -d 'yesterday' +'%Y-%m-%d')}"
+          python scripts/check_nature_sustainability.py \
+            --days 7 \
+            --end-date "$end_date" \
+            --github-output "$GITHUB_OUTPUT"
+
       - name: Install spider dependencies
         if: steps.gaps.outputs.missing_count != '0'
         run: |
@@ -90,11 +106,33 @@ jobs:
           failed_dates="${failed_dates# }"
           echo "failed_dates=$failed_dates" >> "$GITHUB_OUTPUT"
 
+      - name: Attempt Nature Sustainability repair once
+        if: >-
+          always() &&
+          (steps.nature_source.outcome == 'failure' || steps.nature_source.outputs.missing_count != '0')
+        id: nature_repair
+        continue-on-error: true
+        env:
+          END_DATE: ${{ github.event.inputs.end_date }}
+        run: |
+          end_date="${END_DATE:-$(date -u -d 'yesterday' +'%Y-%m-%d')}"
+          python scripts/check_nature_sustainability.py \
+            --days 7 \
+            --end-date "$end_date" \
+            --repair-date "$end_date" \
+            --github-output "$GITHUB_OUTPUT" \
+            --fail-on-missing
+
       - name: Commit successful backfills
-        if: steps.gaps.outputs.missing_count != '0'
+        if: >-
+          always() &&
+          (steps.gaps.outputs.missing_count != '0' ||
+           steps.nature_source.outcome == 'failure' ||
+           steps.nature_source.outputs.missing_count != '0')
         env:
           GITHUB_TOKEN: ${{ github.token }}
           MISSING_DATES: ${{ steps.gaps.outputs.missing_dates }}
+          END_DATE: ${{ github.event.inputs.end_date }}
         run: |
           set -e
           git config --global user.name "github-actions[bot]"
@@ -107,6 +145,11 @@ jobs:
               git add -- "$path"
             fi
           done
+          end_date="${END_DATE:-$(date -u -d 'yesterday' +'%Y-%m-%d')}"
+          nature_path="output/news_with_abstract_${end_date}.csv"
+          if [ -f "$nature_path" ]; then
+            git add -- "$nature_path"
+          fi
           if git diff --cached --quiet; then
             echo "No successful backfill files to commit"
             exit 0
@@ -120,22 +163,33 @@ jobs:
       - name: Send DingTalk gap alert
         if: >-
           always() &&
-          (failure() || steps.backfill.outputs.failed_dates != '')
+          (failure() ||
+           steps.backfill.outputs.failed_dates != '' ||
+           steps.nature_repair.outcome == 'failure' ||
+           steps.nature_repair.outputs.missing_count != '0')
         env:
           DINGTALK_WEBHOOK: ${{ secrets.DINGTALK_WEBHOOK || secrets.DINGTALK_WEBHOOK_URL }}
           DINGTALK_SECRET: ${{ secrets.DINGTALK_SECRET }}
           DETECTED_DATES: ${{ steps.gaps.outputs.missing_dates }}
           FAILED_DATES: ${{ steps.backfill.outputs.failed_dates }}
+          NATURE_MISSING_DOIS: ${{ steps.nature_repair.outputs.missing_dois || steps.nature_source.outputs.missing_dois }}
+          NATURE_ERROR: ${{ steps.nature_repair.outputs.error || steps.nature_source.outputs.error }}
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
         run: >-
           python scripts/send_dingtalk_alert.py
           --title "Literature RSS daily gap alert"
-          --message "repository=${GITHUB_REPOSITORY}; detected=${DETECTED_DATES:-workflow-error}; still_missing=${FAILED_DATES:-workflow-error}; run=${RUN_URL}"
+          --message "repository=${GITHUB_REPOSITORY}; daily_gaps=${DETECTED_DATES:-none}; still_missing_dates=${FAILED_DATES:-none}; nature_sustainability_missing=${NATURE_MISSING_DOIS:-none}; nature_error=${NATURE_ERROR:-none}; run=${RUN_URL}"
 
-      - name: Fail when gaps remain after the single attempt
-        if: steps.backfill.outputs.failed_dates != ''
+      - name: Fail when gaps or source omissions remain after the single attempt
+        if: >-
+          always() &&
+          (steps.backfill.outputs.failed_dates != '' ||
+           steps.nature_repair.outcome == 'failure' ||
+           steps.nature_repair.outputs.missing_count != '0')
         env:
           FAILED_DATES: ${{ steps.backfill.outputs.failed_dates }}
+          NATURE_MISSING_DOIS: ${{ steps.nature_repair.outputs.missing_dois }}
         run: |
           echo "Daily outputs still missing or invalid: $FAILED_DATES"
+          echo "Nature Sustainability still missing: $NATURE_MISSING_DOIS"
           exit 1

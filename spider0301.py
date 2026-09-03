@@ -47,6 +47,15 @@ yesterday_utc = today_utc - timedelta(days=1)
 day_before_utc = today_utc - timedelta(days=2)
 TARGET_DATES = {yesterday_utc, day_before_utc}
 
+# Nature Sustainability sometimes adds an article to its RSS feed several days
+# after the article's declared online date. A strict yesterday/day-before filter
+# therefore loses late-arriving entries permanently. Keep a seven-day window for
+# this feed; downstream daily/weekly aggregation already deduplicates by DOI.
+NATURE_SUSTAINABILITY_FEED = "https://www.nature.com/natsustain.rss"
+NATURE_SUSTAINABILITY_LOOKBACK_DAYS = int(
+    os.getenv("NATURE_SUSTAINABILITY_LOOKBACK_DAYS", "7")
+)
+
 # ✅ Wiley 校验：canonical_date 在最近 N 天内，则保持 RSS 日期不动
 WILEY_CANONICAL_RECENT_DAYS = 5
 
@@ -470,6 +479,36 @@ def safe_get(url: str, params=None, headers=None):
         print(f"⚠️ 请求 {url} 失败: {e}")
         return None
 
+
+def parse_rss_feed(url: str):
+    """Fetch RSS with tolerant decoding before handing it to feedparser.
+
+    Some Nature feeds declare UTF-8 but intermittently contain legacy single-byte
+    copyright/dash characters. Passing those bytes directly to feedparser can
+    produce an empty feed with an ``invalid token`` error.
+    """
+    last_error = ""
+    for attempt in range(1, 4):
+        try:
+            response = requests.get(url, headers=RSS_REQUEST_HEADERS, timeout=REQ_TIMEOUT)
+            response.raise_for_status()
+            encoding = response.encoding or "utf-8"
+            xml_text = response.content.decode(encoding, errors="replace")
+            parsed = feedparser.parse(xml_text)
+            if parsed.entries:
+                if getattr(parsed, "bozo", False):
+                    print(f"⚠️ RSS XML存在可恢复问题，已保留 {len(parsed.entries)} 条: {url}")
+                return parsed
+            last_error = str(getattr(parsed, "bozo_exception", "RSS returned no entries"))
+        except Exception as exc:
+            last_error = str(exc)
+        print(f"⚠️ RSS读取失败，第 {attempt}/3 次: {url} ({last_error})")
+        if attempt < 3:
+            time.sleep(attempt)
+
+    print(f"❌ RSS连续3次无可用条目: {url} ({last_error})")
+    return feedparser.FeedParserDict(feed=feedparser.FeedParserDict(), entries=[])
+
 def within_days(pub_dt: datetime, days: int) -> bool:
     if not pub_dt:
         return False
@@ -482,6 +521,18 @@ def in_target_dates(pub_dt: datetime | None) -> bool:
         return False
     if pub_dt.tzinfo is None:
         pub_dt = pub_dt.replace(tzinfo=timezone.utc)
+    return pub_dt.date() in TARGET_DATES
+
+
+def in_feed_date_window(feed_url: str, pub_dt: datetime | None) -> bool:
+    """Return whether an RSS entry belongs in this run's collection window."""
+    if not pub_dt:
+        return False
+    if pub_dt.tzinfo is None:
+        pub_dt = pub_dt.replace(tzinfo=timezone.utc)
+    if feed_url.rstrip("/").lower() == NATURE_SUSTAINABILITY_FEED.lower():
+        age_days = (today_utc - pub_dt.date()).days
+        return 0 <= age_days <= NATURE_SUSTAINABILITY_LOOKBACK_DAYS
     return pub_dt.date() in TARGET_DATES
 
 # ================== Wiley 识别（用于日期校验） ==================
@@ -1300,7 +1351,7 @@ def collect_rss_records(prev_by_key, prev_has_abs_keys, prev_no_abs_recent3_keys
 
     for feed_url in urls:
         print(f"\n📡 RSS: {feed_url}")
-        feed = feedparser.parse(feed_url, request_headers=RSS_REQUEST_HEADERS)
+        feed = parse_rss_feed(feed_url)
         source_title = feed.feed.get("title", feed_url)
 
         is_sd_special = feed_url in SD_SPECIAL_URLS
@@ -1319,7 +1370,7 @@ def collect_rss_records(prev_by_key, prev_has_abs_keys, prev_no_abs_recent3_keys
                 published_str = pub_date.strftime("%Y-%m-%d %H:%M:%S %Z")
             else:
                 pub_date = get_entry_pub_date(entry)
-                if not pub_date or pub_date.date() not in TARGET_DATES:
+                if not in_feed_date_window(feed_url, pub_date):
                     continue
                 published_str = pub_date.strftime("%Y-%m-%d %H:%M:%S %Z")
 
