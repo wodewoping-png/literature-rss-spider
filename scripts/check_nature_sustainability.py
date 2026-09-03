@@ -8,6 +8,7 @@ import csv
 import html
 import os
 import re
+from concurrent.futures import ThreadPoolExecutor
 from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 from urllib.parse import urlsplit, urlunsplit
@@ -36,6 +37,16 @@ RSS_HEADERS = {
     "Accept": "application/rss+xml, application/xml, text/xml, */*",
 }
 TAG_RE = re.compile(r"<[^>]+>")
+DROP_TITLE_KEYWORDS = {
+    "editorial",
+    "masthead",
+    "issue information",
+    "publication information",
+    "information for authors",
+    "society information",
+    "table of contents",
+    "cover",
+}
 
 
 def parse_iso_date(value: str) -> date:
@@ -107,7 +118,21 @@ def entry_last_author(entry) -> str:
     return clean_text(entry.get("author") or "")
 
 
-def fetch_expected_items(start_date: date, end_date: date, feed_url: str = FEED_URL) -> dict[str, dict[str, str]]:
+def is_direct_nature_feed(url: str) -> bool:
+    parts = urlsplit(url)
+    return (
+        parts.netloc.lower() in {"nature.com", "www.nature.com"}
+        and bool(re.fullmatch(r"/[^/]+\.rss", parts.path.lower()))
+    )
+
+
+def fetch_expected_items(
+    start_date: date,
+    end_date: date,
+    feed_url: str = FEED_URL,
+    doi_prefix: str = DOI_PREFIX,
+    source_name: str | None = SOURCE_NAME,
+) -> dict[str, dict[str, str]]:
     last_error = ""
     feed = None
     for attempt in range(1, 4):
@@ -129,20 +154,25 @@ def fetch_expected_items(start_date: date, end_date: date, feed_url: str = FEED_
     if feed is None or not feed.entries:
         raise RuntimeError(f"RSS returned no entries after 3 attempts: {last_error}")
 
+    resolved_source_name = source_name or clean_text(feed.feed.get("title") or feed_url)
+
     items: dict[str, dict[str, str]] = {}
     for entry in feed.entries:
         pub_dt = entry_date(entry)
         doi = entry_doi(entry)
+        title = clean_text(entry.get("title") or "")
         if not pub_dt or not (start_date <= pub_dt.date() <= end_date):
             continue
-        if not doi.startswith(DOI_PREFIX):
+        if doi_prefix and not doi.startswith(doi_prefix.lower()):
+            continue
+        if not title or any(keyword in title.lower() for keyword in DROP_TITLE_KEYWORDS):
             continue
         link = normalize_link(entry.get("link") or entry.get("prism_url") or f"https://doi.org/{doi}")
         key = record_key(doi, link)
         items[key] = {
-            "title": clean_text(entry.get("title") or ""),
+            "title": title,
             "link": link,
-            "source": SOURCE_NAME,
+            "source": resolved_source_name,
             "published_str": pub_dt.strftime("%Y-%m-%d %H:%M:%S UTC"),
             "pub_date": pub_dt.strftime("%Y-%m-%d %H:%M:%S+00:00"),
             "doi": doi,
@@ -222,6 +252,8 @@ def main() -> int:
     parser.add_argument("--days", type=int, default=7)
     parser.add_argument("--end-date", type=parse_iso_date, required=True)
     parser.add_argument("--repair-date", type=parse_iso_date)
+    parser.add_argument("--all-direct-nature", action="store_true")
+    parser.add_argument("--feed-list", type=Path, default=Path("feeds1211.txt"))
     parser.add_argument("--github-output", type=Path)
     parser.add_argument("--fail-on-missing", action="store_true")
     args = parser.parse_args()
@@ -231,7 +263,32 @@ def main() -> int:
     days = date_range(args.end_date, args.days)
     github_output = args.github_output or (Path(os.environ["GITHUB_OUTPUT"]) if os.getenv("GITHUB_OUTPUT") else None)
     try:
-        expected = fetch_expected_items(days[0], days[-1])
+        if args.all_direct_nature:
+            feed_urls = [
+                line.strip()
+                for line in args.feed_list.read_text(encoding="utf-8").splitlines()
+                if line.strip() and is_direct_nature_feed(line.strip())
+            ]
+            with ThreadPoolExecutor(max_workers=min(6, max(1, len(feed_urls)))) as pool:
+                batches = list(
+                    pool.map(
+                        lambda url: fetch_expected_items(
+                            days[0],
+                            days[-1],
+                            feed_url=url,
+                            doi_prefix="",
+                            source_name=None,
+                        ),
+                        feed_urls,
+                    )
+                )
+            expected = {}
+            for batch in batches:
+                expected.update(batch)
+            coverage_label = f"{len(feed_urls)} direct Nature journals"
+        else:
+            expected = fetch_expected_items(days[0], days[-1])
+            coverage_label = SOURCE_NAME
         observed = load_observed_keys(args.output_dir, days)
         missing = missing_items(expected, observed)
         initially_missing = len(missing)
@@ -244,7 +301,7 @@ def main() -> int:
 
         missing_dois = " ".join(item["doi"] for item in missing.values())
         print(
-            f"Nature Sustainability coverage {days[0]}..{days[-1]}: "
+            f"{coverage_label} coverage {days[0]}..{days[-1]}: "
             f"expected={len(expected)} initially_missing={initially_missing} repaired={added} remaining={len(missing)}"
         )
         for item in missing.values():
@@ -263,7 +320,7 @@ def main() -> int:
         return 1 if args.fail_on_missing and missing else 0
     except Exception as exc:
         message = f"{type(exc).__name__}: {exc}"
-        print(f"Nature Sustainability health check failed: {message}")
+        print(f"Nature journal health check failed: {message}")
         if github_output:
             write_github_outputs(
                 github_output,

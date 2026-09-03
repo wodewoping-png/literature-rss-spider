@@ -47,13 +47,16 @@ yesterday_utc = today_utc - timedelta(days=1)
 day_before_utc = today_utc - timedelta(days=2)
 TARGET_DATES = {yesterday_utc, day_before_utc}
 
-# Nature Sustainability sometimes adds an article to its RSS feed several days
-# after the article's declared online date. A strict yesterday/day-before filter
-# therefore loses late-arriving entries permanently. Keep a seven-day window for
-# this feed; downstream daily/weekly aggregation already deduplicates by DOI.
+# Nature journals sometimes add an article to RSS several days after the
+# article's declared online date. A strict yesterday/day-before filter therefore
+# loses late-arriving entries permanently. Keep a seven-day window for direct
+# Nature journal feeds; downstream aggregation already deduplicates by DOI.
 NATURE_SUSTAINABILITY_FEED = "https://www.nature.com/natsustain.rss"
-NATURE_SUSTAINABILITY_LOOKBACK_DAYS = int(
-    os.getenv("NATURE_SUSTAINABILITY_LOOKBACK_DAYS", "7")
+NATURE_JOURNAL_LOOKBACK_DAYS = int(
+    os.getenv(
+        "NATURE_JOURNAL_LOOKBACK_DAYS",
+        os.getenv("NATURE_SUSTAINABILITY_LOOKBACK_DAYS", "7"),
+    )
 )
 
 # ✅ Wiley 校验：canonical_date 在最近 N 天内，则保持 RSS 日期不动
@@ -98,35 +101,59 @@ SD_SPECIAL_LIMITS = {
 }
 SD_SPECIAL_URLS = set(SD_SPECIAL_LIMITS.keys())
 
-# ACS RSS can return a Cloudflare challenge page instead of XML. When that
-# happens, fall back to Crossref by journal ISSN for the ACS feeds we track.
-ACS_CROSSREF_FEEDS = {
+# Publisher RSS endpoints can be blocked or silently stop updating. When no
+# usable record is found, query Crossref by journal ISSN as a second channel.
+CROSSREF_FALLBACK_FEEDS = {
     "https://pubs.acs.org/action/showFeed?type=etoc&feed=rss&jc=chreay": {
         "issn": "0009-2665",
         "journal": "Chemical Reviews",
+        "doi_prefix": "10.1021/",
+        "source_suffix": ": Latest Articles (ACS Publications)",
     },
     "https://pubs.acs.org/action/showFeed?type=axatoc&feed=rss&jc=chreay": {
         "issn": "0009-2665",
         "journal": "Chemical Reviews",
+        "doi_prefix": "10.1021/",
+        "source_suffix": ": Latest Articles (ACS Publications)",
     },
     "https://pubs.acs.org/action/showFeed?type=etoc&feed=rss&jc=aelccp": {
         "issn": "2380-8195",
         "journal": "ACS Energy Letters",
+        "doi_prefix": "10.1021/",
+        "source_suffix": ": Latest Articles (ACS Publications)",
     },
     "https://pubs.acs.org/action/showFeed?type=axatoc&feed=rss&jc=aelccp": {
         "issn": "2380-8195",
         "journal": "ACS Energy Letters",
+        "doi_prefix": "10.1021/",
+        "source_suffix": ": Latest Articles (ACS Publications)",
     },
     "https://pubs.acs.org/action/showFeed?type=axatoc&feed=rss&jc=jacsat": {
         "issn": "0002-7863",
         "journal": "Journal of the American Chemical Society",
+        "doi_prefix": "10.1021/",
+        "source_suffix": ": Latest Articles (ACS Publications)",
     },
     "https://pubs.acs.org/action/showFeed?type=axatoc&feed=rss&jc=aamick": {
         "issn": "1944-8244",
         "journal": "ACS Applied Materials & Interfaces",
+        "doi_prefix": "10.1021/",
+        "source_suffix": ": Latest Articles (ACS Publications)",
+    },
+    "http://feeds.rsc.org/rss/cs": {
+        "issn": "0306-0012",
+        "journal": "Chemical Society Reviews",
+        "doi_prefix": "10.1039/",
+        "source_suffix": "",
+    },
+    "http://feeds.rsc.org/rss/ee": {
+        "issn": "1754-5692",
+        "journal": "Energy & Environmental Science",
+        "doi_prefix": "10.1039/",
+        "source_suffix": "",
     },
 }
-ACS_CROSSREF_ROWS = 100
+CROSSREF_FALLBACK_ROWS = 100
 
 # ✅ Debug：作者抓取路径日志
 DEBUG_AUTHOR = os.getenv("DEBUG_AUTHOR", "1") == "1"
@@ -530,9 +557,14 @@ def in_feed_date_window(feed_url: str, pub_dt: datetime | None) -> bool:
         return False
     if pub_dt.tzinfo is None:
         pub_dt = pub_dt.replace(tzinfo=timezone.utc)
-    if feed_url.rstrip("/").lower() == NATURE_SUSTAINABILITY_FEED.lower():
+    parts = urlsplit(feed_url)
+    is_direct_nature_journal = (
+        parts.netloc.lower() in {"nature.com", "www.nature.com"}
+        and bool(re.fullmatch(r"/[^/]+\.rss", parts.path.lower()))
+    )
+    if is_direct_nature_journal:
         age_days = (today_utc - pub_dt.date()).days
-        return 0 <= age_days <= NATURE_SUSTAINABILITY_LOOKBACK_DAYS
+        return 0 <= age_days <= NATURE_JOURNAL_LOOKBACK_DAYS
     return pub_dt.date() in TARGET_DATES
 
 # ================== Wiley 识别（用于日期校验） ==================
@@ -728,9 +760,9 @@ def _crossref_primary_url(msg: dict, doi: str) -> str:
         return f"https://doi.org/{doi}"
     return ""
 
-def _crossref_work_to_record(msg: dict, fallback_journal: str) -> dict | None:
+def _crossref_work_to_record(msg: dict, meta: dict) -> dict | None:
     doi = (msg.get("DOI") or "").strip()
-    if not doi or not doi.lower().startswith("10.1021/"):
+    if not doi or not doi.lower().startswith(meta["doi_prefix"].lower()):
         return None
 
     pub_date = _crossref_pick_date(msg)
@@ -741,8 +773,8 @@ def _crossref_work_to_record(msg: dict, fallback_journal: str) -> dict | None:
     if should_drop_by_title(title):
         return None
 
-    container_title = _crossref_first_text(msg.get("container-title")) or fallback_journal
-    source_title = f"{container_title}: Latest Articles (ACS Publications)"
+    container_title = _crossref_first_text(msg.get("container-title")) or meta["journal"]
+    source_title = f"{container_title}{meta.get('source_suffix', '')}"
     link = _crossref_primary_url(msg, doi)
     published_str = pub_date.strftime("%Y-%m-%d %H:%M:%S %Z") if pub_date else ""
 
@@ -769,8 +801,8 @@ def _crossref_work_to_record(msg: dict, fallback_journal: str) -> dict | None:
         "_drop": False,
     }
 
-def query_acs_crossref_records(feed_url: str) -> list[dict]:
-    meta = ACS_CROSSREF_FEEDS.get(feed_url)
+def query_crossref_fallback_records(feed_url: str) -> list[dict]:
+    meta = CROSSREF_FALLBACK_FEEDS.get(feed_url)
     if not meta:
         return []
 
@@ -779,7 +811,7 @@ def query_acs_crossref_records(feed_url: str) -> list[dict]:
     url = f"https://api.crossref.org/journals/{meta['issn']}/works"
     params = {
         "filter": f"from-pub-date:{from_date},until-pub-date:{until_date},type:journal-article",
-        "rows": ACS_CROSSREF_ROWS,
+        "rows": CROSSREF_FALLBACK_ROWS,
         "sort": "published",
         "order": "desc",
     }
@@ -797,7 +829,7 @@ def query_acs_crossref_records(feed_url: str) -> list[dict]:
     records = []
     seen = set()
     for msg in items:
-        rec = _crossref_work_to_record(msg, meta["journal"])
+        rec = _crossref_work_to_record(msg, meta)
         if not rec:
             continue
         key = record_key(rec.get("doi", ""), rec.get("link", ""))
@@ -1347,7 +1379,7 @@ def read_feed_list(path: Path) -> list[str]:
 def collect_rss_records(prev_by_key, prev_has_abs_keys, prev_no_abs_recent3_keys):
     urls = read_feed_list(FEED_LIST_FILE)
     today_records = {}
-    acs_crossref_done = set()
+    crossref_fallback_done = set()
 
     for feed_url in urls:
         print(f"\n📡 RSS: {feed_url}")
@@ -1501,11 +1533,14 @@ def collect_rss_records(prev_by_key, prev_has_abs_keys, prev_no_abs_recent3_keys
         if is_sd_special:
             print(f" ✅ 特殊源实际收录：{special_taken}/{special_limit} 条（标题过滤/去重后可能少于limit）")
 
-        acs_meta = ACS_CROSSREF_FEEDS.get(feed_url)
-        acs_done_key = acs_meta.get("issn") if acs_meta else ""
-        if acs_meta and feed_added == 0 and acs_done_key not in acs_crossref_done:
-            print(f"  ACS RSS yielded 0 usable records; trying Crossref fallback for {acs_meta['journal']} ({acs_done_key})")
-            fallback_records = query_acs_crossref_records(feed_url)
+        fallback_meta = CROSSREF_FALLBACK_FEEDS.get(feed_url)
+        fallback_done_key = fallback_meta.get("issn") if fallback_meta else ""
+        if fallback_meta and feed_added == 0 and fallback_done_key not in crossref_fallback_done:
+            print(
+                f"  RSS yielded 0 usable records; trying Crossref fallback for "
+                f"{fallback_meta['journal']} ({fallback_done_key})"
+            )
+            fallback_records = query_crossref_fallback_records(feed_url)
             added = 0
             for base in fallback_records:
                 key = record_key(base.get("doi", ""), base.get("link", ""))
@@ -1513,8 +1548,8 @@ def collect_rss_records(prev_by_key, prev_has_abs_keys, prev_no_abs_recent3_keys
                 if key not in today_records:
                     added += 1
                 today_records[key] = rec
-            acs_crossref_done.add(acs_done_key)
-            print(f"  ACS Crossref fallback added {added}/{len(fallback_records)} records")
+            crossref_fallback_done.add(fallback_done_key)
+            print(f"  Crossref fallback added {added}/{len(fallback_records)} records")
 
     return today_records
 

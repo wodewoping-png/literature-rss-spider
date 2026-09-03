@@ -8,6 +8,7 @@ from unittest import mock
 
 import spider0301
 from scripts.check_daily_gaps import expected_dates, validate_daily_file
+from scripts.check_feed_endpoints import check_one, fallback_issn
 from scripts.check_nature_sustainability import (
     load_observed_keys,
     missing_items,
@@ -61,6 +62,17 @@ class BackfillDateTests(unittest.TestCase):
             )
             self.assertFalse(spider0301.in_feed_date_window("https://example.com/feed", pub_date))
 
+    def test_all_direct_nature_journals_use_late_arrival_window(self):
+        pub_date = spider0301.datetime(2026, 8, 28, tzinfo=spider0301.timezone.utc)
+        with mock.patch.object(spider0301, "today_utc", date(2026, 9, 3)):
+            self.assertTrue(spider0301.in_feed_date_window("https://www.nature.com/nenergy.rss", pub_date))
+            self.assertFalse(
+                spider0301.in_feed_date_window(
+                    "https://www.nature.com/subjects/physical-sciences/ncomms.rss",
+                    pub_date,
+                )
+            )
+
     def test_rss_fetch_tolerates_invalid_utf8_bytes(self):
         response = mock.Mock()
         response.encoding = "utf-8"
@@ -74,6 +86,26 @@ class BackfillDateTests(unittest.TestCase):
             parsed = spider0301.parse_rss_feed("https://example.com/feed")
         self.assertEqual(len(parsed.entries), 1)
         self.assertEqual(parsed.entries[0].title, "Paper")
+
+    def test_rsc_crossref_fallback_accepts_rsc_doi(self):
+        message = {
+            "DOI": "10.1039/d6ee01234a",
+            "title": ["RSC fallback paper"],
+            "container-title": ["Energy & Environmental Science"],
+            "published-online": {"date-parts": [[2026, 9, 1]]},
+            "URL": "https://doi.org/10.1039/d6ee01234a",
+            "author": [{"given": "First", "family": "Author"}],
+        }
+        meta = spider0301.CROSSREF_FALLBACK_FEEDS["http://feeds.rsc.org/rss/ee"]
+        with mock.patch.object(
+            spider0301,
+            "TARGET_DATES",
+            {date(2026, 9, 1), date(2026, 9, 2)},
+        ):
+            record = spider0301._crossref_work_to_record(message, meta)
+        self.assertIsNotNone(record)
+        self.assertEqual(record["source"], "Energy & Environmental Science")
+        self.assertEqual(record["doi"], "10.1039/d6ee01234a")
 
 
 class NatureSustainabilityCoverageTests(unittest.TestCase):
@@ -139,6 +171,29 @@ class NatureSustainabilityCoverageTests(unittest.TestCase):
                 rows = list(csv.DictReader(handle))
             self.assertEqual(len(rows), 2)
             self.assertEqual(rows[-1]["source"], "Nature Sustainability")
+
+
+class FeedEndpointHealthTests(unittest.TestCase):
+    def test_crossref_fallback_mapping_covers_acs_and_rsc(self):
+        self.assertEqual(
+            fallback_issn("https://pubs.acs.org/action/showFeed?type=axatoc&feed=rss&jc=jacsat"),
+            "0002-7863",
+        )
+        self.assertEqual(fallback_issn("http://feeds.rsc.org/rss/ee"), "1754-5692")
+
+    @mock.patch("scripts.check_feed_endpoints.crossref_available", return_value=(True, "reachable"))
+    @mock.patch("scripts.check_feed_endpoints.fetch_feed", return_value=([], "ACS", "HTTP 403"))
+    def test_failed_primary_feed_is_healthy_when_fallback_is_reachable(self, _fetch, _crossref):
+        result = check_one(
+            "https://pubs.acs.org/action/showFeed?type=axatoc&feed=rss&jc=jacsat",
+            date(2026, 9, 2),
+        )
+        self.assertEqual(result["status"], "fallback_ok")
+
+    @mock.patch("scripts.check_feed_endpoints.fetch_feed", return_value=([], "Unknown", "timeout"))
+    def test_failed_feed_without_fallback_is_unhealthy(self, _fetch):
+        result = check_one("https://example.com/feed", date(2026, 9, 2))
+        self.assertEqual(result["status"], "unhealthy")
 
 
 class DingTalkAlertTests(unittest.TestCase):
