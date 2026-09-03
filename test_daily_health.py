@@ -8,13 +8,14 @@ from unittest import mock
 
 import spider0301
 from scripts.check_daily_gaps import expected_dates, validate_daily_file
-from scripts.check_feed_endpoints import check_one, fallback_issn
+from scripts.check_crossref_fallback_sources import find_missing, title_key
+from scripts.check_feed_endpoints import check_one, fallback_issn, fallback_prefix
 from scripts.check_nature_sustainability import (
     load_observed_keys,
     missing_items,
     repair_daily_file,
 )
-from scripts.send_dingtalk_alert import signed_webhook_url
+from scripts.send_dingtalk_alert import resolve_webhook, signed_webhook_url
 
 
 class DailyGapCheckTests(unittest.TestCase):
@@ -174,12 +175,22 @@ class NatureSustainabilityCoverageTests(unittest.TestCase):
 
 
 class FeedEndpointHealthTests(unittest.TestCase):
-    def test_crossref_fallback_mapping_covers_acs_and_rsc(self):
+    def test_crossref_fallback_mapping_covers_all_blocked_publishers(self):
         self.assertEqual(
             fallback_issn("https://pubs.acs.org/action/showFeed?type=axatoc&feed=rss&jc=jacsat"),
             "0002-7863",
         )
         self.assertEqual(fallback_issn("http://feeds.rsc.org/rss/ee"), "1754-5692")
+        self.assertEqual(
+            fallback_issn("https://advanced.onlinelibrary.wiley.com/feed/16146840/most-recent"),
+            "1614-6840",
+        )
+        self.assertEqual(fallback_issn("https://www.cell.com/joule/inpress.rss"), "2542-4351")
+        self.assertEqual(
+            fallback_issn("https://ieeexplore.ieee.org/rss/TOC5165411.XML"),
+            "1949-3061",
+        )
+        self.assertEqual(fallback_prefix("https://www.cell.com/joule/inpress.rss"), "10.1016")
 
     @mock.patch("scripts.check_feed_endpoints.crossref_available", return_value=(True, "reachable"))
     @mock.patch("scripts.check_feed_endpoints.fetch_feed", return_value=([], "ACS", "HTTP 403"))
@@ -203,6 +214,24 @@ class DingTalkAlertTests(unittest.TestCase):
         self.assertIn("timestamp=1000", url)
         self.assertIn("&sign=", url)
         self.assertNotIn("secret-value", url)
+
+    def test_access_token_can_build_webhook(self):
+        self.assertEqual(
+            resolve_webhook("", "token with space"),
+            "https://oapi.dingtalk.com/robot/send?access_token=token%20with%20space",
+        )
+
+
+class CrossrefFallbackCoverageTests(unittest.TestCase):
+    def test_title_alias_prevents_duplicate_when_rss_row_has_no_doi(self):
+        expected = {
+            "doi:10.1016/j.joule.2026.1": {
+                "doi": "10.1016/j.joule.2026.1",
+                "title": "A battery discovery",
+            }
+        }
+        observed = {title_key("A battery discovery")}
+        self.assertEqual(find_missing(expected, observed), {})
 
 
 if __name__ == "__main__":

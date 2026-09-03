@@ -27,6 +27,14 @@ def signed_webhook_url(webhook: str, secret: str) -> str:
     return f"{webhook}{separator}timestamp={timestamp}&sign={sign}"
 
 
+def resolve_webhook(webhook: str, access_token: str) -> str:
+    if webhook.strip():
+        return webhook.strip()
+    if access_token.strip():
+        return f"https://oapi.dingtalk.com/robot/send?access_token={parse.quote(access_token.strip())}"
+    return ""
+
+
 def send_alert(webhook: str, secret: str, content: str) -> None:
     payload = json.dumps(
         {"msgtype": "text", "text": {"content": content}},
@@ -64,9 +72,12 @@ def main() -> int:
         print(content)
         return 0
 
-    webhook = os.getenv("DINGTALK_WEBHOOK", "").strip()
+    webhook = resolve_webhook(
+        os.getenv("DINGTALK_WEBHOOK", ""),
+        os.getenv("DINGTALK_ACCESS_TOKEN", ""),
+    )
     if not webhook:
-        raise RuntimeError("DINGTALK_WEBHOOK is not configured")
+        raise RuntimeError("DINGTALK_WEBHOOK or DINGTALK_ACCESS_TOKEN is not configured")
     send_alert(webhook, os.getenv("DINGTALK_SECRET", "").strip(), content)
     print("DingTalk alert sent successfully.")
     return 0

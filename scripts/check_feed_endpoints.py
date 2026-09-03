@@ -27,6 +27,21 @@ RSC_FALLBACKS = {
     "http://feeds.rsc.org/rss/cs": "0306-0012",
     "http://feeds.rsc.org/rss/ee": "1754-5692",
 }
+EXPLICIT_FALLBACKS = {
+    "https://onlinelibrary.wiley.com/feed/15213773/most-recent": ("1521-3773", "10.1002"),
+    "https://advanced.onlinelibrary.wiley.com/feed/16146840/most-recent": ("1614-6840", "10.1002"),
+    "https://advanced.onlinelibrary.wiley.com/feed/15214095/most-recent": ("1521-4095", "10.1002"),
+    "https://www.cell.com/chem/inpress.rss": ("2451-9294", "10.1016"),
+    "https://www.cell.com/joule/inpress.rss": ("2542-4351", "10.1016"),
+    "https://www.cell.com/oneear/inpress.rss": ("2590-3322", "10.1016"),
+    "https://www.cell.com/matter/inpress.rss": ("2590-2385", "10.1016"),
+    "https://ieeexplore.ieee.org/rss/toc9424.xml": ("1941-0050", "10.1109"),
+    "https://ieeexplore.ieee.org/rss/toc5165391.xml": ("1949-3037", "10.1109"),
+    "https://ieeexplore.ieee.org/rss/toc60.xml": ("1558-0059", "10.1109"),
+    "https://ieeexplore.ieee.org/rss/toc5165411.xml": ("1949-3061", "10.1109"),
+    "https://ieeexplore.ieee.org/rss/toc59.xml": ("1558-0679", "10.1109"),
+    "https://ieeexplore.ieee.org/rss/toc61.xml": ("1937-4208", "10.1109"),
+}
 ACS_ISSNS = {
     "chreay": "0009-2665",
     "aelccp": "2380-8195",
@@ -65,6 +80,8 @@ def entry_date(entry) -> datetime | None:
 
 def fallback_issn(url: str) -> str:
     normalized = url.rstrip("/").lower()
+    if normalized in EXPLICIT_FALLBACKS:
+        return EXPLICIT_FALLBACKS[normalized][0]
     if normalized in RSC_FALLBACKS:
         return RSC_FALLBACKS[normalized]
     parts = urlsplit(url)
@@ -76,6 +93,8 @@ def fallback_issn(url: str) -> str:
 
 def fallback_prefix(url: str) -> str:
     normalized = url.rstrip("/").lower()
+    if normalized in EXPLICIT_FALLBACKS:
+        return EXPLICIT_FALLBACKS[normalized][1]
     if normalized in RSC_FALLBACKS:
         return "10.1039"
     if urlsplit(url).netloc.lower() == "pubs.acs.org" and fallback_issn(url):
@@ -91,23 +110,23 @@ def is_direct_nature_feed(url: str) -> bool:
     )
 
 
-def crossref_available(prefix: str) -> tuple[bool, str]:
+def crossref_available(prefix: str = "") -> tuple[bool, str]:
     last_error = ""
     for attempt in range(1, 4):
         try:
             response = requests.get(
-                f"https://api.crossref.org/prefixes/{prefix}/works",
+                "https://api.crossref.org/works",
                 params={"rows": 0},
                 headers=CROSSREF_HEADERS,
                 timeout=30,
             )
             response.raise_for_status()
-            return True, f"Crossref prefix {prefix} reachable"
+            return True, "Crossref API reachable"
         except Exception as exc:
             last_error = str(exc)
             if attempt < 3:
                 time.sleep(attempt * 2)
-    return False, f"Crossref prefix {prefix} failed after 3 attempts: {last_error}"
+    return False, f"Crossref API failed after 3 attempts: {last_error}"
 
 
 def fetch_feed(url: str) -> tuple[list, str, str]:
@@ -192,12 +211,13 @@ def main() -> int:
     args = parser.parse_args()
     urls = [line.strip() for line in args.feed_list.read_text(encoding="utf-8").splitlines() if line.strip()]
 
-    # Multiple feed URLs and journals share a publisher. Probe each publisher
-    # DOI prefix once to avoid self-inflicted Crossref 429 responses.
+    # Every configured fallback uses the same Crossref service. Probe it once
+    # to avoid self-inflicted 429 responses on shared GitHub runner IPs.
     fallback_status: dict[str, tuple[bool, str]] = {}
-    for prefix in sorted({fallback_prefix(url) for url in urls} - {""}):
-        fallback_status[prefix] = crossref_available(prefix)
-        time.sleep(0.5)
+    prefixes = sorted({fallback_prefix(url) for url in urls} - {""})
+    if prefixes:
+        crossref_status = crossref_available()
+        fallback_status = {prefix: crossref_status for prefix in prefixes}
 
     with ThreadPoolExecutor(max_workers=max(1, args.workers)) as pool:
         results = list(pool.map(lambda url: check_one(url, args.end_date, fallback_status), urls))

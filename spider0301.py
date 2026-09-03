@@ -152,6 +152,84 @@ CROSSREF_FALLBACK_FEEDS = {
         "doi_prefix": "10.1039/",
         "source_suffix": "",
     },
+    "https://onlinelibrary.wiley.com/feed/15213773/most-recent": {
+        "issn": "1521-3773",
+        "journal": "Angewandte Chemie International Edition",
+        "doi_prefix": "10.1002/",
+        "source_suffix": "",
+    },
+    "https://advanced.onlinelibrary.wiley.com/feed/16146840/most-recent": {
+        "issn": "1614-6840",
+        "journal": "Advanced Energy Materials",
+        "doi_prefix": "10.1002/",
+        "source_suffix": "",
+    },
+    "https://advanced.onlinelibrary.wiley.com/feed/15214095/most-recent": {
+        "issn": "1521-4095",
+        "journal": "Advanced Materials",
+        "doi_prefix": "10.1002/",
+        "source_suffix": "",
+    },
+    "https://www.cell.com/chem/inpress.rss": {
+        "issn": "2451-9294",
+        "journal": "Chem",
+        "doi_prefix": "10.1016/",
+        "source_suffix": "",
+    },
+    "https://www.cell.com/joule/inpress.rss": {
+        "issn": "2542-4351",
+        "journal": "Joule",
+        "doi_prefix": "10.1016/",
+        "source_suffix": "",
+    },
+    "https://www.cell.com/oneear/inpress.rss": {
+        "issn": "2590-3322",
+        "journal": "One Earth",
+        "doi_prefix": "10.1016/",
+        "source_suffix": "",
+    },
+    "https://www.cell.com/matter/inpress.rss": {
+        "issn": "2590-2385",
+        "journal": "Matter",
+        "doi_prefix": "10.1016/",
+        "source_suffix": "",
+    },
+    "https://ieeexplore.ieee.org/rss/TOC9424.XML": {
+        "issn": "1941-0050",
+        "journal": "IEEE Transactions on Industrial Informatics",
+        "doi_prefix": "10.1109/",
+        "source_suffix": "",
+    },
+    "https://ieeexplore.ieee.org/rss/TOC5165391.XML": {
+        "issn": "1949-3037",
+        "journal": "IEEE Transactions on Sustainable Energy",
+        "doi_prefix": "10.1109/",
+        "source_suffix": "",
+    },
+    "https://ieeexplore.ieee.org/rss/TOC60.XML": {
+        "issn": "1558-0059",
+        "journal": "IEEE Transactions on Energy Conversion",
+        "doi_prefix": "10.1109/",
+        "source_suffix": "",
+    },
+    "https://ieeexplore.ieee.org/rss/TOC5165411.XML": {
+        "issn": "1949-3061",
+        "journal": "IEEE Transactions on Smart Grid",
+        "doi_prefix": "10.1109/",
+        "source_suffix": "",
+    },
+    "https://ieeexplore.ieee.org/rss/TOC59.XML": {
+        "issn": "1558-0679",
+        "journal": "IEEE Transactions on Power Systems",
+        "doi_prefix": "10.1109/",
+        "source_suffix": "",
+    },
+    "https://ieeexplore.ieee.org/rss/TOC61.XML": {
+        "issn": "1937-4208",
+        "journal": "IEEE Transactions on Power Delivery",
+        "doi_prefix": "10.1109/",
+        "source_suffix": "",
+    },
 }
 CROSSREF_FALLBACK_ROWS = 100
 
@@ -816,7 +894,13 @@ def query_crossref_fallback_records(feed_url: str) -> list[dict]:
         "order": "desc",
     }
     headers = {"User-Agent": f"literature-rss-spider/1.0 (mailto:{NCBI_EMAIL})"}
-    resp = safe_get(url, params=params, headers=headers)
+    resp = None
+    for attempt in range(1, 4):
+        resp = safe_get(url, params=params, headers=headers)
+        if resp:
+            break
+        if attempt < 3:
+            time.sleep(attempt * 2)
     time.sleep(API_SLEEP)
     if not resp:
         return []
@@ -1535,19 +1619,41 @@ def collect_rss_records(prev_by_key, prev_has_abs_keys, prev_no_abs_recent3_keys
 
         fallback_meta = CROSSREF_FALLBACK_FEEDS.get(feed_url)
         fallback_done_key = fallback_meta.get("issn") if fallback_meta else ""
-        if fallback_meta and feed_added == 0 and fallback_done_key not in crossref_fallback_done:
+        if fallback_meta and fallback_done_key not in crossref_fallback_done:
             print(
-                f"  RSS yielded 0 usable records; trying Crossref fallback for "
-                f"{fallback_meta['journal']} ({fallback_done_key})"
+                f"  Checking Crossref completeness channel for {fallback_meta['journal']} "
+                f"({fallback_done_key}); RSS added {feed_added} record(s)"
             )
             fallback_records = query_crossref_fallback_records(feed_url)
             added = 0
             for base in fallback_records:
                 key = record_key(base.get("doi", ""), base.get("link", ""))
+                normalized_title = re.sub(r"[^0-9a-z]+", " ", (base.get("title") or "").casefold()).strip()
+                matching_key = next(
+                    (
+                        existing_key
+                        for existing_key, existing in today_records.items()
+                        if normalized_title
+                        and re.sub(
+                            r"[^0-9a-z]+",
+                            " ",
+                            (existing.get("title") or "").casefold(),
+                        ).strip()
+                        == normalized_title
+                    ),
+                    "",
+                )
+                if key in today_records or matching_key:
+                    existing_key = key if key in today_records else matching_key
+                    existing = today_records.pop(existing_key)
+                    for field, value in base.items():
+                        if field == "doi" or existing.get(field) in (None, ""):
+                            existing[field] = value
+                    today_records[key] = existing
+                    continue
                 rec = merge_crossref_fallback_record(base, prev_by_key, prev_has_abs_keys, prev_no_abs_recent3_keys)
-                if key not in today_records:
-                    added += 1
                 today_records[key] = rec
+                added += 1
             crossref_fallback_done.add(fallback_done_key)
             print(f"  Crossref fallback added {added}/{len(fallback_records)} records")
 
