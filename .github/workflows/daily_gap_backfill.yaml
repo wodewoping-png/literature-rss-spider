@@ -270,8 +270,6 @@ jobs:
         if: >-
           always() &&
           (failure() ||
-           steps.dingtalk_test.outcome == 'failure' ||
-           steps.nature_priority_alert.outcome == 'failure' ||
            steps.backfill.outputs.failed_dates != '' ||
            steps.nature_repair.outcome == 'failure' ||
            steps.nature_repair.outputs.missing_count != '0' ||
@@ -311,8 +309,6 @@ jobs:
         if: >-
           always() &&
           (steps.backfill.outputs.failed_dates != '' ||
-           steps.dingtalk_test.outcome == 'failure' ||
-           steps.nature_priority_alert.outcome == 'failure' ||
            steps.nature_repair.outcome == 'failure' ||
            steps.nature_repair.outputs.missing_count != '0' ||
            steps.crossref_repair.outcome == 'failure' ||
@@ -331,4 +327,14 @@ jobs:
           echo "Fallback-journal records still missing: $CROSSREF_MISSING_DOIS"
           echo "RSS endpoints/fallbacks still unhealthy: $UNHEALTHY_FEEDS"
           echo "::error title=RSS feed health check failed::Unhealthy feeds: ${UNHEALTHY_FEEDS:-unknown}; missing dates: ${FAILED_DATES:-none}; Nature DOI gaps: ${NATURE_MISSING_DOIS:-none}; fallback DOI gaps: ${CROSSREF_MISSING_DOIS:-none}"
+          exit 1
+
+      - name: Fail when DingTalk delivery is unavailable
+        if: >-
+          always() &&
+          (steps.dingtalk_test.outcome == 'failure' ||
+           steps.nature_priority_alert.outcome == 'failure' ||
+           steps.dingtalk_alert.outcome == 'failure')
+        run: |
+          echo "::error title=DingTalk delivery unavailable::A required DingTalk test or alert could not be delivered. See the earlier configuration/rejection annotation."
           exit 1
