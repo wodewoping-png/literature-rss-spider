@@ -9,7 +9,7 @@ import os
 import re
 import time
 from concurrent.futures import ThreadPoolExecutor
-from datetime import date, datetime, timezone
+from datetime import date, datetime, timedelta, timezone
 from email.utils import parsedate_to_datetime
 from pathlib import Path
 from urllib.parse import parse_qs, urlsplit
@@ -131,6 +131,35 @@ def crossref_available(prefix: str = "") -> tuple[bool, str]:
     return False, f"Crossref API failed after 3 attempts: {last_error}"
 
 
+def rsc_crossref_recent(issn: str, end_date: date) -> tuple[bool, str]:
+    start_date = end_date - timedelta(days=14)
+    last_error = ""
+    for attempt in range(1, 4):
+        try:
+            response = requests.get(
+                f"https://api.crossref.org/journals/{issn}/works",
+                params={
+                    "filter": (
+                        f"from-created-date:{start_date},until-created-date:{end_date},"
+                        "type:journal-article"
+                    ),
+                    "rows": 0,
+                },
+                headers=CROSSREF_HEADERS,
+                timeout=30,
+            )
+            response.raise_for_status()
+            count = int(response.json().get("message", {}).get("total-results", 0))
+            if count:
+                return True, f"Crossref has {count} RSC records created in the last 14 days"
+            return False, "Crossref returned zero RSC records created in the last 14 days"
+        except Exception as exc:
+            last_error = str(exc)
+            if attempt < 3:
+                time.sleep(attempt * 2)
+    return False, f"RSC Crossref coverage query failed after 3 attempts: {last_error}"
+
+
 def fetch_feed(url: str) -> tuple[list, str, str]:
     last_error = ""
     for attempt in range(1, 4):
@@ -176,11 +205,15 @@ def check_one(
     if problem:
         prefix = fallback_prefix(url)
         if prefix:
-            available, fallback_note = (
-                fallback_status[prefix]
-                if fallback_status is not None and prefix in fallback_status
-                else crossref_available(prefix)
-            )
+            normalized = url.rstrip("/").lower()
+            if normalized in RSC_FALLBACKS:
+                available, fallback_note = rsc_crossref_recent(RSC_FALLBACKS[normalized], end_date)
+            else:
+                available, fallback_note = (
+                    fallback_status[prefix]
+                    if fallback_status is not None and prefix in fallback_status
+                    else crossref_available(prefix)
+                )
             status = "fallback_ok" if available else "unhealthy"
         else:
             status = "unhealthy"

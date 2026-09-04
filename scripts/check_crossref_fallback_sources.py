@@ -9,6 +9,7 @@ import html
 import os
 import re
 import time
+from collections import Counter
 from datetime import date, datetime, timezone
 from pathlib import Path
 
@@ -62,6 +63,7 @@ SOURCES = (
     ("2375-2548", "Science Advances", "10.1126/"),
     ("0036-8075", "Science", "10.1126/"),
 )
+RSC_ISSNS = {"0306-0012", "1754-5692"}
 DEFAULT_FIELDS = [
     "title",
     "link",
@@ -97,7 +99,7 @@ def parse_iso_date(value: str) -> date:
         raise argparse.ArgumentTypeError(f"invalid date {value!r}; expected YYYY-MM-DD") from exc
 
 
-def crossref_date(message: dict) -> datetime | None:
+def crossref_date(message: dict, preferred_field: str = "") -> datetime | None:
     def parse_parts(value) -> datetime | None:
         try:
             parts = value["date-parts"][0]
@@ -109,6 +111,15 @@ def crossref_date(message: dict) -> datetime | None:
             )
         except (KeyError, IndexError, TypeError, ValueError):
             return None
+
+    if preferred_field:
+        preferred = parse_parts(message.get(preferred_field))
+        try:
+            has_full_date = len(message.get(preferred_field, {}).get("date-parts", [[]])[0]) >= 3
+        except (IndexError, TypeError):
+            has_full_date = False
+        if preferred and has_full_date:
+            return preferred
 
     for key in ("published-online", "published-print", "issued", "created"):
         parsed = parse_parts(message.get(key))
@@ -168,10 +179,13 @@ def fetch_source(
     end_date: date,
 ) -> dict[str, dict[str, str]]:
     url = f"https://api.crossref.org/journals/{issn}/works"
+    use_created_date = issn in RSC_ISSNS
+    filter_name = "created-date" if use_created_date else "pub-date"
+    sort_name = "created" if use_created_date else "published"
     params = {
-        "filter": f"from-pub-date:{start_date},until-pub-date:{end_date},type:journal-article",
+        "filter": f"from-{filter_name}:{start_date},until-{filter_name}:{end_date},type:journal-article",
         "rows": 1000,
-        "sort": "published",
+        "sort": sort_name,
         "order": "desc",
     }
     last_error = ""
@@ -197,7 +211,7 @@ def fetch_source(
     items: dict[str, dict[str, str]] = {}
     for message in payload.get("items", []):
         doi = normalize_doi(message.get("DOI", ""))
-        pub_dt = crossref_date(message)
+        pub_dt = crossref_date(message, "created" if use_created_date else "")
         title = first_text(message.get("title"))
         if not doi.startswith(doi_prefix.lower()) or not pub_dt:
             continue
@@ -223,13 +237,17 @@ def fetch_source(
     return items
 
 
-def fetch_expected(start_date: date, end_date: date) -> dict[str, dict[str, str]]:
+def fetch_expected(
+    start_date: date,
+    end_date: date,
+    sources: tuple[tuple[str, str, str], ...] = SOURCES,
+) -> dict[str, dict[str, str]]:
     expected: dict[str, dict[str, str]] = {}
-    for index, source in enumerate(SOURCES):
+    for index, source in enumerate(sources):
         batch = fetch_source(*source, start_date, end_date)
         expected.update(batch)
         print(f"Crossref source {source[1]}: {len(batch)} relevant records")
-        if index + 1 < len(SOURCES):
+        if index + 1 < len(sources):
             time.sleep(0.6)
     return expected
 
@@ -242,6 +260,9 @@ def main() -> int:
     parser.add_argument("--repair-date", type=parse_iso_date)
     parser.add_argument("--github-output", type=Path)
     parser.add_argument("--fail-on-missing", action="store_true")
+    source_group = parser.add_mutually_exclusive_group()
+    source_group.add_argument("--only-rsc", action="store_true")
+    source_group.add_argument("--exclude-rsc", action="store_true")
     args = parser.parse_args()
     if args.days < 1:
         parser.error("--days must be at least 1")
@@ -249,7 +270,12 @@ def main() -> int:
     days = date_range(args.end_date, args.days)
     github_output = args.github_output or (Path(os.environ["GITHUB_OUTPUT"]) if os.getenv("GITHUB_OUTPUT") else None)
     try:
-        expected = fetch_expected(days[0], days[-1])
+        sources = SOURCES
+        if args.only_rsc:
+            sources = tuple(source for source in SOURCES if source[0] in RSC_ISSNS)
+        elif args.exclude_rsc:
+            sources = tuple(source for source in SOURCES if source[0] not in RSC_ISSNS)
+        expected = fetch_expected(days[0], days[-1], sources)
         observed = load_observed_aliases(args.output_dir, days)
         missing = find_missing(expected, observed)
         initially_missing = len(missing)
@@ -261,6 +287,10 @@ def main() -> int:
             missing = find_missing(expected, observed)
 
         missing_dois = " ".join(item["doi"] for item in missing.values())
+        missing_counts = Counter(item.get("source") or "unknown" for item in missing.values())
+        missing_journals = "; ".join(
+            f"{journal}={count}" for journal, count in sorted(missing_counts.items())
+        )
         missing_sample = " ".join(item["doi"] for item in list(missing.values())[:20])
         if len(missing) > 20:
             missing_sample += f" ...(+{len(missing) - 20} more)"
@@ -278,6 +308,7 @@ def main() -> int:
             "missing_count": len(missing),
             "missing_dois": missing_dois,
             "missing_sample": missing_sample,
+            "missing_journals": missing_journals,
             "error": "",
         }
         if github_output:
@@ -297,6 +328,7 @@ def main() -> int:
                     "missing_count": 1,
                     "missing_dois": "source-check-failed",
                     "missing_sample": "source-check-failed",
+                    "missing_journals": "source-check-failed",
                     "error": message,
                 },
             )

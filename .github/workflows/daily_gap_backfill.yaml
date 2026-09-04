@@ -142,6 +142,59 @@ jobs:
           --title "HIGH PRIORITY - Nature journal omission alert"
           --message "repository=${GITHUB_REPOSITORY}; initially_missing=${NATURE_INITIAL_MISSING:-unknown}; remaining_after_repair=${NATURE_REMAINING:-unknown}; journals=${NATURE_JOURNALS:-unknown}; sample=${NATURE_SAMPLE:-none}; error=${NATURE_ERROR:-none}; run=${RUN_URL}"
 
+      - name: Detect high-priority RSC journal omissions
+        id: rsc_source
+        continue-on-error: true
+        env:
+          END_DATE: ${{ github.event.inputs.end_date }}
+        run: |
+          end_date="${END_DATE:-$(date -u -d 'yesterday' +'%Y-%m-%d')}"
+          python scripts/check_crossref_fallback_sources.py \
+            --days 7 \
+            --end-date "$end_date" \
+            --only-rsc \
+            --github-output "$GITHUB_OUTPUT"
+
+      - name: Attempt high-priority RSC repair once
+        if: >-
+          always() &&
+          (steps.rsc_source.outcome == 'failure' || steps.rsc_source.outputs.missing_count != '0')
+        id: rsc_repair
+        continue-on-error: true
+        env:
+          END_DATE: ${{ github.event.inputs.end_date }}
+        run: |
+          end_date="${END_DATE:-$(date -u -d 'yesterday' +'%Y-%m-%d')}"
+          python scripts/check_crossref_fallback_sources.py \
+            --days 7 \
+            --end-date "$end_date" \
+            --repair-date "$end_date" \
+            --only-rsc \
+            --github-output "$GITHUB_OUTPUT" \
+            --fail-on-missing
+
+      - name: Send high-priority RSC omission alert
+        id: rsc_priority_alert
+        continue-on-error: true
+        if: >-
+          always() &&
+          (steps.rsc_source.outcome == 'failure' || steps.rsc_source.outputs.missing_count != '0')
+        env:
+          DINGTALK_WEBHOOK: ${{ secrets.DINGTALK_WEBHOOK || secrets.DINGTALK_WEBHOOK_URL }}
+          DINGTALK_ACCESS_TOKEN: ${{ secrets.DINGTALK_ACCESS_TOKEN || secrets.DINGTALK_TOKEN }}
+          DINGTALK_SECRET: ${{ secrets.DINGTALK_SECRET }}
+          RSC_INITIAL_MISSING: ${{ steps.rsc_source.outputs.initial_missing_count }}
+          RSC_REMAINING: ${{ steps.rsc_repair.outputs.missing_count }}
+          RSC_JOURNALS: ${{ steps.rsc_source.outputs.missing_journals }}
+          RSC_SAMPLE: ${{ steps.rsc_repair.outputs.missing_sample || steps.rsc_source.outputs.missing_sample }}
+          RSC_ERROR: ${{ steps.rsc_repair.outputs.error || steps.rsc_source.outputs.error }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          echo "::warning title=HIGH PRIORITY RSC omission::initial=${RSC_INITIAL_MISSING:-unknown}; remaining=${RSC_REMAINING:-unknown}; journals=${RSC_JOURNALS:-unknown}; sample=${RSC_SAMPLE:-none}"
+          python scripts/send_dingtalk_alert.py \
+            --title "HIGH PRIORITY - RSC journal omission alert" \
+            --message "repository=${GITHUB_REPOSITORY}; initially_missing=${RSC_INITIAL_MISSING:-unknown}; remaining_after_repair=${RSC_REMAINING:-unknown}; journals=${RSC_JOURNALS:-unknown}; sample=${RSC_SAMPLE:-none}; error=${RSC_ERROR:-none}; run=${RUN_URL}"
+
       - name: Check all RSS endpoints and fallback channels
         id: feed_health
         continue-on-error: true
@@ -163,6 +216,7 @@ jobs:
           python scripts/check_crossref_fallback_sources.py \
             --days 7 \
             --end-date "$end_date" \
+            --exclude-rsc \
             --github-output "$GITHUB_OUTPUT"
 
       - name: Recheck unhealthy feeds once
@@ -222,6 +276,7 @@ jobs:
             --days 7 \
             --end-date "$end_date" \
             --repair-date "$end_date" \
+            --exclude-rsc \
             --github-output "$GITHUB_OUTPUT" \
             --fail-on-missing
 
@@ -231,6 +286,8 @@ jobs:
           (steps.gaps.outputs.missing_count != '0' ||
            steps.nature_source.outcome == 'failure' ||
            steps.nature_source.outputs.missing_count != '0' ||
+           steps.rsc_source.outcome == 'failure' ||
+           steps.rsc_source.outputs.missing_count != '0' ||
            steps.crossref_source.outcome == 'failure' ||
            steps.crossref_source.outputs.missing_count != '0')
         env:
@@ -273,6 +330,8 @@ jobs:
            steps.backfill.outputs.failed_dates != '' ||
            steps.nature_repair.outcome == 'failure' ||
            steps.nature_repair.outputs.missing_count != '0' ||
+           steps.rsc_repair.outcome == 'failure' ||
+           steps.rsc_repair.outputs.missing_count != '0' ||
            steps.crossref_repair.outcome == 'failure' ||
            steps.crossref_repair.outputs.missing_count != '0' ||
            steps.feed_recheck.outcome == 'failure' ||
@@ -286,6 +345,8 @@ jobs:
           FAILED_DATES: ${{ steps.backfill.outputs.failed_dates }}
           NATURE_MISSING_DOIS: ${{ steps.nature_repair.outputs.missing_dois || steps.nature_source.outputs.missing_dois }}
           NATURE_ERROR: ${{ steps.nature_repair.outputs.error || steps.nature_source.outputs.error }}
+          RSC_MISSING_DOIS: ${{ steps.rsc_repair.outputs.missing_sample || steps.rsc_source.outputs.missing_sample }}
+          RSC_ERROR: ${{ steps.rsc_repair.outputs.error || steps.rsc_source.outputs.error }}
           CROSSREF_MISSING_DOIS: ${{ steps.crossref_repair.outputs.missing_sample || steps.crossref_source.outputs.missing_sample }}
           CROSSREF_ERROR: ${{ steps.crossref_repair.outputs.error || steps.crossref_source.outputs.error }}
           UNHEALTHY_FEEDS: ${{ steps.feed_recheck.outputs.unhealthy_feeds || steps.feed_health.outputs.unhealthy_feeds }}
@@ -294,16 +355,17 @@ jobs:
         run: >-
           python scripts/send_dingtalk_alert.py
           --title "Literature RSS daily gap alert"
-          --message "repository=${GITHUB_REPOSITORY}; daily_gaps=${DETECTED_DATES:-none}; still_missing_dates=${FAILED_DATES:-none}; nature_journal_missing=${NATURE_MISSING_DOIS:-none}; nature_error=${NATURE_ERROR:-none}; fallback_journal_missing=${CROSSREF_MISSING_DOIS:-none}; fallback_error=${CROSSREF_ERROR:-none}; unhealthy_feeds=${UNHEALTHY_FEEDS:-none}; active_fallbacks=${FALLBACK_FEEDS:-none}; run=${RUN_URL}"
+          --message "repository=${GITHUB_REPOSITORY}; daily_gaps=${DETECTED_DATES:-none}; still_missing_dates=${FAILED_DATES:-none}; nature_journal_missing=${NATURE_MISSING_DOIS:-none}; nature_error=${NATURE_ERROR:-none}; rsc_missing=${RSC_MISSING_DOIS:-none}; rsc_error=${RSC_ERROR:-none}; fallback_journal_missing=${CROSSREF_MISSING_DOIS:-none}; fallback_error=${CROSSREF_ERROR:-none}; unhealthy_feeds=${UNHEALTHY_FEEDS:-none}; active_fallbacks=${FALLBACK_FEEDS:-none}; run=${RUN_URL}"
 
       - name: Report DingTalk delivery failure
         if: >-
           always() &&
           (steps.dingtalk_test.outcome == 'failure' ||
            steps.nature_priority_alert.outcome == 'failure' ||
+           steps.rsc_priority_alert.outcome == 'failure' ||
            steps.dingtalk_alert.outcome == 'failure')
         run: >-
-          echo "::error title=DingTalk alert delivery failed::test=${{ steps.dingtalk_test.outcome }}, nature_priority=${{ steps.nature_priority_alert.outcome }}, general=${{ steps.dingtalk_alert.outcome }}. Configure DINGTALK_WEBHOOK/DINGTALK_WEBHOOK_URL or DINGTALK_ACCESS_TOKEN/DINGTALK_TOKEN, plus optional DINGTALK_SECRET; then check robot keyword/IP policy."
+          echo "::error title=DingTalk alert delivery failed::test=${{ steps.dingtalk_test.outcome }}, nature_priority=${{ steps.nature_priority_alert.outcome }}, rsc_priority=${{ steps.rsc_priority_alert.outcome }}, general=${{ steps.dingtalk_alert.outcome }}. Configure DINGTALK_WEBHOOK/DINGTALK_WEBHOOK_URL or DINGTALK_ACCESS_TOKEN/DINGTALK_TOKEN, plus optional DINGTALK_SECRET; then check robot keyword/IP policy."
 
       - name: Fail when gaps or source omissions remain after the single attempt
         if: >-
@@ -311,6 +373,8 @@ jobs:
           (steps.backfill.outputs.failed_dates != '' ||
            steps.nature_repair.outcome == 'failure' ||
            steps.nature_repair.outputs.missing_count != '0' ||
+           steps.rsc_repair.outcome == 'failure' ||
+           steps.rsc_repair.outputs.missing_count != '0' ||
            steps.crossref_repair.outcome == 'failure' ||
            steps.crossref_repair.outputs.missing_count != '0' ||
            steps.feed_recheck.outcome == 'failure' ||
@@ -319,14 +383,16 @@ jobs:
         env:
           FAILED_DATES: ${{ steps.backfill.outputs.failed_dates }}
           NATURE_MISSING_DOIS: ${{ steps.nature_repair.outputs.missing_dois }}
+          RSC_MISSING_DOIS: ${{ steps.rsc_repair.outputs.missing_sample }}
           CROSSREF_MISSING_DOIS: ${{ steps.crossref_repair.outputs.missing_sample }}
           UNHEALTHY_FEEDS: ${{ steps.feed_recheck.outputs.unhealthy_feeds }}
         run: |
           echo "Daily outputs still missing or invalid: $FAILED_DATES"
           echo "Direct Nature journal records still missing: $NATURE_MISSING_DOIS"
+          echo "Priority RSC journal records still missing: $RSC_MISSING_DOIS"
           echo "Fallback-journal records still missing: $CROSSREF_MISSING_DOIS"
           echo "RSS endpoints/fallbacks still unhealthy: $UNHEALTHY_FEEDS"
-          echo "::error title=RSS feed health check failed::Unhealthy feeds: ${UNHEALTHY_FEEDS:-unknown}; missing dates: ${FAILED_DATES:-none}; Nature DOI gaps: ${NATURE_MISSING_DOIS:-none}; fallback DOI gaps: ${CROSSREF_MISSING_DOIS:-none}"
+          echo "::error title=RSS feed health check failed::Unhealthy feeds: ${UNHEALTHY_FEEDS:-unknown}; missing dates: ${FAILED_DATES:-none}; Nature DOI gaps: ${NATURE_MISSING_DOIS:-none}; RSC DOI gaps: ${RSC_MISSING_DOIS:-none}; fallback DOI gaps: ${CROSSREF_MISSING_DOIS:-none}"
           exit 1
 
       - name: Fail when DingTalk delivery is unavailable
@@ -334,6 +400,7 @@ jobs:
           always() &&
           (steps.dingtalk_test.outcome == 'failure' ||
            steps.nature_priority_alert.outcome == 'failure' ||
+           steps.rsc_priority_alert.outcome == 'failure' ||
            steps.dingtalk_alert.outcome == 'failure')
         run: |
           echo "::error title=DingTalk delivery unavailable::A required DingTalk test or alert could not be delivered. See the earlier configuration/rejection annotation."

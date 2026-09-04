@@ -145,12 +145,14 @@ CROSSREF_FALLBACK_FEEDS = {
         "journal": "Chemical Society Reviews",
         "doi_prefix": "10.1039/",
         "source_suffix": "",
+        "date_source": "created",
     },
     "http://feeds.rsc.org/rss/ee": {
         "issn": "1754-5692",
         "journal": "Energy & Environmental Science",
         "doi_prefix": "10.1039/",
         "source_suffix": "",
+        "date_source": "created",
     },
     "https://onlinelibrary.wiley.com/feed/15213773/most-recent": {
         "issn": "1521-3773",
@@ -764,24 +766,33 @@ def is_acs_energy_letters(source_title: str, link: str) -> bool:
 
 # ================== API 摘要 & 日期：Crossref / S2 / OpenAlex / PubMed ==================
 
-def _crossref_pick_date(msg: dict) -> datetime | None:
-    def parse_parts(obj):
-        if not isinstance(obj, dict):
-            return None
-        parts = obj.get("date-parts")
-        if not parts or not isinstance(parts, list) or not parts[0]:
-            return None
-        ymd = parts[0]
-        try:
-            y = int(ymd[0])
-            m = int(ymd[1]) if len(ymd) >= 2 else 1
-            d = int(ymd[2]) if len(ymd) >= 3 else 1
-            return datetime(y, m, d, tzinfo=timezone.utc)
-        except Exception:
-            return None
+def _crossref_date_field(msg: dict, field: str, require_day: bool = False) -> datetime | None:
+    obj = msg.get(field)
+    if not isinstance(obj, dict):
+        return None
+    parts = obj.get("date-parts")
+    if not parts or not isinstance(parts, list) or not parts[0]:
+        return None
+    ymd = parts[0]
+    if require_day and len(ymd) < 3:
+        return None
+    try:
+        y = int(ymd[0])
+        m = int(ymd[1]) if len(ymd) >= 2 else 1
+        d = int(ymd[2]) if len(ymd) >= 3 else 1
+        return datetime(y, m, d, tzinfo=timezone.utc)
+    except Exception:
+        return None
+
+
+def _crossref_pick_date(msg: dict, preferred_field: str = "") -> datetime | None:
+    if preferred_field:
+        preferred = _crossref_date_field(msg, preferred_field, require_day=True)
+        if preferred:
+            return preferred
 
     for k in ("published-online", "published-print", "issued", "created"):
-        dt = parse_parts(msg.get(k))
+        dt = _crossref_date_field(msg, k)
         if dt:
             return dt
     return None
@@ -855,7 +866,7 @@ def _crossref_work_to_record(msg: dict, meta: dict) -> dict | None:
     if not doi or not doi.lower().startswith(meta["doi_prefix"].lower()):
         return None
 
-    pub_date = _crossref_pick_date(msg)
+    pub_date = _crossref_pick_date(msg, meta.get("date_source", ""))
     if not in_target_dates(pub_date):
         return None
 
@@ -899,10 +910,13 @@ def query_crossref_fallback_records(feed_url: str) -> list[dict]:
     from_date = min(TARGET_DATES).isoformat()
     until_date = max(TARGET_DATES).isoformat()
     url = f"https://api.crossref.org/journals/{meta['issn']}/works"
+    date_source = meta.get("date_source", "published")
+    filter_name = "created-date" if date_source == "created" else "pub-date"
+    sort_name = "created" if date_source == "created" else "published"
     params = {
-        "filter": f"from-pub-date:{from_date},until-pub-date:{until_date},type:journal-article",
+        "filter": f"from-{filter_name}:{from_date},until-{filter_name}:{until_date},type:journal-article",
         "rows": CROSSREF_FALLBACK_ROWS,
-        "sort": "published",
+        "sort": sort_name,
         "order": "desc",
     }
     headers = {"User-Agent": f"literature-rss-spider/1.0 (mailto:{NCBI_EMAIL})"}
