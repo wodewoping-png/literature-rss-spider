@@ -60,7 +60,10 @@ class ZAIDailyPipelineTests(unittest.TestCase):
         succeeded = Mock()
         succeeded.raise_for_status.return_value = None
         succeeded.json.return_value = {"content": [{"type": "text", "text": '{"by_id": {}}'}]}
-        post.side_effect = [failed_primary, failed_secondary, succeeded]
+        succeeded_again = Mock()
+        succeeded_again.raise_for_status.return_value = None
+        succeeded_again.json.return_value = {"content": [{"type": "text", "text": '{"by_id": {}}'}]}
+        post.side_effect = [failed_primary, failed_secondary, succeeded, succeeded_again]
         endpoints = [
             ZAIEndpoint("primary", "https://api.z.ai/api/paas/v4", "openai", "zai-key"),
             ZAIEndpoint("secondary", "https://open.bigmodel.cn/api/paas/v4", "openai", "cn-key"),
@@ -81,6 +84,11 @@ class ZAIDailyPipelineTests(unittest.TestCase):
         fallback_call = post.call_args_list[2].kwargs
         self.assertEqual(fallback_call["headers"]["x-api-key"], "cn-key")
         self.assertEqual(fallback_call["json"]["system"], "Return JSON")
+
+        # Once a route succeeds, later classification batches start there.
+        self.assertEqual(client.generate([{"role": "user", "content": "next batch"}]), '{"by_id": {}}')
+        self.assertEqual(len(post.call_args_list), 4)
+        self.assertEqual(post.call_args_list[3].args[0], "https://open.bigmodel.cn/api/anthropic/v1/messages")
 
 
 if __name__ == "__main__":

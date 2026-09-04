@@ -107,16 +107,25 @@ class ZAIChatClient:
         self.timeout = timeout
         self.max_tokens = max_tokens
         self.temperature = temperature
+        self._preferred_endpoint: Optional[ZAIEndpoint] = None
 
     def generate(self, messages: List[Dict[str, Any]], json_object: bool = True) -> str:
         errors: List[str] = []
-        for endpoint in self.endpoints:
+        endpoint_order = list(self.endpoints)
+        if self._preferred_endpoint in endpoint_order:
+            endpoint_order.remove(self._preferred_endpoint)
+            endpoint_order.insert(0, self._preferred_endpoint)
+
+        for endpoint in endpoint_order:
             try:
                 if endpoint.protocol == "openai":
-                    return self._call_openai(endpoint, messages, json_object)
-                if endpoint.protocol == "anthropic":
-                    return self._call_anthropic(endpoint, messages)
-                raise RuntimeError(f"unsupported protocol: {endpoint.protocol}")
+                    content = self._call_openai(endpoint, messages, json_object)
+                elif endpoint.protocol == "anthropic":
+                    content = self._call_anthropic(endpoint, messages)
+                else:
+                    raise RuntimeError(f"unsupported protocol: {endpoint.protocol}")
+                self._preferred_endpoint = endpoint
+                return content
             except Exception as exc:
                 errors.append(f"{endpoint.name}: {exc}")
                 print(f"[zai] endpoint {endpoint.name} failed; trying next route: {exc}", flush=True)
