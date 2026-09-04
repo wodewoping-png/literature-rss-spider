@@ -8,7 +8,12 @@ from unittest import mock
 
 import spider0301
 from scripts.check_daily_gaps import expected_dates, validate_daily_file
-from scripts.check_crossref_fallback_sources import crossref_date, find_missing, title_key
+from scripts.check_crossref_fallback_sources import (
+    crossref_date,
+    find_missing,
+    is_rsc_front_matter,
+    title_key,
+)
 from scripts.check_feed_endpoints import check_one, fallback_issn, fallback_prefix
 from scripts.check_nature_sustainability import (
     load_observed_keys,
@@ -233,6 +238,13 @@ class DingTalkAlertTests(unittest.TestCase):
 
 
 class CrossrefFallbackCoverageTests(unittest.TestCase):
+    def test_rsc_contents_list_is_not_an_article(self):
+        self.assertTrue(
+            is_rsc_front_matter(
+                {"doi": "10.1039/d6ee90082h", "title": "Contents list"}
+            )
+        )
+
     def test_rsc_year_only_publication_uses_full_created_date(self):
         message = {
             "published-online": {"date-parts": [[2026]]},

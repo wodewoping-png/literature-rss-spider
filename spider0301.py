@@ -282,6 +282,7 @@ TITLE_EXCLUDE_KEYWORDS = [
     "information for authors",
     "society information",
     "table of contents",
+    "contents list",
     "cover",
 ]
 

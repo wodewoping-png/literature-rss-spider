@@ -158,7 +158,9 @@ jobs:
       - name: Attempt high-priority RSC repair once
         if: >-
           always() &&
-          (steps.rsc_source.outcome == 'failure' || steps.rsc_source.outputs.missing_count != '0')
+          (steps.rsc_source.outcome == 'failure' ||
+           steps.rsc_source.outputs.missing_count != '0' ||
+           steps.rsc_source.outputs.initial_invalid_count != '0')
         id: rsc_repair
         continue-on-error: true
         env:
@@ -178,22 +180,25 @@ jobs:
         continue-on-error: true
         if: >-
           always() &&
-          (steps.rsc_source.outcome == 'failure' || steps.rsc_source.outputs.missing_count != '0')
+          (steps.rsc_source.outcome == 'failure' ||
+           steps.rsc_source.outputs.missing_count != '0' ||
+           steps.rsc_source.outputs.initial_invalid_count != '0')
         env:
           DINGTALK_WEBHOOK: ${{ secrets.DINGTALK_WEBHOOK || secrets.DINGTALK_WEBHOOK_URL }}
           DINGTALK_ACCESS_TOKEN: ${{ secrets.DINGTALK_ACCESS_TOKEN || secrets.DINGTALK_TOKEN }}
           DINGTALK_SECRET: ${{ secrets.DINGTALK_SECRET }}
           RSC_INITIAL_MISSING: ${{ steps.rsc_source.outputs.initial_missing_count }}
           RSC_REMAINING: ${{ steps.rsc_repair.outputs.missing_count }}
+          RSC_INVALID_REMOVED: ${{ steps.rsc_repair.outputs.removed_count }}
           RSC_JOURNALS: ${{ steps.rsc_source.outputs.missing_journals }}
           RSC_SAMPLE: ${{ steps.rsc_repair.outputs.missing_sample || steps.rsc_source.outputs.missing_sample }}
           RSC_ERROR: ${{ steps.rsc_repair.outputs.error || steps.rsc_source.outputs.error }}
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
         run: |
-          echo "::warning title=HIGH PRIORITY RSC omission::initial=${RSC_INITIAL_MISSING:-unknown}; remaining=${RSC_REMAINING:-unknown}; journals=${RSC_JOURNALS:-unknown}; sample=${RSC_SAMPLE:-none}"
+          echo "::warning title=HIGH PRIORITY RSC omission::initial=${RSC_INITIAL_MISSING:-unknown}; remaining=${RSC_REMAINING:-unknown}; front_matter_removed=${RSC_INVALID_REMOVED:-0}; journals=${RSC_JOURNALS:-unknown}; sample=${RSC_SAMPLE:-none}"
           python scripts/send_dingtalk_alert.py \
             --title "HIGH PRIORITY - RSC journal omission alert" \
-            --message "repository=${GITHUB_REPOSITORY}; initially_missing=${RSC_INITIAL_MISSING:-unknown}; remaining_after_repair=${RSC_REMAINING:-unknown}; journals=${RSC_JOURNALS:-unknown}; sample=${RSC_SAMPLE:-none}; error=${RSC_ERROR:-none}; run=${RUN_URL}"
+            --message "repository=${GITHUB_REPOSITORY}; initially_missing=${RSC_INITIAL_MISSING:-unknown}; remaining_after_repair=${RSC_REMAINING:-unknown}; front_matter_removed=${RSC_INVALID_REMOVED:-0}; journals=${RSC_JOURNALS:-unknown}; sample=${RSC_SAMPLE:-none}; error=${RSC_ERROR:-none}; run=${RUN_URL}"
 
       - name: Check all RSS endpoints and fallback channels
         id: feed_health
@@ -288,6 +293,7 @@ jobs:
            steps.nature_source.outputs.missing_count != '0' ||
            steps.rsc_source.outcome == 'failure' ||
            steps.rsc_source.outputs.missing_count != '0' ||
+           steps.rsc_source.outputs.initial_invalid_count != '0' ||
            steps.crossref_source.outcome == 'failure' ||
            steps.crossref_source.outputs.missing_count != '0')
         env:
@@ -332,6 +338,7 @@ jobs:
            steps.nature_repair.outputs.missing_count != '0' ||
            steps.rsc_repair.outcome == 'failure' ||
            steps.rsc_repair.outputs.missing_count != '0' ||
+           steps.rsc_repair.outputs.invalid_count != '0' ||
            steps.crossref_repair.outcome == 'failure' ||
            steps.crossref_repair.outputs.missing_count != '0' ||
            steps.feed_recheck.outcome == 'failure' ||
@@ -375,6 +382,7 @@ jobs:
            steps.nature_repair.outputs.missing_count != '0' ||
            steps.rsc_repair.outcome == 'failure' ||
            steps.rsc_repair.outputs.missing_count != '0' ||
+           steps.rsc_repair.outputs.invalid_count != '0' ||
            steps.crossref_repair.outcome == 'failure' ||
            steps.crossref_repair.outputs.missing_count != '0' ||
            steps.feed_recheck.outcome == 'failure' ||

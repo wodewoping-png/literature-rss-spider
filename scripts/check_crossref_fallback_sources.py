@@ -84,6 +84,7 @@ DROP_TITLE_KEYWORDS = {
     "information for authors",
     "society information",
     "table of contents",
+    "contents list",
     "cover",
 }
 HEADERS = {
@@ -159,6 +160,42 @@ def find_missing(expected: dict[str, dict[str, str]], observed: set[str]) -> dic
         for key, item in expected.items()
         if key not in observed and title_key(item.get("title", "")) not in observed
     }
+
+
+def is_rsc_front_matter(row: dict[str, str]) -> bool:
+    doi = normalize_doi(row.get("doi", ""))
+    title = clean_text(row.get("title", "")).casefold()
+    return doi.startswith("10.1039/") and any(keyword in title for keyword in DROP_TITLE_KEYWORDS)
+
+
+def count_rsc_front_matter(output_dir: Path, days: list[date]) -> int:
+    count = 0
+    for day in days:
+        path = output_dir / f"news_with_abstract_{day.isoformat()}.csv"
+        if not path.is_file():
+            continue
+        with path.open("r", encoding="utf-8-sig", newline="") as handle:
+            count += sum(1 for row in csv.DictReader(handle) if is_rsc_front_matter(row))
+    return count
+
+
+def clean_rsc_front_matter(path: Path) -> int:
+    if not path.is_file():
+        return 0
+    with path.open("r", encoding="utf-8-sig", newline="") as handle:
+        reader = csv.DictReader(handle)
+        fieldnames = list(reader.fieldnames or DEFAULT_FIELDS)
+        rows = list(reader)
+    kept = [row for row in rows if not is_rsc_front_matter(row)]
+    removed = len(rows) - len(kept)
+    if removed:
+        temp_path = path.with_suffix(path.suffix + ".tmp")
+        with temp_path.open("w", encoding="utf-8-sig", newline="") as handle:
+            writer = csv.DictWriter(handle, fieldnames=fieldnames, extrasaction="ignore")
+            writer.writeheader()
+            writer.writerows(kept)
+        temp_path.replace(path)
+    return removed
 
 
 def last_author(message: dict) -> str:
@@ -279,12 +316,17 @@ def main() -> int:
         observed = load_observed_aliases(args.output_dir, days)
         missing = find_missing(expected, observed)
         initially_missing = len(missing)
+        initially_invalid = count_rsc_front_matter(args.output_dir, days) if args.only_rsc else 0
         added = 0
-        if args.repair_date and missing:
+        removed = 0
+        if args.repair_date and (missing or initially_invalid):
             target = args.output_dir / f"news_with_abstract_{args.repair_date.isoformat()}.csv"
+            if args.only_rsc:
+                removed = clean_rsc_front_matter(target)
             added = repair_daily_file(target, missing)
             observed = load_observed_aliases(args.output_dir, days)
             missing = find_missing(expected, observed)
+        invalid = count_rsc_front_matter(args.output_dir, days) if args.only_rsc else 0
 
         missing_dois = " ".join(item["doi"] for item in missing.values())
         missing_counts = Counter(item.get("source") or "unknown" for item in missing.values())
@@ -296,7 +338,8 @@ def main() -> int:
             missing_sample += f" ...(+{len(missing) - 20} more)"
         print(
             f"Crossref fallback coverage {days[0]}..{days[-1]}: expected={len(expected)} "
-            f"initially_missing={initially_missing} repaired={added} remaining={len(missing)}"
+            f"initially_missing={initially_missing} repaired={added} remaining={len(missing)} "
+            f"initially_invalid={initially_invalid} removed={removed} invalid_remaining={invalid}"
         )
         for item in missing.values():
             print(f"MISSING {item['source']} {item['doi']}: {item['title']}")
@@ -304,8 +347,11 @@ def main() -> int:
             "source_healthy": "true",
             "expected_count": len(expected),
             "initial_missing_count": initially_missing,
+            "initial_invalid_count": initially_invalid,
             "repaired_count": added,
+            "removed_count": removed,
             "missing_count": len(missing),
+            "invalid_count": invalid,
             "missing_dois": missing_dois,
             "missing_sample": missing_sample,
             "missing_journals": missing_journals,
@@ -313,7 +359,7 @@ def main() -> int:
         }
         if github_output:
             write_github_outputs(github_output, values)
-        return 1 if args.fail_on_missing and missing else 0
+        return 1 if args.fail_on_missing and (missing or invalid) else 0
     except Exception as exc:
         message = f"{type(exc).__name__}: {exc}"
         print(f"Crossref fallback coverage check failed: {message}")
@@ -324,8 +370,11 @@ def main() -> int:
                     "source_healthy": "false",
                     "expected_count": 0,
                     "initial_missing_count": 0,
+                    "initial_invalid_count": 0,
                     "repaired_count": 0,
+                    "removed_count": 0,
                     "missing_count": 1,
+                    "invalid_count": 0,
                     "missing_dois": "source-check-failed",
                     "missing_sample": "source-check-failed",
                     "missing_journals": "source-check-failed",
