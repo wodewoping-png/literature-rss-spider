@@ -230,6 +230,18 @@ CROSSREF_FALLBACK_FEEDS = {
         "doi_prefix": "10.1109/",
         "source_suffix": "",
     },
+    "https://www.science.org/action/showFeed?type=etoc&feed=rss&jc=sciadv": {
+        "issn": "2375-2548",
+        "journal": "Science Advances",
+        "doi_prefix": "10.1126/",
+        "source_suffix": "",
+    },
+    "https://www.science.org/action/showFeed?type=etoc&feed=rss&jc=science": {
+        "issn": "0036-8075",
+        "journal": "Science",
+        "doi_prefix": "10.1126/",
+        "source_suffix": "",
+    },
 }
 CROSSREF_FALLBACK_ROWS = 100
 

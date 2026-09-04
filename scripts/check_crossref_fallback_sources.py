@@ -59,6 +59,8 @@ SOURCES = (
     ("1949-3061", "IEEE Transactions on Smart Grid", "10.1109/"),
     ("1558-0679", "IEEE Transactions on Power Systems", "10.1109/"),
     ("1937-4208", "IEEE Transactions on Power Delivery", "10.1109/"),
+    ("2375-2548", "Science Advances", "10.1126/"),
+    ("0036-8075", "Science", "10.1126/"),
 )
 DEFAULT_FIELDS = [
     "title",

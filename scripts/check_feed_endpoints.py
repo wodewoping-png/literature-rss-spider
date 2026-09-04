@@ -41,6 +41,8 @@ EXPLICIT_FALLBACKS = {
     "https://ieeexplore.ieee.org/rss/toc5165411.xml": ("1949-3061", "10.1109"),
     "https://ieeexplore.ieee.org/rss/toc59.xml": ("1558-0679", "10.1109"),
     "https://ieeexplore.ieee.org/rss/toc61.xml": ("1937-4208", "10.1109"),
+    "https://www.science.org/action/showfeed?type=etoc&feed=rss&jc=sciadv": ("2375-2548", "10.1126"),
+    "https://www.science.org/action/showfeed?type=etoc&feed=rss&jc=science": ("0036-8075", "10.1126"),
 }
 ACS_ISSNS = {
     "chreay": "0009-2665",

@@ -197,6 +197,10 @@ class FeedEndpointHealthTests(unittest.TestCase):
             "1949-3061",
         )
         self.assertEqual(fallback_prefix("https://www.cell.com/joule/inpress.rss"), "10.1016")
+        self.assertEqual(
+            fallback_issn("https://www.science.org/action/showFeed?type=etoc&feed=rss&jc=sciadv"),
+            "2375-2548",
+        )
 
     @mock.patch("scripts.check_feed_endpoints.crossref_available", return_value=(True, "reachable"))
     @mock.patch("scripts.check_feed_endpoints.fetch_feed", return_value=([], "ACS", "HTTP 403"))

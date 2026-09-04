@@ -77,8 +77,18 @@ def main() -> int:
         os.getenv("DINGTALK_ACCESS_TOKEN", ""),
     )
     if not webhook:
+        print(
+            "::error title=DingTalk configuration missing::"
+            "No supported DingTalk secret is available. Configure DINGTALK_WEBHOOK or "
+            "DINGTALK_WEBHOOK_URL; alternatively configure DINGTALK_ACCESS_TOKEN or DINGTALK_TOKEN."
+        )
         raise RuntimeError("DINGTALK_WEBHOOK or DINGTALK_ACCESS_TOKEN is not configured")
-    send_alert(webhook, os.getenv("DINGTALK_SECRET", "").strip(), content)
+    try:
+        send_alert(webhook, os.getenv("DINGTALK_SECRET", "").strip(), content)
+    except RuntimeError as exc:
+        safe_message = str(exc).replace("\r", " ").replace("\n", " ")
+        print(f"::error title=DingTalk delivery rejected::{safe_message}")
+        raise
     print("DingTalk alert sent successfully.")
     return 0
 
