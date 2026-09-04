@@ -646,6 +646,53 @@ def google_translate_texts(texts, label: str) -> List[str]:
     return out
 
 
+def _translation_list_from_content(content: str, expected: int) -> List[str]:
+    """Accept the small JSON variations returned by compatible LLM APIs."""
+    cleaned = _clean_json_text(content)
+    candidates = [cleaned]
+
+    # Some compatible APIs wrap otherwise valid JSON in a short explanation.
+    for opener, closer in (("{", "}"), ("[", "]")):
+        start = cleaned.find(opener)
+        end = cleaned.rfind(closer)
+        if start >= 0 and end > start:
+            candidates.append(cleaned[start: end + 1])
+
+    data = None
+    for candidate in candidates:
+        try:
+            data = json.loads(candidate)
+            break
+        except Exception:
+            continue
+
+    values = data
+    if isinstance(data, dict):
+        for key in ("translations", "translation", "results", "result", "data"):
+            if key in data:
+                values = data[key]
+                break
+
+    if isinstance(values, str):
+        values = [values]
+    if not isinstance(values, list):
+        return []
+
+    out: List[str] = []
+    for value in values:
+        if isinstance(value, dict):
+            value = next(
+                (
+                    value[key]
+                    for key in ("text", "translation", "translated_text", "translatedText", "value")
+                    if key in value
+                ),
+                "",
+            )
+        out.append(str(value).strip())
+    return out if len(out) == expected else []
+
+
 def translate_texts(client, texts, label: str) -> List[str]:
     if not texts:
         return []
@@ -654,24 +701,40 @@ def translate_texts(client, texts, label: str) -> List[str]:
         "You are a professional scientific translator. "
         "Translate English into Simplified Chinese. Preserve abbreviations, formulas, proper nouns, and units."
     )
+    numbered_inputs = [{"id": i, "text": text} for i, text in enumerate(texts)]
     user = (
-        "Return ONLY JSON in this schema: {\"translations\": [\"...\", \"...\"]}\n"
-        "Array length must equal input length and order must match.\n"
-        f"inputs={json.dumps(texts, ensure_ascii=False)}"
+        "Translate every input. Return ONLY a JSON object with exactly one key named translations. "
+        "Its value must be an array of translated strings, in the same order and with exactly "
+        f"{len(texts)} elements. Do not include ids, Markdown, comments, or explanations.\n"
+        f"inputs={json.dumps(numbered_inputs, ensure_ascii=False)}"
     )
     messages = [{"role": "system", "content": system}, {"role": "user", "content": user}]
     resp = _call_with_retries(client, messages, f"translate:{label}", json_object=True, max_retries=GEMINI_TRANSLATE_MAX_RETRIES)
-    content = _clean_json_text(_extract_content(resp))
+    content = _extract_content(resp)
+    out = _translation_list_from_content(content, len(texts))
+    if out:
+        return out
 
-    try:
-        data = json.loads(content)
-        out = data.get("translations", [])
-    except Exception:
-        out = []
+    if len(texts) > 1:
+        midpoint = len(texts) // 2
+        print(
+            f"[translate:{label}] model returned an unexpected batch format; "
+            f"retrying as {midpoint}+{len(texts) - midpoint}",
+            flush=True,
+        )
+        return translate_texts(client, texts[:midpoint], label) + translate_texts(
+            client, texts[midpoint:], label
+        )
 
-    if not isinstance(out, list) or len(out) != len(texts):
-        raise RuntimeError(f"Translation output invalid for {label}.")
-    return [str(x) for x in out]
+    # A one-item response is still useful when a compatible endpoint ignores
+    # the requested JSON response format and emits only the translated text.
+    singleton = _clean_json_text(content).strip().strip('"').strip()
+    if singleton:
+        print(f"[translate:{label}] accepted plain-text singleton response", flush=True)
+        return [singleton]
+    raise RuntimeError(
+        f"Translation output invalid for {label}; response preview={content[:300]!r}"
+    )
 
 
 def translate_texts_with_provider(client, texts, label: str, provider: str) -> List[str]:
@@ -722,6 +785,15 @@ def enrich_translation(df: pd.DataFrame, provider: str = "google", checkpoint_pa
         return df
 
     client = None
+    uses_llm = provider in {"llm", "gemini", "model", "zai"}
+    google_may_fallback_to_llm = (
+        provider in {"google", "google_translate", "free"}
+        and TRANSLATE_FALLBACK_PROVIDER in {"llm", "gemini", "model", "zai"}
+    )
+    if uses_llm or google_may_fallback_to_llm:
+        # Keep one client for the whole translation run so a successful Z.AI
+        # fallback route remains preferred for every later batch.
+        client = _build_gemini_client()
 
     if need_title_idx:
         start = time.time()
