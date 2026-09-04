@@ -2,7 +2,13 @@ name: Weekly CSV to XLSX+Word (Z.AI GLM-5.2, manual)
 
 on:
   # Manual catch-up workflow. Normal production uses daily_classification_zai.yaml.
-  workflow_dispatch: {}
+  workflow_dispatch:
+    inputs:
+      force:
+        description: Rebuild even when weekly XLSX and Word already exist
+        required: false
+        default: false
+        type: boolean
 
 permissions:
   contents: write
@@ -42,7 +48,7 @@ jobs:
           docx="${stem}_translated.docx"
 
           echo "input=$latest" >> "$GITHUB_OUTPUT"
-          if [ -f "$xlsx" ] && [ -f "$docx" ]; then
+          if [ -f "$xlsx" ] && [ -f "$docx" ] && [ "${{ inputs.force }}" != "true" ]; then
             echo "run=false" >> "$GITHUB_OUTPUT"
             echo "Latest weekly CSV is already translated: $latest"
           else
