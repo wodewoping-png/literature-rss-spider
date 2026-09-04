@@ -87,8 +87,8 @@ jobs:
           ZAI_CLASSIFY_MAX_RETRIES: "3"
           ZAI_RETRY_BASE_SECONDS: "4"
           ZAI_RETRY_MAX_SECONDS: "30"
-      TRANSLATE_FALLBACK_PROVIDER: llm
-      TRANSLATE_BATCH_SIZE_ABSTRACT: "6"
+          TRANSLATE_FALLBACK_PROVIDER: llm
+          TRANSLATE_BATCH_SIZE_ABSTRACT: "6"
         run: |
           python3 classify_weekly_zai.py -i "${{ steps.weekly_input.outputs.input }}" -c classification.txt --translation-provider google --output-suffix _translated --save-translated-csv
 
