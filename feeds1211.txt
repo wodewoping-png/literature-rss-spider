@@ -8,6 +8,9 @@ https://www.nature.com/nclimate.rss
 https://onlinelibrary.wiley.com/feed/15213773/most-recent
 https://www.nature.com/nmat.rss
 https://www.nature.com/natchemeng.rss
+https://www.nature.com/natsensors.rss
+https://www.nature.com/natcatal.rss
+https://www.nature.com/natcities.rss
 http://rss.sciencedirect.com/publication/science/13697021
 http://feeds.rsc.org/rss/cs
 https://pubs.acs.org/action/showFeed?type=axatoc&feed=rss&jc=aelccp

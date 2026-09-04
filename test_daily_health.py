@@ -110,6 +110,12 @@ class BackfillDateTests(unittest.TestCase):
 
 
 class NatureSustainabilityCoverageTests(unittest.TestCase):
+    def test_requested_nature_journals_are_in_feed_list(self):
+        feeds = Path("feeds1211.txt").read_text(encoding="utf-8").splitlines()
+        self.assertIn("https://www.nature.com/natsensors.rss", feeds)
+        self.assertIn("https://www.nature.com/natcatal.rss", feeds)
+        self.assertIn("https://www.nature.com/natcities.rss", feeds)
+
     def test_nonempty_daily_csv_still_reports_missing_source_doi(self):
         with tempfile.TemporaryDirectory() as temp_dir:
             output_dir = Path(temp_dir)

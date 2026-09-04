@@ -14,6 +14,7 @@ on:
       - "scripts/check_nature_sustainability.py"
       - "scripts/send_dingtalk_alert.py"
       - "spider0301.py"
+      - "feeds1211.txt"
   schedule:
     # Check the prior seven complete UTC days. This intentionally avoids a
     # false gap while today's 02:00 UTC spider is still running.
@@ -24,6 +25,11 @@ on:
         description: "Last UTC output date to check (YYYY-MM-DD); blank means yesterday"
         required: false
         type: string
+      test_dingtalk:
+        description: "Send a real DingTalk test alert"
+        required: false
+        default: false
+        type: boolean
 
 permissions:
   contents: write
@@ -68,6 +74,22 @@ jobs:
       - name: Install source-health dependencies
         run: pip install feedparser requests
 
+      - name: Send real DingTalk test alert
+        id: dingtalk_test
+        continue-on-error: true
+        if: >-
+          (github.event_name == 'workflow_dispatch' && inputs.test_dingtalk) ||
+          (github.event_name == 'push' && contains(github.event.head_commit.message, '[test-dingtalk]'))
+        env:
+          DINGTALK_WEBHOOK: ${{ secrets.DINGTALK_WEBHOOK || secrets.DINGTALK_WEBHOOK_URL }}
+          DINGTALK_ACCESS_TOKEN: ${{ secrets.DINGTALK_ACCESS_TOKEN || secrets.DINGTALK_TOKEN }}
+          DINGTALK_SECRET: ${{ secrets.DINGTALK_SECRET }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: >-
+          python scripts/send_dingtalk_alert.py
+          --title "Literature RSS Nature journal alert TEST"
+          --message "DingTalk delivery test from ${GITHUB_REPOSITORY}. No action is required. run=${RUN_URL}"
+
       - name: Detect direct Nature journal omissions
         id: nature_source
         continue-on-error: true
@@ -80,6 +102,45 @@ jobs:
             --end-date "$end_date" \
             --all-direct-nature \
             --github-output "$GITHUB_OUTPUT"
+
+      - name: Attempt direct Nature journal repair once
+        if: >-
+          always() &&
+          (steps.nature_source.outcome == 'failure' || steps.nature_source.outputs.missing_count != '0')
+        id: nature_repair
+        continue-on-error: true
+        env:
+          END_DATE: ${{ github.event.inputs.end_date }}
+        run: |
+          end_date="${END_DATE:-$(date -u -d 'yesterday' +'%Y-%m-%d')}"
+          python scripts/check_nature_sustainability.py \
+            --days 7 \
+            --end-date "$end_date" \
+            --repair-date "$end_date" \
+            --all-direct-nature \
+            --github-output "$GITHUB_OUTPUT" \
+            --fail-on-missing
+
+      - name: Send high-priority Nature omission alert
+        id: nature_priority_alert
+        continue-on-error: true
+        if: >-
+          always() &&
+          (steps.nature_source.outcome == 'failure' || steps.nature_source.outputs.missing_count != '0')
+        env:
+          DINGTALK_WEBHOOK: ${{ secrets.DINGTALK_WEBHOOK || secrets.DINGTALK_WEBHOOK_URL }}
+          DINGTALK_ACCESS_TOKEN: ${{ secrets.DINGTALK_ACCESS_TOKEN || secrets.DINGTALK_TOKEN }}
+          DINGTALK_SECRET: ${{ secrets.DINGTALK_SECRET }}
+          NATURE_INITIAL_MISSING: ${{ steps.nature_source.outputs.initial_missing_count }}
+          NATURE_REMAINING: ${{ steps.nature_repair.outputs.missing_count }}
+          NATURE_JOURNALS: ${{ steps.nature_source.outputs.missing_journals }}
+          NATURE_SAMPLE: ${{ steps.nature_repair.outputs.missing_sample || steps.nature_source.outputs.missing_sample }}
+          NATURE_ERROR: ${{ steps.nature_repair.outputs.error || steps.nature_source.outputs.error }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: >-
+          python scripts/send_dingtalk_alert.py
+          --title "HIGH PRIORITY - Nature journal omission alert"
+          --message "repository=${GITHUB_REPOSITORY}; initially_missing=${NATURE_INITIAL_MISSING:-unknown}; remaining_after_repair=${NATURE_REMAINING:-unknown}; journals=${NATURE_JOURNALS:-unknown}; sample=${NATURE_SAMPLE:-none}; error=${NATURE_ERROR:-none}; run=${RUN_URL}"
 
       - name: Check all RSS endpoints and fallback channels
         id: feed_health
@@ -147,24 +208,6 @@ jobs:
           failed_dates="${failed_dates# }"
           echo "failed_dates=$failed_dates" >> "$GITHUB_OUTPUT"
 
-      - name: Attempt direct Nature journal repair once
-        if: >-
-          always() &&
-          (steps.nature_source.outcome == 'failure' || steps.nature_source.outputs.missing_count != '0')
-        id: nature_repair
-        continue-on-error: true
-        env:
-          END_DATE: ${{ github.event.inputs.end_date }}
-        run: |
-          end_date="${END_DATE:-$(date -u -d 'yesterday' +'%Y-%m-%d')}"
-          python scripts/check_nature_sustainability.py \
-            --days 7 \
-            --end-date "$end_date" \
-            --repair-date "$end_date" \
-            --all-direct-nature \
-            --github-output "$GITHUB_OUTPUT" \
-            --fail-on-missing
-
       - name: Attempt fallback-journal repair once
         if: >-
           always() &&
@@ -227,6 +270,8 @@ jobs:
         if: >-
           always() &&
           (failure() ||
+           steps.dingtalk_test.outcome == 'failure' ||
+           steps.nature_priority_alert.outcome == 'failure' ||
            steps.backfill.outputs.failed_dates != '' ||
            steps.nature_repair.outcome == 'failure' ||
            steps.nature_repair.outputs.missing_count != '0' ||
@@ -254,14 +299,20 @@ jobs:
           --message "repository=${GITHUB_REPOSITORY}; daily_gaps=${DETECTED_DATES:-none}; still_missing_dates=${FAILED_DATES:-none}; nature_journal_missing=${NATURE_MISSING_DOIS:-none}; nature_error=${NATURE_ERROR:-none}; fallback_journal_missing=${CROSSREF_MISSING_DOIS:-none}; fallback_error=${CROSSREF_ERROR:-none}; unhealthy_feeds=${UNHEALTHY_FEEDS:-none}; active_fallbacks=${FALLBACK_FEEDS:-none}; run=${RUN_URL}"
 
       - name: Report DingTalk delivery failure
-        if: always() && steps.dingtalk_alert.outcome == 'failure'
+        if: >-
+          always() &&
+          (steps.dingtalk_test.outcome == 'failure' ||
+           steps.nature_priority_alert.outcome == 'failure' ||
+           steps.dingtalk_alert.outcome == 'failure')
         run: >-
-          echo "::error title=DingTalk alert delivery failed::Configure DINGTALK_WEBHOOK/DINGTALK_WEBHOOK_URL or DINGTALK_ACCESS_TOKEN/DINGTALK_TOKEN, plus optional DINGTALK_SECRET; then check robot keyword/IP policy."
+          echo "::error title=DingTalk alert delivery failed::test=${{ steps.dingtalk_test.outcome }}, nature_priority=${{ steps.nature_priority_alert.outcome }}, general=${{ steps.dingtalk_alert.outcome }}. Configure DINGTALK_WEBHOOK/DINGTALK_WEBHOOK_URL or DINGTALK_ACCESS_TOKEN/DINGTALK_TOKEN, plus optional DINGTALK_SECRET; then check robot keyword/IP policy."
 
       - name: Fail when gaps or source omissions remain after the single attempt
         if: >-
           always() &&
           (steps.backfill.outputs.failed_dates != '' ||
+           steps.dingtalk_test.outcome == 'failure' ||
+           steps.nature_priority_alert.outcome == 'failure' ||
            steps.nature_repair.outcome == 'failure' ||
            steps.nature_repair.outputs.missing_count != '0' ||
            steps.crossref_repair.outcome == 'failure' ||

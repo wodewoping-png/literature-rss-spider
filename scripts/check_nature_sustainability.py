@@ -8,6 +8,7 @@ import csv
 import html
 import os
 import re
+from collections import Counter
 from concurrent.futures import ThreadPoolExecutor
 from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
@@ -152,7 +153,7 @@ def fetch_expected_items(
 
             time.sleep(attempt)
     if feed is None or not feed.entries:
-        raise RuntimeError(f"RSS returned no entries after 3 attempts: {last_error}")
+        raise RuntimeError(f"RSS returned no entries after 3 attempts for {feed_url}: {last_error}")
 
     resolved_source_name = source_name or clean_text(feed.feed.get("title") or feed_url)
 
@@ -300,6 +301,13 @@ def main() -> int:
             missing = missing_items(expected, observed)
 
         missing_dois = " ".join(item["doi"] for item in missing.values())
+        missing_counts = Counter(item.get("source") or "unknown" for item in missing.values())
+        missing_journals = "; ".join(
+            f"{journal}={count}" for journal, count in sorted(missing_counts.items())
+        )
+        missing_sample = " ".join(item["doi"] for item in list(missing.values())[:20])
+        if len(missing) > 20:
+            missing_sample += f" ...(+{len(missing) - 20} more)"
         print(
             f"{coverage_label} coverage {days[0]}..{days[-1]}: "
             f"expected={len(expected)} initially_missing={initially_missing} repaired={added} remaining={len(missing)}"
@@ -313,6 +321,9 @@ def main() -> int:
             "repaired_count": added,
             "missing_count": len(missing),
             "missing_dois": missing_dois,
+            "missing_sample": missing_sample,
+            "missing_journals": missing_journals,
+            "feed_count": len(feed_urls) if args.all_direct_nature else 1,
             "error": "",
         }
         if github_output:
@@ -331,6 +342,9 @@ def main() -> int:
                     "repaired_count": 0,
                     "missing_count": 1,
                     "missing_dois": "source-check-failed",
+                    "missing_sample": "source-check-failed",
+                    "missing_journals": "source-check-failed",
+                    "feed_count": 0,
                     "error": message,
                 },
             )
