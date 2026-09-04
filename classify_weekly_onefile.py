@@ -100,6 +100,7 @@ TRANSLATE_FALLBACK_PROVIDER = os.getenv(
     "TRANSLATE_FALLBACK_PROVIDER",
     os.getenv("GEMINI_TRANSLATE_FALLBACK_PROVIDER", "llm"),
 ).strip().lower()
+_GOOGLE_TRANSLATE_DISABLED = False
 GOOGLE_TRANSLATE_MAX_RETRIES = int(os.getenv("GOOGLE_TRANSLATE_MAX_RETRIES", "4"))
 
 CLASSIFY_BATCH_SIZE = int(os.getenv("CLASSIFY_BATCH_SIZE", "12"))
@@ -738,27 +739,35 @@ def translate_texts(client, texts, label: str) -> List[str]:
 
 
 def translate_texts_with_provider(client, texts, label: str, provider: str) -> List[str]:
+    global _GOOGLE_TRANSLATE_DISABLED
     provider = (provider or "google").strip().lower()
     if provider in {"none", "skip"}:
         return ["" for _ in texts]
     if provider in {"google", "google_translate", "free"}:
-        try:
-            return google_translate_texts(texts, label)
-        except Exception as google_error:
-            fallback = TRANSLATE_FALLBACK_PROVIDER
-            if fallback not in {"llm", "gemini", "model", "zai"}:
-                raise
+        google_error = None
+        if not _GOOGLE_TRANSLATE_DISABLED:
+            try:
+                return google_translate_texts(texts, label)
+            except Exception as exc:
+                google_error = exc
+                _GOOGLE_TRANSLATE_DISABLED = True
+        fallback = TRANSLATE_FALLBACK_PROVIDER
+        if fallback not in {"llm", "gemini", "model", "zai"}:
+            if google_error is not None:
+                raise google_error
+            raise RuntimeError("Google Translate was disabled after an earlier failure.")
+        if google_error is not None:
             print(
                 f"[translate:{label}] Google Translate unavailable; falling back to {fallback}: {google_error}",
                 flush=True,
             )
-            fallback_client = client or _build_gemini_client()
-            try:
-                return translate_texts(fallback_client, texts, label)
-            except Exception as fallback_error:
-                raise RuntimeError(
-                    f"Google Translate and {fallback} fallback both failed for {label}: {fallback_error}"
-                ) from fallback_error
+        fallback_client = client or _build_gemini_client()
+        try:
+            return translate_texts(fallback_client, texts, label)
+        except Exception as fallback_error:
+            raise RuntimeError(
+                f"Google Translate and {fallback} fallback both failed for {label}: {fallback_error}"
+            ) from fallback_error
     if provider in {"llm", "gemini", "model", "zai"}:
         return translate_texts(client or _build_gemini_client(), texts, label)
     raise RuntimeError(f"Unsupported translation provider: {provider}. Use google, llm, or none.")

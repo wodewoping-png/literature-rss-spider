@@ -30,7 +30,9 @@ class TranslationFallbackTests(unittest.TestCase):
     @patch.object(pipeline, "google_translate_texts", side_effect=RuntimeError("429 Too Many Requests"))
     def test_google_failure_uses_llm_fallback(self, google_translate, build_client, llm_translate):
         original = pipeline.TRANSLATE_FALLBACK_PROVIDER
+        original_disabled = pipeline._GOOGLE_TRANSLATE_DISABLED
         pipeline.TRANSLATE_FALLBACK_PROVIDER = "llm"
+        pipeline._GOOGLE_TRANSLATE_DISABLED = False
         try:
             result = pipeline.translate_texts_with_provider(
                 None,
@@ -40,6 +42,7 @@ class TranslationFallbackTests(unittest.TestCase):
             )
         finally:
             pipeline.TRANSLATE_FALLBACK_PROVIDER = original
+            pipeline._GOOGLE_TRANSLATE_DISABLED = original_disabled
 
         self.assertEqual(result, ["固态电池电解质"])
         google_translate.assert_called_once()
@@ -62,6 +65,24 @@ class TranslationFallbackTests(unittest.TestCase):
 
         get.assert_called_once()
         sleep.assert_not_called()
+
+    @patch.object(pipeline, "translate_texts", return_value=["甲"])
+    @patch.object(pipeline, "google_translate_texts", side_effect=RuntimeError("429"))
+    def test_google_is_not_retried_after_first_failure(self, google_translate, llm_translate):
+        original = pipeline.TRANSLATE_FALLBACK_PROVIDER
+        original_disabled = pipeline._GOOGLE_TRANSLATE_DISABLED
+        pipeline.TRANSLATE_FALLBACK_PROVIDER = "llm"
+        pipeline._GOOGLE_TRANSLATE_DISABLED = False
+        try:
+            client = object()
+            pipeline.translate_texts_with_provider(client, ["a"], "title", "google")
+            pipeline.translate_texts_with_provider(client, ["b"], "title", "google")
+        finally:
+            pipeline.TRANSLATE_FALLBACK_PROVIDER = original
+            pipeline._GOOGLE_TRANSLATE_DISABLED = original_disabled
+
+        google_translate.assert_called_once()
+        self.assertEqual(llm_translate.call_count, 2)
 
 
 if __name__ == "__main__":
