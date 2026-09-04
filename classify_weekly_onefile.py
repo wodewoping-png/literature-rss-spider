@@ -96,7 +96,10 @@ MAX_ABSTRACT_CHARS_TO_TRANSLATE = int(os.getenv("MAX_ABSTRACT_CHARS_TO_TRANSLATE
 TRANSLATE_BATCH_SIZE_TITLE = int(os.getenv("TRANSLATE_BATCH_SIZE_TITLE", "12"))
 TRANSLATE_BATCH_SIZE_ABSTRACT = int(os.getenv("TRANSLATE_BATCH_SIZE_ABSTRACT", "3"))
 TRANSLATE_PROVIDER = os.getenv("TRANSLATE_PROVIDER", "google").strip().lower()
-GEMINI_TRANSLATE_FALLBACK_PROVIDER = os.getenv("GEMINI_TRANSLATE_FALLBACK_PROVIDER", "google").strip().lower()
+TRANSLATE_FALLBACK_PROVIDER = os.getenv(
+    "TRANSLATE_FALLBACK_PROVIDER",
+    os.getenv("GEMINI_TRANSLATE_FALLBACK_PROVIDER", "llm"),
+).strip().lower()
 GOOGLE_TRANSLATE_MAX_RETRIES = int(os.getenv("GOOGLE_TRANSLATE_MAX_RETRIES", "4"))
 
 CLASSIFY_BATCH_SIZE = int(os.getenv("CLASSIFY_BATCH_SIZE", "12"))
@@ -624,6 +627,16 @@ def google_translate_texts(texts, label: str) -> List[str]:
                 break
             except Exception as e:
                 last_err = e
+                status_code = getattr(getattr(e, "response", None), "status_code", None)
+                if status_code == 429:
+                    print(
+                        f"[google-translate:{label}] rate limited on item {i}/{total}; "
+                        "stop retrying this endpoint",
+                        flush=True,
+                    )
+                    raise RuntimeError(
+                        f"Google Translate rate limited for {label} item {i}/{total}: {e}"
+                    ) from e
                 wait = min(30, 2 * attempt) + random.uniform(0, 1.5)
                 print(f"[google-translate:{label}] item {i}/{total} attempt {attempt} failed: {e} (wait {wait:.1f}s)", flush=True)
                 time.sleep(wait)
@@ -666,8 +679,26 @@ def translate_texts_with_provider(client, texts, label: str, provider: str) -> L
     if provider in {"none", "skip"}:
         return ["" for _ in texts]
     if provider in {"google", "google_translate", "free"}:
-        return google_translate_texts(texts, label)
-    raise RuntimeError(f"Unsupported translation provider: {provider}. Use google or none.")
+        try:
+            return google_translate_texts(texts, label)
+        except Exception as google_error:
+            fallback = TRANSLATE_FALLBACK_PROVIDER
+            if fallback not in {"llm", "gemini", "model", "zai"}:
+                raise
+            print(
+                f"[translate:{label}] Google Translate unavailable; falling back to {fallback}: {google_error}",
+                flush=True,
+            )
+            fallback_client = client or _build_gemini_client()
+            try:
+                return translate_texts(fallback_client, texts, label)
+            except Exception as fallback_error:
+                raise RuntimeError(
+                    f"Google Translate and {fallback} fallback both failed for {label}: {fallback_error}"
+                ) from fallback_error
+    if provider in {"llm", "gemini", "model", "zai"}:
+        return translate_texts(client or _build_gemini_client(), texts, label)
+    raise RuntimeError(f"Unsupported translation provider: {provider}. Use google, llm, or none.")
 
 
 def enrich_translation(df: pd.DataFrame, provider: str = "google", checkpoint_path: Optional[Path] = None) -> pd.DataFrame:

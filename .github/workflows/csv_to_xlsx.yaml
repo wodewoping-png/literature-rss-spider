@@ -1,8 +1,7 @@
-name: Weekly CSV to XLSX+Word (Gemini, manual backup)
+name: Weekly CSV to XLSX+Word (Z.AI GLM-5.2, manual)
 
 on:
-  # Gemini is retained as a manual backup only. Its former Friday schedule
-  # was removed when the daily Z.AI classification workflow was introduced.
+  # Manual catch-up workflow. Normal production uses daily_classification_zai.yaml.
   workflow_dispatch: {}
 
 permissions:
@@ -18,6 +17,7 @@ concurrency:
 jobs:
   classify-to-xlsx-docx:
     runs-on: ubuntu-latest
+    timeout-minutes: 180
     steps:
       - name: Checkout repo
         uses: actions/checkout@v6
@@ -73,16 +73,23 @@ jobs:
           python -m pip install -U pip
           pip install -r requirements.txt
 
-      - name: Run classify_weekly_onefile.py
+      - name: Run weekly classification with Z.AI GLM-5.2
         if: steps.weekly_input.outputs.run == 'true'
         env:
-          GOOGLE_AI_API_KEY: ${{ secrets.GOOGLE_AI_API_KEY }}
-          GOOGLE_AI_MAX_RETRIES: "3"
-          GEMINI_CLASSIFY_MAX_RETRIES: "2"
-          GOOGLE_AI_RETRY_BASE_SECONDS: "4"
-          GOOGLE_AI_RETRY_MAX_SECONDS: "30"
+          ZAI_API_KEY: ${{ secrets.ZAI_API_KEY }}
+          ZAI_MODEL: glm-5.2
+          ZAI_BASE_URL: https://api.z.ai/api/paas/v4
+          ZAI_PROTOCOL: openai
+          BIGMODEL_BASE_URL: https://open.bigmodel.cn/api/paas/v4
+          ZAI_FALLBACK_BASE_URL: https://open.bigmodel.cn/api/anthropic
+          ZAI_FALLBACK_PROTOCOL: anthropic
+          ZAI_MAX_RETRIES: "3"
+          ZAI_CLASSIFY_MAX_RETRIES: "3"
+          ZAI_RETRY_BASE_SECONDS: "4"
+          ZAI_RETRY_MAX_SECONDS: "30"
+          TRANSLATE_FALLBACK_PROVIDER: llm
         run: |
-          python3 classify_weekly_onefile.py -i "${{ steps.weekly_input.outputs.input }}" -c classification.txt --translation-provider google --classification-model gemini-2.5-flash --output-suffix _translated --save-translated-csv
+          python3 classify_weekly_zai.py -i "${{ steps.weekly_input.outputs.input }}" -c classification.txt --translation-provider google --output-suffix _translated --save-translated-csv
 
       - name: Commit outputs (only translated files)
         if: always() && steps.weekly_input.outputs.run == 'true'
@@ -106,7 +113,7 @@ jobs:
             exit 0
           fi
 
-          git commit -m "chore: weekly translated xlsx+docx (UTC $(date -u +'%Y-%m-%d'))"
+          git commit -m "chore: weekly Z.AI xlsx+docx (UTC $(date -u +'%Y-%m-%d'))"
 
           git fetch origin main
           git pull --rebase origin main
