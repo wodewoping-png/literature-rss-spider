@@ -4,7 +4,7 @@ Generate a monthly literature statistics workbook from classified weekly Excel f
 
 Default behavior:
   - Month: previous month in Asia/Shanghai, e.g. 2026-06-03 -> 2026-05.
-  - Input: output/weekly/*_translated.xlsx
+  - Input: translated weekly workbooks plus classified daily backfill workbooks.
   - Output: output/monthly/YYYY-MM 文献统计表.xlsx
 """
 
@@ -28,6 +28,7 @@ from openpyxl.styles import Alignment
 
 BASE_DIR = Path(__file__).resolve().parent
 DEFAULT_WEEKLY_DIR = BASE_DIR / "output" / "weekly"
+DEFAULT_DAILY_CLASSIFIED_DIR = BASE_DIR / "output" / "daily_classified"
 DEFAULT_OUTPUT_DIR = BASE_DIR / "output" / "monthly"
 DEFAULT_SOURCE_MAP = BASE_DIR / "config" / "monthly" / "source对应表.xlsx"
 DEFAULT_TEMPLATE = BASE_DIR / "config" / "monthly" / "文献统计模板表.xlsx"
@@ -40,6 +41,12 @@ NATURE_COMMUNICATIONS_SOURCES = {
     "Physical sciences : Nature Communications subject feeds",
 }
 NATURE_COMMUNICATIONS_CANONICAL_SOURCE = "Nature Communications"
+SOURCE_ALIASES = {
+    # Crossref recovery records use canonical journal titles, while the source
+    # mapping workbook historically used the labels from the RSC RSS feeds.
+    "Chemical Society Reviews": "RSC - Chem. Soc. Rev. latest articles",
+    "Energy & Environmental Science": "RSC - Energy Environ. Sci. latest articles",
+}
 ASAP_PREFIX = "[ASAP] "
 
 SHEET_ALIASES = {
@@ -54,6 +61,12 @@ def parse_args() -> argparse.Namespace:
         help="Target month in YYYY-MM. Defaults to the previous month in Asia/Shanghai.",
     )
     parser.add_argument("--weekly-dir", type=Path, default=DEFAULT_WEEKLY_DIR)
+    parser.add_argument(
+        "--daily-classified-dir",
+        type=Path,
+        default=DEFAULT_DAILY_CLASSIFIED_DIR,
+        help="Classified daily workbooks, including records added by late backfills.",
+    )
     parser.add_argument("--output-dir", type=Path, default=DEFAULT_OUTPUT_DIR)
     parser.add_argument("--source-map", type=Path, default=DEFAULT_SOURCE_MAP)
     parser.add_argument("--template", type=Path, default=DEFAULT_TEMPLATE)
@@ -88,7 +101,7 @@ def normalize_source(source) -> str:
     value = str(source).strip()
     if value in NATURE_COMMUNICATIONS_SOURCES:
         return NATURE_COMMUNICATIONS_CANONICAL_SOURCE
-    return value
+    return SOURCE_ALIASES.get(value, value)
 
 
 def clean_title(title) -> str:
@@ -197,12 +210,46 @@ def weekly_files_for_month(weekly_dir: Path, month: str, include_untranslated: b
     if not weekly_dir.exists():
         raise FileNotFoundError(f"Weekly directory not found: {weekly_dir}")
 
-    pattern = f"weekly_news_with_abstract_{month}-*.xlsx"
-    files = sorted(weekly_dir.glob(pattern))
+    start, end = month_bounds(month)
+    # The first weekly workbook in the following month contains the final days
+    # of the target month, so include a seven-day spillover and filter rows by
+    # their actual publication date later.
+    latest_run_date = (end + pd.Timedelta(days=7)).date()
+    files = sorted(weekly_dir.glob("weekly_news_with_abstract_*.xlsx"))
     if not include_untranslated:
         files = [path for path in files if path.name.endswith("_translated.xlsx")]
 
-    return [path for path in files if "classify_only" not in path.name]
+    selected = []
+    for path in files:
+        if "classify_only" in path.name:
+            continue
+        match = re.search(r"(\d{4}-\d{2}-\d{2})", path.name)
+        if not match:
+            continue
+        run_date = datetime.strptime(match.group(1), "%Y-%m-%d").date()
+        if start.date() <= run_date <= latest_run_date:
+            selected.append(path)
+    return selected
+
+
+def daily_classified_files_for_month(daily_dir: Path, month: str) -> list[Path]:
+    """Return daily classified files that can contain target-month backfills."""
+    if not daily_dir.exists():
+        return []
+
+    start, end = month_bounds(month)
+    # The gap checker repairs the previous 30 complete days. A classified daily
+    # file can therefore contain records published up to 30 days before its run.
+    latest_run_date = (end + pd.Timedelta(days=31)).date()
+    selected = []
+    for path in sorted(daily_dir.glob("news_with_abstract_*_zai_classified.xlsx")):
+        match = re.search(r"(\d{4}-\d{2}-\d{2})", path.name)
+        if not match:
+            continue
+        run_date = datetime.strptime(match.group(1), "%Y-%m-%d").date()
+        if start.date() <= run_date <= latest_run_date:
+            selected.append(path)
+    return selected
 
 
 def read_weekly_sheet(path: Path, sheet_name: str) -> pd.DataFrame:
@@ -378,9 +425,12 @@ def fill_sheet(ws, articles: pd.DataFrame) -> None:
             if col_count:
                 ws.cell(row=current_row, column=col_count).value = count
 
-    merge_equal_runs(ws, col_jour, [col_pub, col_jour])
+    # Merge the count before the journal column. openpyxl clears the non-anchor
+    # values in a merged range; merging the journal first would therefore split
+    # every multi-article count into a one-row cell plus a second merged block.
     if col_count:
         merge_equal_runs(ws, col_count, [col_pub, col_jour])
+    merge_equal_runs(ws, col_jour, [col_pub, col_jour])
     merge_equal_runs(ws, col_pub, [col_pub])
     format_literature_worksheet(ws)
     adjust_sheet_layout(ws, headers)
@@ -389,6 +439,7 @@ def fill_sheet(ws, articles: pd.DataFrame) -> None:
 def generate_monthly_workbook(
     month: str,
     weekly_dir: Path,
+    daily_classified_dir: Path,
     output_dir: Path,
     source_map_path: Path,
     template_path: Path,
@@ -401,8 +452,12 @@ def generate_monthly_workbook(
         raise FileNotFoundError(f"Template workbook not found: {template_path}")
 
     weekly_files = weekly_files_for_month(weekly_dir, month, include_untranslated)
-    if not weekly_files:
-        raise FileNotFoundError(f"No weekly Excel files found for {month} in {weekly_dir}")
+    daily_files = daily_classified_files_for_month(daily_classified_dir, month)
+    input_files = weekly_files + daily_files
+    if not input_files:
+        raise FileNotFoundError(
+            f"No classified Excel files found for {month} in {weekly_dir} or {daily_classified_dir}"
+        )
 
     output_dir.mkdir(parents=True, exist_ok=True)
     output_path = output_dir / f"{month} 文献统计表.xlsx"
@@ -411,8 +466,8 @@ def generate_monthly_workbook(
     wb = openpyxl.load_workbook(output_path)
     for sheet_name in wb.sheetnames:
         sheet_frames = []
-        for weekly_file in weekly_files:
-            frame = read_weekly_sheet(weekly_file, sheet_name)
+        for input_file in input_files:
+            frame = read_weekly_sheet(input_file, sheet_name)
             if not frame.empty:
                 sheet_frames.append(frame)
 
@@ -423,6 +478,7 @@ def generate_monthly_workbook(
 
     wb.save(output_path)
     print(f"[monthly] Read {len(weekly_files)} weekly workbook(s)")
+    print(f"[monthly] Read {len(daily_files)} classified daily workbook(s)")
     print(f"[monthly] Wrote {output_path}")
     return output_path
 
@@ -433,6 +489,7 @@ def main() -> None:
     generate_monthly_workbook(
         month=month,
         weekly_dir=args.weekly_dir,
+        daily_classified_dir=args.daily_classified_dir,
         output_dir=args.output_dir,
         source_map_path=args.source_map,
         template_path=args.template,

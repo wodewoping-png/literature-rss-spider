@@ -2,11 +2,13 @@ name: Monthly Literature Statistics
 
 on:
   workflow_run:
-    workflows: ["Weekly CSV to XLSX+Word (Gemini)"]
+    workflows:
+      - Weekly CSV to XLSX+Word (Z.AI GLM-5.2, manual)
+      - Daily Literature Classification (Z.AI GLM-5.2)
     types: [completed]
   schedule:
     # Fallback: every Friday 13:30 Asia/Shanghai (05:30 UTC). The job gate keeps
-    # only the last Friday of the month; workflow_run above preserves ordering.
+    # only the first Friday of the month, after the prior month is complete.
     - cron: "30 5 * * 5"
   workflow_dispatch:
     inputs:
@@ -47,12 +49,11 @@ jobs:
             exit 0
           fi
 
-          # In Asia/Shanghai, this workflow is evaluated on Friday after weekly output.
-          next_week_month="$(TZ=Asia/Shanghai date -d '+7 days' +'%m')"
-          this_month="$(TZ=Asia/Shanghai date +'%m')"
-          if [ "$next_week_month" != "$this_month" ]; then
+          # Generate the completed previous month during the first seven days.
+          day_of_month="$(TZ=Asia/Shanghai date +'%d')"
+          if [ "$day_of_month" -le 7 ]; then
             echo "run=true" >> "$GITHUB_OUTPUT"
-            echo "month=$(TZ=Asia/Shanghai date +'%Y-%m')" >> "$GITHUB_OUTPUT"
+            echo "month=$(TZ=Asia/Shanghai date -d 'last month' +'%Y-%m')" >> "$GITHUB_OUTPUT"
           else
             echo "run=false" >> "$GITHUB_OUTPUT"
           fi

@@ -6,6 +6,7 @@ on:
   workflow_run:
     workflows:
       - RSS Spider + Weekly Aggregate with Abstracts
+      - Daily Gap Backfill and Alert
     types:
       - completed
   workflow_dispatch:
@@ -20,6 +21,11 @@ on:
           - daily
           - weekly
           - all
+      force_reclassify:
+        description: Reclassify the latest daily CSV even if an output workbook exists
+        required: false
+        default: false
+        type: boolean
 
 permissions:
   contents: write
@@ -58,7 +64,8 @@ jobs:
 
   classify-daily:
     if: >-
-      (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success') ||
+      (github.event_name == 'workflow_run' &&
+       (github.event.workflow_run.conclusion == 'success' || github.event.workflow_run.name == 'Daily Gap Backfill and Alert')) ||
       (github.event_name == 'workflow_dispatch' && (github.event.inputs.task == 'daily' || github.event.inputs.task == 'all'))
     runs-on: ubuntu-latest
     timeout-minutes: 150
@@ -84,14 +91,18 @@ jobs:
 
           name="$(basename "${latest%.csv}")"
           output="output/daily_classified/${name}_zai_classified.xlsx"
+          signature="${output}.source.sha256"
+          current_hash="$(sha256sum "$latest" | awk '{print $1}')"
           echo "input=$latest" >> "$GITHUB_OUTPUT"
           echo "output=$output" >> "$GITHUB_OUTPUT"
-          if [ -f "$output" ]; then
+          if [ "${{ github.event.inputs.force_reclassify }}" != "true" ] &&
+             [ -f "$output" ] && [ -f "$signature" ] &&
+             [ "$(tr -d '[:space:]' < "$signature")" = "$current_hash" ]; then
             echo "run=false" >> "$GITHUB_OUTPUT"
-            echo "Daily CSV is already classified: $latest"
+            echo "Daily CSV content is already classified: $latest"
           else
             echo "run=true" >> "$GITHUB_OUTPUT"
-            echo "Will translate/classify: $latest"
+            echo "Will translate/classify new or changed content: $latest"
           fi
 
       - name: Set up Python
@@ -149,6 +160,7 @@ jobs:
           git remote set-url origin "https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
 
           git add "${{ steps.daily_input.outputs.output }}"
+          git add "${{ steps.daily_input.outputs.output }}.source.sha256"
           git add output/checkpoints/*zai_classified* || true
           if git diff --cached --quiet; then
             echo "No daily classification changes to commit"

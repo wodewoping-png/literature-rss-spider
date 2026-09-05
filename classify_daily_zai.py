@@ -9,6 +9,7 @@ but replaces the final model call with Z.AI and writes XLSX only.
 from __future__ import annotations
 
 import argparse
+import hashlib
 import os
 import random
 import time
@@ -155,6 +156,11 @@ def classify_daily(
         ordered_categories,
         still_missing,
         str(output_xlsx),
+    )
+    signature_path = output_xlsx.with_suffix(output_xlsx.suffix + ".source.sha256")
+    signature_path.write_text(
+        hashlib.sha256(csv_path.read_bytes()).hexdigest() + "\n",
+        encoding="ascii",
     )
     print(f"[io] wrote daily classified XLSX: {output_xlsx}", flush=True)
     return output_xlsx
