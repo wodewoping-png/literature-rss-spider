@@ -150,7 +150,7 @@ jobs:
         run: |
           end_date="${END_DATE:-$(date -u -d 'yesterday' +'%Y-%m-%d')}"
           python scripts/check_crossref_fallback_sources.py \
-            --days 7 \
+            --days 30 \
             --end-date "$end_date" \
             --only-rsc \
             --github-output "$GITHUB_OUTPUT"
@@ -168,7 +168,7 @@ jobs:
         run: |
           end_date="${END_DATE:-$(date -u -d 'yesterday' +'%Y-%m-%d')}"
           python scripts/check_crossref_fallback_sources.py \
-            --days 7 \
+            --days 30 \
             --end-date "$end_date" \
             --repair-date "$end_date" \
             --only-rsc \
