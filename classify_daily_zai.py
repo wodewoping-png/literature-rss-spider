@@ -106,12 +106,16 @@ def classify_daily(
     translation_provider: str = "google",
     skip_llm: bool = False,
     no_resume: bool = False,
+    sources: Optional[List[str]] = None,
+    output_tag: str = "",
 ) -> Path:
     install_zai_backend()
     output_dir.mkdir(parents=True, exist_ok=True)
 
-    output_xlsx = output_dir / f"{csv_path.stem}_zai_classified.xlsx"
-    checkpoint_base = checkpoint_dir / f"{csv_path.stem}_zai_classified"
+    clean_tag = "".join(ch for ch in output_tag.strip() if ch.isalnum() or ch in "-_")
+    tagged_stem = f"{csv_path.stem}_{clean_tag}" if clean_tag else csv_path.stem
+    output_xlsx = output_dir / f"{tagged_stem}_zai_classified.xlsx"
+    checkpoint_base = checkpoint_dir / f"{tagged_stem}_zai_classified"
     translation_checkpoint: Optional[Path] = checkpoint_base.with_name(
         checkpoint_base.name + "_translation.csv"
     )
@@ -125,6 +129,10 @@ def classify_daily(
     print(f"[io] daily input: {csv_path}", flush=True)
     frame = pd.read_csv(csv_path, encoding="utf-8-sig", keep_default_na=False)
     frame = pipeline.ensure_base_columns(frame)
+    if sources:
+        wanted_sources = {source.strip() for source in sources if source.strip()}
+        frame = frame[frame["source"].astype(str).str.strip().isin(wanted_sources)].copy()
+        print(f"[io] filtered sources: {sorted(wanted_sources)}", flush=True)
     print(f"[io] loaded rows: {len(frame)}", flush=True)
 
     rules = pipeline.load_classification_rules(str(classification_path))
@@ -176,6 +184,17 @@ def main() -> None:
     parser.add_argument("--translation-provider", choices=["google", "none"], default="google")
     parser.add_argument("--skip-llm", action="store_true", help="Test mode: use only keyword and embedding layers")
     parser.add_argument("--no-resume", action="store_true")
+    parser.add_argument(
+        "--source",
+        action="append",
+        default=[],
+        help="Only classify this exact source label; repeat to include multiple sources.",
+    )
+    parser.add_argument(
+        "--output-tag",
+        default="",
+        help="Optional safe suffix for a targeted classification output.",
+    )
     args = parser.parse_args()
 
     csv_path = Path(args.input) if args.input else pick_latest_daily_csv()
@@ -191,6 +210,8 @@ def main() -> None:
         translation_provider=args.translation_provider,
         skip_llm=args.skip_llm,
         no_resume=args.no_resume,
+        sources=args.source,
+        output_tag=args.output_tag,
     )
 
 

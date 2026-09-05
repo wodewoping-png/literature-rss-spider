@@ -72,6 +72,7 @@ class MonthlyLiteratureStatsTests(unittest.TestCase):
                 (weekly / name).touch()
             for name in [
                 "news_with_abstract_2026-09-04_zai_classified.xlsx",
+                "news_with_abstract_2026-09-05_rsc_backfill_zai_classified.xlsx",
                 "news_with_abstract_2026-10-02_zai_classified.xlsx",
             ]:
                 (daily / name).touch()
@@ -82,6 +83,7 @@ class MonthlyLiteratureStatsTests(unittest.TestCase):
             self.assertIn("weekly_news_with_abstract_2026-09-04_translated.xlsx", weekly_names)
             self.assertNotIn("weekly_news_with_abstract_2026-09-08_translated.xlsx", weekly_names)
             self.assertIn("news_with_abstract_2026-09-04_zai_classified.xlsx", daily_names)
+            self.assertIn("news_with_abstract_2026-09-05_rsc_backfill_zai_classified.xlsx", daily_names)
             self.assertNotIn("news_with_abstract_2026-10-02_zai_classified.xlsx", daily_names)
 
 

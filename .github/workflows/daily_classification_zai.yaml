@@ -26,6 +26,16 @@ on:
         required: false
         default: false
         type: boolean
+      source_filter:
+        description: Optional exact source labels separated by | for a targeted catch-up
+        required: false
+        default: ""
+        type: string
+      output_tag:
+        description: Optional output suffix for a targeted catch-up
+        required: false
+        default: ""
+        type: string
 
 permissions:
   contents: write
@@ -34,7 +44,7 @@ env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
 
 concurrency:
-  group: daily-literature-classification-zai
+  group: daily-literature-classification-zai-${{ github.event.inputs.output_tag || 'default' }}
   cancel-in-progress: false
 
 jobs:
@@ -81,6 +91,9 @@ jobs:
       - name: Detect unclassified daily CSV
         id: daily_input
         shell: bash
+        env:
+          FORCE_RECLASSIFY: ${{ github.event.inputs.force_reclassify }}
+          OUTPUT_TAG: ${{ github.event.inputs.output_tag }}
         run: |
           latest="$(find output -maxdepth 1 -type f -name 'news_with_abstract_*.csv' | sort | tail -n 1)"
           if [ -z "$latest" ]; then
@@ -90,12 +103,17 @@ jobs:
           fi
 
           name="$(basename "${latest%.csv}")"
-          output="output/daily_classified/${name}_zai_classified.xlsx"
+          output_tag="$(printf '%s' "$OUTPUT_TAG" | tr -cd '[:alnum:]_-')"
+          if [ -n "$output_tag" ]; then
+            output="output/daily_classified/${name}_${output_tag}_zai_classified.xlsx"
+          else
+            output="output/daily_classified/${name}_zai_classified.xlsx"
+          fi
           signature="${output}.source.sha256"
           current_hash="$(sha256sum "$latest" | awk '{print $1}')"
           echo "input=$latest" >> "$GITHUB_OUTPUT"
           echo "output=$output" >> "$GITHUB_OUTPUT"
-          if [ "${{ github.event.inputs.force_reclassify }}" != "true" ] &&
+          if [ "$FORCE_RECLASSIFY" != "true" ] &&
              [ -f "$output" ] && [ -f "$signature" ] &&
              [ "$(tr -d '[:space:]' < "$signature")" = "$current_hash" ]; then
             echo "run=false" >> "$GITHUB_OUTPUT"
@@ -142,12 +160,26 @@ jobs:
           ZAI_RETRY_BASE_SECONDS: "4"
           ZAI_RETRY_MAX_SECONDS: "30"
           TRANSLATE_FALLBACK_PROVIDER: llm
+          SOURCE_FILTER: ${{ github.event.inputs.source_filter }}
+          OUTPUT_TAG: ${{ github.event.inputs.output_tag }}
           TRANSLATE_BATCH_SIZE_ABSTRACT: "6"
-        run: >-
-          python classify_daily_zai.py
-          -i "${{ steps.daily_input.outputs.input }}"
-          -c classification.txt
-          --translation-provider google
+        shell: bash
+        run: |
+          args=(
+            -i "${{ steps.daily_input.outputs.input }}"
+            -c classification.txt
+            --translation-provider google
+          )
+          if [ -n "$OUTPUT_TAG" ]; then
+            args+=(--output-tag "$OUTPUT_TAG")
+          fi
+          if [ -n "$SOURCE_FILTER" ]; then
+            IFS='|' read -ra sources <<< "$SOURCE_FILTER"
+            for source in "${sources[@]}"; do
+              args+=(--source "$source")
+            done
+          fi
+          python classify_daily_zai.py "${args[@]}"
 
       - name: Commit daily classification
         if: steps.daily_input.outputs.run == 'true'
