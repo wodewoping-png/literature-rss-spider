@@ -6,7 +6,7 @@ on:
   workflow_run:
     workflows:
       - RSS Spider + Weekly Aggregate with Abstracts
-      - Daily Gap Backfill and Alert
+      - Daily RSS Gap Check and Backfill
     types:
       - completed
   workflow_dispatch:
@@ -75,7 +75,7 @@ jobs:
   classify-daily:
     if: >-
       (github.event_name == 'workflow_run' &&
-       (github.event.workflow_run.conclusion == 'success' || github.event.workflow_run.name == 'Daily Gap Backfill and Alert')) ||
+       (github.event.workflow_run.conclusion == 'success' || github.event.workflow_run.name == 'Daily RSS Gap Check and Backfill')) ||
       (github.event_name == 'workflow_dispatch' && (github.event.inputs.task == 'daily' || github.event.inputs.task == 'all'))
     runs-on: ubuntu-latest
     timeout-minutes: 150

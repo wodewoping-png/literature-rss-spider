@@ -20,6 +20,7 @@ on:
 
 permissions:
   contents: write
+  actions: write
 
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
@@ -80,6 +81,15 @@ jobs:
           git fetch origin main
           git pull --rebase origin main
           git push origin HEAD:main
+
+      - name: Trigger daily Z.AI classification
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: >-
+          gh workflow run daily_classification_zai.yaml
+          --repo "${GITHUB_REPOSITORY}"
+          --ref main
+          -f task=daily
 
   run-weekly-aggregate-with-abs:
     needs: run-rss-spider
