@@ -31,6 +31,14 @@ class ZAIDailyWorkflowTriggerTests(unittest.TestCase):
                 self.assertIn("gh workflow run daily_classification_zai.yaml", workflow_text)
                 self.assertIn("-f task=daily", workflow_text)
 
+    def test_daily_selector_can_drain_a_backlog(self):
+        workflow_text = (WORKFLOWS / "daily_classification_zai.yaml").read_text(
+            encoding="utf-8"
+        )
+        self.assertIn("sort -r", workflow_text)
+        self.assertIn("newest pending content", workflow_text)
+        self.assertIn("candidate_output", workflow_text)
+
 
 if __name__ == "__main__":
     unittest.main()

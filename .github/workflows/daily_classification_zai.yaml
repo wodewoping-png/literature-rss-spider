@@ -95,33 +95,41 @@ jobs:
           FORCE_RECLASSIFY: ${{ github.event.inputs.force_reclassify }}
           OUTPUT_TAG: ${{ github.event.inputs.output_tag }}
         run: |
-          latest="$(find output -maxdepth 1 -type f -name 'news_with_abstract_*.csv' | sort | tail -n 1)"
+          output_tag="$(printf '%s' "$OUTPUT_TAG" | tr -cd '[:alnum:]_-')"
+          latest=""
+          output=""
+
+          # Pick the newest CSV whose corresponding workbook is missing or
+          # stale. This also lets repeated runs drain a multi-day backlog.
+          while IFS= read -r candidate; do
+            name="$(basename "${candidate%.csv}")"
+            if [ -n "$output_tag" ]; then
+              candidate_output="output/daily_classified/${name}_${output_tag}_zai_classified.xlsx"
+            else
+              candidate_output="output/daily_classified/${name}_zai_classified.xlsx"
+            fi
+            signature="${candidate_output}.source.sha256"
+            current_hash="$(sha256sum "$candidate" | awk '{print $1}')"
+
+            if [ "$FORCE_RECLASSIFY" = "true" ] ||
+               [ ! -f "$candidate_output" ] || [ ! -f "$signature" ] ||
+               [ "$(tr -d '[:space:]' < "$signature" 2>/dev/null || true)" != "$current_hash" ]; then
+              latest="$candidate"
+              output="$candidate_output"
+              break
+            fi
+          done < <(find output -maxdepth 1 -type f -name 'news_with_abstract_*.csv' | sort -r)
+
           if [ -z "$latest" ]; then
             echo "run=false" >> "$GITHUB_OUTPUT"
-            echo "No daily CSV found."
+            echo "No new or changed daily CSV needs classification."
             exit 0
           fi
 
-          name="$(basename "${latest%.csv}")"
-          output_tag="$(printf '%s' "$OUTPUT_TAG" | tr -cd '[:alnum:]_-')"
-          if [ -n "$output_tag" ]; then
-            output="output/daily_classified/${name}_${output_tag}_zai_classified.xlsx"
-          else
-            output="output/daily_classified/${name}_zai_classified.xlsx"
-          fi
-          signature="${output}.source.sha256"
-          current_hash="$(sha256sum "$latest" | awk '{print $1}')"
           echo "input=$latest" >> "$GITHUB_OUTPUT"
           echo "output=$output" >> "$GITHUB_OUTPUT"
-          if [ "$FORCE_RECLASSIFY" != "true" ] &&
-             [ -f "$output" ] && [ -f "$signature" ] &&
-             [ "$(tr -d '[:space:]' < "$signature")" = "$current_hash" ]; then
-            echo "run=false" >> "$GITHUB_OUTPUT"
-            echo "Daily CSV content is already classified: $latest"
-          else
-            echo "run=true" >> "$GITHUB_OUTPUT"
-            echo "Will translate/classify new or changed content: $latest"
-          fi
+          echo "run=true" >> "$GITHUB_OUTPUT"
+          echo "Will translate/classify newest pending content: $latest"
 
       - name: Set up Python
         if: steps.daily_input.outputs.run == 'true'
