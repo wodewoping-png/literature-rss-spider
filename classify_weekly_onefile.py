@@ -1197,6 +1197,7 @@ def write_grouped_xlsx(
     ordered_categories: List[str],
     still_missing_ids: List[str],
     output_xlsx: str,
+    source_sha256: str = "",
 ):
     used = set()
     sid = set(still_missing_ids)
@@ -1211,6 +1212,8 @@ def write_grouped_xlsx(
                 cat_to_indices[c].append(i)
 
     with pd.ExcelWriter(output_xlsx, engine="openpyxl") as writer:
+        if source_sha256:
+            writer.book.properties.keywords = f"source_sha256={source_sha256}"
         # ALL
         sheet = _safe_sheet_name("ALL", used)
         df.to_excel(writer, index=False, sheet_name=sheet)

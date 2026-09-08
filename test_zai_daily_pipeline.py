@@ -1,8 +1,13 @@
 import tempfile
 import unittest
+import zipfile
 from pathlib import Path
 from unittest.mock import Mock, patch
 
+import pandas as pd
+from openpyxl import load_workbook
+
+from classify_weekly_onefile import write_grouped_xlsx
 from classify_daily_zai import pick_latest_daily_csv
 from zai_client import ZAIChatClient, ZAIEndpoint, endpoints_from_env
 
@@ -34,6 +39,30 @@ class ZAIDailyPipelineTests(unittest.TestCase):
             for path in (older, latest, ignored):
                 path.write_text("title\n", encoding="utf-8")
             self.assertEqual(pick_latest_daily_csv(folder), latest)
+
+    def test_workbook_embeds_source_hash_without_sidecar(self):
+        source_hash = "a" * 64
+        with tempfile.TemporaryDirectory() as temp_dir:
+            output = Path(temp_dir) / "daily.xlsx"
+            frame = pd.DataFrame(
+                [{"stable_id": "one", "title": "Example", "categories": "光伏"}]
+            )
+            write_grouped_xlsx(
+                frame,
+                [["光伏"]],
+                ["光伏"],
+                [],
+                str(output),
+                source_sha256=source_hash,
+            )
+
+            workbook = load_workbook(output, read_only=True)
+            self.assertEqual(workbook.properties.keywords, f"source_sha256={source_hash}")
+            workbook.close()
+            self.assertFalse(Path(str(output) + ".source.sha256").exists())
+            with zipfile.ZipFile(output) as archive:
+                core_xml = archive.read("docProps/core.xml").decode("utf-8")
+            self.assertIn(f"source_sha256={source_hash}", core_xml)
 
     @patch("zai_client.requests.post")
     def test_primary_openai_response(self, post: Mock):

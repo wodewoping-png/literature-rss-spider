@@ -15,10 +15,6 @@ on:
       - "scripts/send_dingtalk_alert.py"
       - "spider0301.py"
       - "feeds1211.txt"
-  schedule:
-    # Check the prior seven complete UTC days. This intentionally avoids a
-    # false gap while today's 02:00 UTC spider is still running.
-    - cron: "30 4 * * *"
   workflow_dispatch:
     inputs:
       end_date:

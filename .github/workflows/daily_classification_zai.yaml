@@ -1,14 +1,6 @@
 name: Daily Literature Classification (Z.AI GLM-5.2)
 
 on:
-  # Start only after the existing daily spider workflow has completed. This
-  # avoids racing a long-running scrape with a fixed second cron time.
-  workflow_run:
-    workflows:
-      - RSS Spider + Weekly Aggregate with Abstracts
-      - Daily RSS Gap Check and Backfill
-    types:
-      - completed
   workflow_dispatch:
     inputs:
       task:
@@ -26,16 +18,6 @@ on:
         required: false
         default: false
         type: boolean
-      source_filter:
-        description: Optional exact source labels separated by | for a targeted catch-up
-        required: false
-        default: ""
-        type: string
-      output_tag:
-        description: Optional output suffix for a targeted catch-up
-        required: false
-        default: ""
-        type: string
 
 permissions:
   contents: write
@@ -44,7 +26,7 @@ env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
 
 concurrency:
-  group: daily-literature-classification-zai-${{ github.event.inputs.output_tag || 'default' }}
+  group: daily-literature-classification-zai
   cancel-in-progress: false
 
 jobs:
@@ -73,10 +55,7 @@ jobs:
         run: python scripts/test_zai_routes.py
 
   classify-daily:
-    if: >-
-      (github.event_name == 'workflow_run' &&
-       (github.event.workflow_run.conclusion == 'success' || github.event.workflow_run.name == 'Daily RSS Gap Check and Backfill')) ||
-      (github.event_name == 'workflow_dispatch' && (github.event.inputs.task == 'daily' || github.event.inputs.task == 'all'))
+    if: github.event.inputs.task == 'daily' || github.event.inputs.task == 'all'
     runs-on: ubuntu-latest
     timeout-minutes: 150
     steps:
@@ -93,9 +72,7 @@ jobs:
         shell: bash
         env:
           FORCE_RECLASSIFY: ${{ github.event.inputs.force_reclassify }}
-          OUTPUT_TAG: ${{ github.event.inputs.output_tag }}
         run: |
-          output_tag="$(printf '%s' "$OUTPUT_TAG" | tr -cd '[:alnum:]_-')"
           latest=""
           output=""
 
@@ -103,17 +80,32 @@ jobs:
           # stale. This also lets repeated runs drain a multi-day backlog.
           while IFS= read -r candidate; do
             name="$(basename "${candidate%.csv}")"
-            if [ -n "$output_tag" ]; then
-              candidate_output="output/daily_classified/${name}_${output_tag}_zai_classified.xlsx"
-            else
-              candidate_output="output/daily_classified/${name}_zai_classified.xlsx"
-            fi
-            signature="${candidate_output}.source.sha256"
+            candidate_output="output/daily_classified/${name}_zai_classified.xlsx"
             current_hash="$(sha256sum "$candidate" | awk '{print $1}')"
+            stored_hash=""
+            if [ -f "$candidate_output" ]; then
+              stored_hash="$(
+                unzip -p "$candidate_output" docProps/core.xml 2>/dev/null |
+                  grep -oE 'source_sha256=[0-9a-f]{64}' |
+                  head -n 1 |
+                  cut -d= -f2 || true
+              )"
+            fi
+
+            legacy_is_current="false"
+            if [ -f "$candidate_output" ] && [ -z "$stored_hash" ]; then
+              source_commit="$(git log -1 --format=%H -- "$candidate" || true)"
+              output_commit="$(git log -1 --format=%H -- "$candidate_output" || true)"
+              if [ -n "$source_commit" ] && [ -n "$output_commit" ] &&
+                 git merge-base --is-ancestor "$source_commit" "$output_commit"; then
+                legacy_is_current="true"
+              fi
+            fi
 
             if [ "$FORCE_RECLASSIFY" = "true" ] ||
-               [ ! -f "$candidate_output" ] || [ ! -f "$signature" ] ||
-               [ "$(tr -d '[:space:]' < "$signature" 2>/dev/null || true)" != "$current_hash" ]; then
+               [ ! -f "$candidate_output" ] ||
+               { [ -n "$stored_hash" ] && [ "$stored_hash" != "$current_hash" ]; } ||
+               { [ -z "$stored_hash" ] && [ "$legacy_is_current" != "true" ]; }; then
               latest="$candidate"
               output="$candidate_output"
               break
@@ -168,8 +160,6 @@ jobs:
           ZAI_RETRY_BASE_SECONDS: "4"
           ZAI_RETRY_MAX_SECONDS: "30"
           TRANSLATE_FALLBACK_PROVIDER: llm
-          SOURCE_FILTER: ${{ github.event.inputs.source_filter }}
-          OUTPUT_TAG: ${{ github.event.inputs.output_tag }}
           TRANSLATE_BATCH_SIZE_ABSTRACT: "6"
         shell: bash
         run: |
@@ -178,15 +168,6 @@ jobs:
             -c classification.txt
             --translation-provider google
           )
-          if [ -n "$OUTPUT_TAG" ]; then
-            args+=(--output-tag "$OUTPUT_TAG")
-          fi
-          if [ -n "$SOURCE_FILTER" ]; then
-            IFS='|' read -ra sources <<< "$SOURCE_FILTER"
-            for source in "${sources[@]}"; do
-              args+=(--source "$source")
-            done
-          fi
           python classify_daily_zai.py "${args[@]}"
 
       - name: Commit daily classification
@@ -200,7 +181,6 @@ jobs:
           git remote set-url origin "https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
 
           git add "${{ steps.daily_input.outputs.output }}"
-          git add "${{ steps.daily_input.outputs.output }}.source.sha256"
           git add output/checkpoints/*zai_classified* || true
           if git diff --cached --quiet; then
             echo "No daily classification changes to commit"
@@ -216,9 +196,9 @@ jobs:
     needs: classify-daily
     if: >-
       always() && !cancelled() &&
-      ((github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success' && needs.classify-daily.result == 'success') ||
-       (github.event_name == 'workflow_dispatch' && github.event.inputs.task == 'weekly') ||
-       (github.event_name == 'workflow_dispatch' && github.event.inputs.task == 'all' && needs.classify-daily.result == 'success'))
+      (github.event.inputs.task == 'weekly' ||
+       (github.event.inputs.task == 'daily' && needs.classify-daily.result == 'success') ||
+       (github.event.inputs.task == 'all' && needs.classify-daily.result == 'success'))
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
@@ -226,9 +206,9 @@ jobs:
         id: weekly_gate
         shell: bash
         run: |
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+          if [ "${{ github.event.inputs.task }}" = "weekly" ] || [ "${{ github.event.inputs.task }}" = "all" ]; then
             echo "run=true" >> "$GITHUB_OUTPUT"
-          elif [ "$(date -u +%u)" = "5" ]; then
+          elif [ "${{ github.event.inputs.task }}" = "daily" ] && [ "$(date -u +%u)" = "5" ]; then
             echo "run=true" >> "$GITHUB_OUTPUT"
           else
             echo "run=false" >> "$GITHUB_OUTPUT"
