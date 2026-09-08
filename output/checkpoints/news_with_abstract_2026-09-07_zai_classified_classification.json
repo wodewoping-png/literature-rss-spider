@@ -1,5 +1,5 @@
 {
-  "updated_at": "2026-09-08T09:10:49Z",
+  "updated_at": "2026-09-08T09:46:11Z",
   "labels_by_id": {
     "7f7597c39026aa16": [
       "CCUS"
@@ -491,6 +491,8 @@
     ],
     "b4fc09a2aefece9f": [
       "光伏"
-    ]
+    ],
+    "fd09924a33a8bffc": [],
+    "2fd6b8ea26df29ab": []
   }
 }
