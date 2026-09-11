@@ -18,7 +18,7 @@ import requests
 
 
 DEFAULT_MODEL = "glm-5.2"
-DEFAULT_PRIMARY_BASE_URL = "https://api.z.ai/api/paas/v4"
+DEFAULT_PRIMARY_BASE_URL = "https://api.z.ai/api/coding/paas/v4"
 DEFAULT_SECONDARY_BASE_URL = "https://open.bigmodel.cn/api/paas/v4"
 DEFAULT_FALLBACK_BASE_URL = "https://open.bigmodel.cn/api/anthropic"
 

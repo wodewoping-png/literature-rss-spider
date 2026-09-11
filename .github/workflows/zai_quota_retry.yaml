@@ -1,0 +1,137 @@
+name: Z.AI Coding Plan Quota Retry
+
+on:
+  schedule:
+    # Only performs a quota query when an unclassified daily CSV exists.
+    - cron: "17,47 * * * *"
+  workflow_dispatch:
+    inputs:
+      check_when_idle:
+        description: Query quota even when no classification backlog exists
+        required: false
+        default: false
+        type: boolean
+
+permissions:
+  actions: write
+  contents: read
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
+
+concurrency:
+  group: zai-coding-plan-quota-retry
+  cancel-in-progress: true
+
+jobs:
+  retry-when-fresh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout latest main
+        uses: actions/checkout@v6
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Detect unclassified daily CSV
+        id: pending
+        shell: bash
+        env:
+          CHECK_WHEN_IDLE: ${{ inputs.check_when_idle || 'false' }}
+        run: |
+          latest=""
+          while IFS= read -r candidate; do
+            name="$(basename "${candidate%.csv}")"
+            candidate_output="output/daily_classified/${name}_zai_classified.xlsx"
+            current_hash="$(sha256sum "$candidate" | awk '{print $1}')"
+            stored_hash=""
+            if [ -f "$candidate_output" ]; then
+              stored_hash="$(
+                unzip -p "$candidate_output" docProps/core.xml 2>/dev/null |
+                  grep -oE 'source_sha256=[0-9a-f]{64}' |
+                  head -n 1 |
+                  cut -d= -f2 || true
+              )"
+            fi
+
+            legacy_is_current="false"
+            if [ -f "$candidate_output" ] && [ -z "$stored_hash" ]; then
+              source_commit="$(git log -1 --format=%H -- "$candidate" || true)"
+              output_commit="$(git log -1 --format=%H -- "$candidate_output" || true)"
+              if [ -n "$source_commit" ] && [ -n "$output_commit" ] &&
+                 git merge-base --is-ancestor "$source_commit" "$output_commit"; then
+                legacy_is_current="true"
+              fi
+            fi
+
+            if [ ! -f "$candidate_output" ] ||
+               { [ -n "$stored_hash" ] && [ "$stored_hash" != "$current_hash" ]; } ||
+               { [ -z "$stored_hash" ] && [ "$legacy_is_current" != "true" ]; }; then
+              latest="$candidate"
+              break
+            fi
+          done < <(find output -maxdepth 1 -type f -name 'news_with_abstract_*.csv' | sort -r)
+
+          if [ -z "$latest" ]; then
+            echo "run=false" >> "$GITHUB_OUTPUT"
+            echo "No classification backlog."
+          else
+            echo "run=true" >> "$GITHUB_OUTPUT"
+            echo "input=$latest" >> "$GITHUB_OUTPUT"
+            echo "Pending classification: $latest"
+          fi
+          if [ -n "$latest" ] || [ "$CHECK_WHEN_IDLE" = "true" ]; then
+            echo "check=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "check=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Avoid duplicate classification runs
+        if: steps.pending.outputs.run == 'true'
+        id: active
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          count="$(
+            gh run list --repo "$GITHUB_REPOSITORY" \
+              --workflow daily_classification_zai.yaml --limit 20 \
+              --json status \
+              --jq '[.[] | select(.status == "queued" or .status == "in_progress" or .status == "waiting" or .status == "requested" or .status == "pending")] | length'
+          )"
+          if [ "$count" -gt 0 ]; then
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+            echo "A daily classification run is already active; retry skipped."
+          else
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Check Coding Plan quota
+        if: steps.pending.outputs.check == 'true' && steps.active.outputs.skip != 'true'
+        id: quota
+        continue-on-error: true
+        env:
+          ZAI_API_KEY: ${{ secrets.ZAI_API_KEY }}
+          ZAI_MODEL: glm-5.2
+          ZAI_SESSION_MAX_USED_PERCENT: "15"
+          ZAI_WEEKLY_MAX_USED_PERCENT: "95"
+        run: python scripts/check_zai_coding_quota.py
+
+      - name: Trigger deferred daily classification
+        if: steps.pending.outputs.run == 'true' && steps.quota.outputs.ready == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: >-
+          gh workflow run daily_classification_zai.yaml
+          --repo "${GITHUB_REPOSITORY}"
+          --ref main
+          -f task=daily
+
+      - name: Report deferred retry
+        if: steps.pending.outputs.run == 'true' && steps.quota.outputs.ready == 'false'
+        run: >-
+          echo "Classification remains deferred: ${{ steps.quota.outputs.reason }};
+          5h used=${{ steps.quota.outputs.session_used_percent || 'unknown' }}%;
+          weekly used=${{ steps.quota.outputs.weekly_used_percent || 'unknown' }}%;
+          next reset=${{ steps.quota.outputs.next_reset_time || 'unknown' }}"

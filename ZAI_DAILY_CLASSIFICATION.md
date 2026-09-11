@@ -16,11 +16,11 @@
 
 必须配置一个 Secret：
 
-- `ZAI_API_KEY`：三个接口共用的 API Key。主线路失败后先使用 `https://open.bigmodel.cn/api/paas/v4`，仍失败才使用 `https://open.bigmodel.cn/api/anthropic`。
+- `ZAI_API_KEY`：Coding Plan API Key。主线路失败后先使用 `https://open.bigmodel.cn/api/paas/v4`，仍失败才使用 `https://open.bigmodel.cn/api/anthropic`。
 
 接口自动回退顺序固定为：
 
-1. `https://api.z.ai/api/paas/v4/chat/completions`
+1. `https://api.z.ai/api/coding/paas/v4/chat/completions`
 2. `https://open.bigmodel.cn/api/paas/v4/chat/completions`
 3. `https://open.bigmodel.cn/api/anthropic/v1/messages`
 
@@ -37,10 +37,15 @@ GitHub Actions 的手动参数 `api-test` 会使用 `ZAI_API_KEY` 分别向三�
 
 任一免费翻译接口返回 `429 Too Many Requests` 时，程序会停用该线路并切换下一条免费线路。MyMemory 匿名调用受官方额度限制，流程默认最多使用 4500 字符/天，只作为小量兜底。所有免费线路都不可用时才切换到 GLM-5.2。翻译检查点按批写入；即使分类步骤失败，workflow 也会提交已完成的检查点，避免下次从头消耗额度。
 
-## GLM Coding Plan 边界
+## GLM Coding Plan 额度监控与自动补跑
 
-GitHub Actions 运行的是自动化脚本，因此继续使用通用 API 端点和独立 API 余额/资源包，不切换到 Coding Plan 专用端点。Z.AI 官方条款将 Coding Plan 限定在受支持的交互式编码工具内，且明确排除应用、机器人和通用 API 自动调用。
+分类主线路使用 Coding Plan 专用端点 `https://api.z.ai/api/coding/paas/v4`，避免把订阅制 Key 错发到通用余额接口而得到 `1113`。
 
-通用 API 返回 `1113 Insufficient balance or no resource package` 代表 API 余额/资源包不足，并不是 Coding Plan 的 5 小时窗口限额；等待 5 小时不会让该端点恢复。Coding Plan 的额度查询插件只在受支持的 Claude Code 个人计划环境中提供，不能作为 GitHub Actions 的额度探针。
+`.github/workflows/zai_quota_retry.yaml` 每小时检查两次（第 17、47 分）。没有待分类日报时不会访问额度接口；存在积压时会先确认没有同类分类任务正在排队或运行，再读取 Coding Plan 额度。手动运行时可启用 `check_when_idle`，只检查当前额度而不触发没有积压的分类。新版 `CREDIT_LIMIT` 和旧版 `TOKENS_LIMIT` 均支持：
+
+- 5 小时窗口用量不超过 15%，且周窗口用量低于 95% 时，自动触发一次 `daily` 分类；
+- 额度不足时正常退出，后续定时检查继续等待，不会让仓库持续显示失败；
+- 官方额度返回无法解析时，仅发送一次最多 8 token 的 Coding Plan 真实请求作为保守探针；
+- 额度和真实探针都不可用时不触发大任务。
 
 分类任务具有按输入日期命名的检查点。已有每日 XLSX 时，workflow 会跳过，避免同一天重复消耗额度。周汇总文件已存在时也会跳过；只有显式传入 `--force` 才会覆盖。

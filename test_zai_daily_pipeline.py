@@ -23,7 +23,7 @@ class ZAIDailyPipelineTests(unittest.TestCase):
         self.assertEqual(
             [(endpoint.name, endpoint.base_url, endpoint.protocol) for endpoint in endpoints],
             [
-                ("z.ai", "https://api.z.ai/api/paas/v4", "openai"),
+                ("z.ai", "https://api.z.ai/api/coding/paas/v4", "openai"),
                 ("bigmodel-openai", "https://open.bigmodel.cn/api/paas/v4", "openai"),
                 ("bigmodel-anthropic", "https://open.bigmodel.cn/api/anthropic", "anthropic"),
             ],

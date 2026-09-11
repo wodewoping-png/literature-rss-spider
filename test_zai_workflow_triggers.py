@@ -42,6 +42,19 @@ class ZAIDailyWorkflowTriggerTests(unittest.TestCase):
         self.assertIn("legacy_is_current", workflow_text)
         self.assertNotIn(".source.sha256", workflow_text)
 
+    def test_quota_monitor_retries_only_a_pending_daily_run(self):
+        quota = load_workflow("zai_quota_retry.yaml")
+        self.assertIn("schedule", quota["on"])
+        self.assertEqual(quota["permissions"]["actions"], "write")
+
+        quota_text = (WORKFLOWS / "zai_quota_retry.yaml").read_text(encoding="utf-8")
+        self.assertIn("scripts/check_zai_coding_quota.py", quota_text)
+        self.assertIn("check_when_idle", quota_text)
+        self.assertIn("CREDIT_LIMIT", Path("scripts/check_zai_coding_quota.py").read_text(encoding="utf-8"))
+        self.assertIn("steps.quota.outputs.ready == 'true'", quota_text)
+        self.assertIn("A daily classification run is already active", quota_text)
+        self.assertEqual(quota_text.count("gh workflow run daily_classification_zai.yaml"), 1)
+
 
 if __name__ == "__main__":
     unittest.main()
