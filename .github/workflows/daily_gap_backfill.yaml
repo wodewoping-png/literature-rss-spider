@@ -197,6 +197,61 @@ jobs:
             --title "HIGH PRIORITY - RSC journal omission alert" \
             --message "repository=${GITHUB_REPOSITORY}; initially_missing=${RSC_INITIAL_MISSING:-unknown}; remaining_after_repair=${RSC_REMAINING:-unknown}; front_matter_removed=${RSC_INVALID_REMOVED:-0}; journals=${RSC_JOURNALS:-unknown}; sample=${RSC_SAMPLE:-none}; error=${RSC_ERROR:-none}; run=${RUN_URL}"
 
+      - name: Detect high-priority Cell Press journal omissions
+        id: cell_press_source
+        continue-on-error: true
+        env:
+          END_DATE: ${{ github.event.inputs.end_date }}
+        run: |
+          end_date="${END_DATE:-$(date -u -d 'yesterday' +'%Y-%m-%d')}"
+          python scripts/check_crossref_fallback_sources.py \
+            --days 30 \
+            --end-date "$end_date" \
+            --only-cell-press \
+            --github-output "$GITHUB_OUTPUT"
+
+      - name: Attempt high-priority Cell Press repair once
+        if: >-
+          always() &&
+          (steps.cell_press_source.outcome == 'failure' ||
+           steps.cell_press_source.outputs.missing_count != '0')
+        id: cell_press_repair
+        continue-on-error: true
+        env:
+          END_DATE: ${{ github.event.inputs.end_date }}
+        run: |
+          end_date="${END_DATE:-$(date -u -d 'yesterday' +'%Y-%m-%d')}"
+          python scripts/check_crossref_fallback_sources.py \
+            --days 30 \
+            --end-date "$end_date" \
+            --repair-date "$end_date" \
+            --only-cell-press \
+            --github-output "$GITHUB_OUTPUT" \
+            --fail-on-missing
+
+      - name: Send high-priority Cell Press omission alert
+        id: cell_press_priority_alert
+        continue-on-error: true
+        if: >-
+          always() &&
+          (steps.cell_press_source.outcome == 'failure' ||
+           steps.cell_press_source.outputs.missing_count != '0')
+        env:
+          DINGTALK_WEBHOOK: ${{ secrets.DINGTALK_WEBHOOK || secrets.DINGTALK_WEBHOOK_URL }}
+          DINGTALK_ACCESS_TOKEN: ${{ secrets.DINGTALK_ACCESS_TOKEN || secrets.DINGTALK_TOKEN }}
+          DINGTALK_SECRET: ${{ secrets.DINGTALK_SECRET }}
+          CELL_PRESS_INITIAL_MISSING: ${{ steps.cell_press_source.outputs.initial_missing_count }}
+          CELL_PRESS_REMAINING: ${{ steps.cell_press_repair.outputs.missing_count }}
+          CELL_PRESS_JOURNALS: ${{ steps.cell_press_source.outputs.missing_journals }}
+          CELL_PRESS_SAMPLE: ${{ steps.cell_press_repair.outputs.missing_sample || steps.cell_press_source.outputs.missing_sample }}
+          CELL_PRESS_ERROR: ${{ steps.cell_press_repair.outputs.error || steps.cell_press_source.outputs.error }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          echo "::warning title=HIGH PRIORITY Cell Press omission::initial=${CELL_PRESS_INITIAL_MISSING:-unknown}; remaining=${CELL_PRESS_REMAINING:-unknown}; journals=${CELL_PRESS_JOURNALS:-unknown}; sample=${CELL_PRESS_SAMPLE:-none}"
+          python scripts/send_dingtalk_alert.py \
+            --title "HIGH PRIORITY - Cell Press journal omission alert" \
+            --message "repository=${GITHUB_REPOSITORY}; initially_missing=${CELL_PRESS_INITIAL_MISSING:-unknown}; remaining_after_repair=${CELL_PRESS_REMAINING:-unknown}; journals=${CELL_PRESS_JOURNALS:-unknown}; sample=${CELL_PRESS_SAMPLE:-none}; error=${CELL_PRESS_ERROR:-none}; run=${RUN_URL}"
+
       - name: Check all RSS endpoints and fallback channels
         id: feed_health
         continue-on-error: true
@@ -291,6 +346,8 @@ jobs:
            steps.rsc_source.outcome == 'failure' ||
            steps.rsc_source.outputs.missing_count != '0' ||
            steps.rsc_source.outputs.initial_invalid_count != '0' ||
+           steps.cell_press_source.outcome == 'failure' ||
+           steps.cell_press_source.outputs.missing_count != '0' ||
            steps.crossref_source.outcome == 'failure' ||
            steps.crossref_source.outputs.missing_count != '0')
         env:
@@ -346,6 +403,8 @@ jobs:
            steps.rsc_repair.outcome == 'failure' ||
            steps.rsc_repair.outputs.missing_count != '0' ||
            steps.rsc_repair.outputs.invalid_count != '0' ||
+           steps.cell_press_repair.outcome == 'failure' ||
+           steps.cell_press_repair.outputs.missing_count != '0' ||
            steps.crossref_repair.outcome == 'failure' ||
            steps.crossref_repair.outputs.missing_count != '0' ||
            steps.feed_recheck.outcome == 'failure' ||
@@ -361,6 +420,8 @@ jobs:
           NATURE_ERROR: ${{ steps.nature_repair.outputs.error || steps.nature_source.outputs.error }}
           RSC_MISSING_DOIS: ${{ steps.rsc_repair.outputs.missing_sample || steps.rsc_source.outputs.missing_sample }}
           RSC_ERROR: ${{ steps.rsc_repair.outputs.error || steps.rsc_source.outputs.error }}
+          CELL_PRESS_MISSING_DOIS: ${{ steps.cell_press_repair.outputs.missing_sample || steps.cell_press_source.outputs.missing_sample }}
+          CELL_PRESS_ERROR: ${{ steps.cell_press_repair.outputs.error || steps.cell_press_source.outputs.error }}
           CROSSREF_MISSING_DOIS: ${{ steps.crossref_repair.outputs.missing_sample || steps.crossref_source.outputs.missing_sample }}
           CROSSREF_ERROR: ${{ steps.crossref_repair.outputs.error || steps.crossref_source.outputs.error }}
           UNHEALTHY_FEEDS: ${{ steps.feed_recheck.outputs.unhealthy_feeds || steps.feed_health.outputs.unhealthy_feeds }}
@@ -369,7 +430,7 @@ jobs:
         run: >-
           python scripts/send_dingtalk_alert.py
           --title "Literature RSS daily gap alert"
-          --message "repository=${GITHUB_REPOSITORY}; daily_gaps=${DETECTED_DATES:-none}; still_missing_dates=${FAILED_DATES:-none}; nature_journal_missing=${NATURE_MISSING_DOIS:-none}; nature_error=${NATURE_ERROR:-none}; rsc_missing=${RSC_MISSING_DOIS:-none}; rsc_error=${RSC_ERROR:-none}; fallback_journal_missing=${CROSSREF_MISSING_DOIS:-none}; fallback_error=${CROSSREF_ERROR:-none}; unhealthy_feeds=${UNHEALTHY_FEEDS:-none}; active_fallbacks=${FALLBACK_FEEDS:-none}; run=${RUN_URL}"
+          --message "repository=${GITHUB_REPOSITORY}; daily_gaps=${DETECTED_DATES:-none}; still_missing_dates=${FAILED_DATES:-none}; nature_journal_missing=${NATURE_MISSING_DOIS:-none}; nature_error=${NATURE_ERROR:-none}; rsc_missing=${RSC_MISSING_DOIS:-none}; rsc_error=${RSC_ERROR:-none}; cell_press_missing=${CELL_PRESS_MISSING_DOIS:-none}; cell_press_error=${CELL_PRESS_ERROR:-none}; fallback_journal_missing=${CROSSREF_MISSING_DOIS:-none}; fallback_error=${CROSSREF_ERROR:-none}; unhealthy_feeds=${UNHEALTHY_FEEDS:-none}; active_fallbacks=${FALLBACK_FEEDS:-none}; run=${RUN_URL}"
 
       - name: Report DingTalk delivery failure
         if: >-
@@ -377,9 +438,10 @@ jobs:
           (steps.dingtalk_test.outcome == 'failure' ||
            steps.nature_priority_alert.outcome == 'failure' ||
            steps.rsc_priority_alert.outcome == 'failure' ||
+           steps.cell_press_priority_alert.outcome == 'failure' ||
            steps.dingtalk_alert.outcome == 'failure')
         run: >-
-          echo "::warning title=DingTalk alert delivery failed::test=${{ steps.dingtalk_test.outcome }}, nature_priority=${{ steps.nature_priority_alert.outcome }}, rsc_priority=${{ steps.rsc_priority_alert.outcome }}, general=${{ steps.dingtalk_alert.outcome }}. Data checks and repairs are not failed solely because the notification channel is unavailable."
+          echo "::warning title=DingTalk alert delivery failed::test=${{ steps.dingtalk_test.outcome }}, nature_priority=${{ steps.nature_priority_alert.outcome }}, rsc_priority=${{ steps.rsc_priority_alert.outcome }}, cell_press_priority=${{ steps.cell_press_priority_alert.outcome }}, general=${{ steps.dingtalk_alert.outcome }}. Data checks and repairs are not failed solely because the notification channel is unavailable."
 
       - name: Fail when gaps or source omissions remain after the single attempt
         if: >-
@@ -390,6 +452,8 @@ jobs:
            steps.rsc_repair.outcome == 'failure' ||
            steps.rsc_repair.outputs.missing_count != '0' ||
            steps.rsc_repair.outputs.invalid_count != '0' ||
+           steps.cell_press_repair.outcome == 'failure' ||
+           steps.cell_press_repair.outputs.missing_count != '0' ||
            steps.crossref_repair.outcome == 'failure' ||
            steps.crossref_repair.outputs.missing_count != '0' ||
            steps.feed_recheck.outcome == 'failure' ||
@@ -399,13 +463,15 @@ jobs:
           FAILED_DATES: ${{ steps.backfill.outputs.failed_dates }}
           NATURE_MISSING_DOIS: ${{ steps.nature_repair.outputs.missing_dois }}
           RSC_MISSING_DOIS: ${{ steps.rsc_repair.outputs.missing_sample }}
+          CELL_PRESS_MISSING_DOIS: ${{ steps.cell_press_repair.outputs.missing_sample }}
           CROSSREF_MISSING_DOIS: ${{ steps.crossref_repair.outputs.missing_sample }}
           UNHEALTHY_FEEDS: ${{ steps.feed_recheck.outputs.unhealthy_feeds }}
         run: |
           echo "Daily outputs still missing or invalid: $FAILED_DATES"
           echo "Direct Nature journal records still missing: $NATURE_MISSING_DOIS"
           echo "Priority RSC journal records still missing: $RSC_MISSING_DOIS"
+          echo "Priority Cell Press journal records still missing: $CELL_PRESS_MISSING_DOIS"
           echo "Fallback-journal records still missing: $CROSSREF_MISSING_DOIS"
           echo "RSS endpoints/fallbacks still unhealthy: $UNHEALTHY_FEEDS"
-          echo "::error title=RSS feed health check failed::Unhealthy feeds: ${UNHEALTHY_FEEDS:-unknown}; missing dates: ${FAILED_DATES:-none}; Nature DOI gaps: ${NATURE_MISSING_DOIS:-none}; RSC DOI gaps: ${RSC_MISSING_DOIS:-none}; fallback DOI gaps: ${CROSSREF_MISSING_DOIS:-none}"
+          echo "::error title=RSS feed health check failed::Unhealthy feeds: ${UNHEALTHY_FEEDS:-unknown}; missing dates: ${FAILED_DATES:-none}; Nature DOI gaps: ${NATURE_MISSING_DOIS:-none}; RSC DOI gaps: ${RSC_MISSING_DOIS:-none}; Cell Press DOI gaps: ${CELL_PRESS_MISSING_DOIS:-none}; fallback DOI gaps: ${CROSSREF_MISSING_DOIS:-none}"
           exit 1

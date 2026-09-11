@@ -9,6 +9,7 @@ from unittest import mock
 import spider0301
 from scripts.check_daily_gaps import expected_dates, validate_daily_file
 from scripts.check_crossref_fallback_sources import (
+    CELL_PRESS_ISSNS,
     crossref_date,
     find_missing,
     is_rsc_front_matter,
@@ -112,6 +113,30 @@ class BackfillDateTests(unittest.TestCase):
         self.assertIsNotNone(record)
         self.assertEqual(record["source"], "Energy & Environmental Science")
         self.assertEqual(record["doi"], "10.1039/d6ee01234a")
+
+    def test_cell_press_fallback_uses_full_created_date(self):
+        message = {
+            "DOI": "10.1016/j.joule.2026.102680",
+            "title": ["Stress-coupled lithium transport"],
+            "container-title": ["Joule"],
+            "published-print": {"date-parts": [[2026, 9]]},
+            "created": {"date-parts": [[2026, 9, 10]]},
+            "URL": "https://doi.org/10.1016/j.joule.2026.102680",
+        }
+        meta = spider0301.CROSSREF_FALLBACK_FEEDS["https://www.cell.com/joule/inpress.rss"]
+        with mock.patch.object(spider0301, "TARGET_DATES", {date(2026, 9, 9), date(2026, 9, 10)}):
+            record = spider0301._crossref_work_to_record(message, meta)
+        self.assertIsNotNone(record)
+        self.assertEqual(record["pub_date"].date(), date(2026, 9, 10))
+
+    def test_all_cell_press_fallbacks_use_created_date(self):
+        mapped = {
+            meta["issn"]: meta
+            for meta in spider0301.CROSSREF_FALLBACK_FEEDS.values()
+            if meta["issn"] in CELL_PRESS_ISSNS
+        }
+        self.assertEqual(set(mapped), CELL_PRESS_ISSNS)
+        self.assertTrue(all(meta.get("date_source") == "created" for meta in mapped.values()))
 
 
 class NatureSustainabilityCoverageTests(unittest.TestCase):

@@ -177,24 +177,30 @@ CROSSREF_FALLBACK_FEEDS = {
         "journal": "Chem",
         "doi_prefix": "10.1016/",
         "source_suffix": "",
+        # Cell Press exposes only a month-level publication date in Crossref.
+        # Use the full Crossref registration date when cell.com blocks CI RSS.
+        "date_source": "created",
     },
     "https://www.cell.com/joule/inpress.rss": {
         "issn": "2542-4351",
         "journal": "Joule",
         "doi_prefix": "10.1016/",
         "source_suffix": "",
+        "date_source": "created",
     },
     "https://www.cell.com/oneear/inpress.rss": {
         "issn": "2590-3322",
         "journal": "One Earth",
         "doi_prefix": "10.1016/",
         "source_suffix": "",
+        "date_source": "created",
     },
     "https://www.cell.com/matter/inpress.rss": {
         "issn": "2590-2385",
         "journal": "Matter",
         "doi_prefix": "10.1016/",
         "source_suffix": "",
+        "date_source": "created",
     },
     "https://ieeexplore.ieee.org/rss/TOC9424.XML": {
         "issn": "1941-0050",

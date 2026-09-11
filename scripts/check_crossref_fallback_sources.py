@@ -64,6 +64,11 @@ SOURCES = (
     ("0036-8075", "Science", "10.1126/"),
 )
 RSC_ISSNS = {"0306-0012", "1754-5692"}
+CELL_PRESS_ISSNS = {"2451-9294", "2542-4351", "2590-3322", "2590-2385"}
+# These publishers expose incomplete (often year- or month-only) publication
+# dates in Crossref. Their full registration date is the reliable discovery
+# clock used by the live spider and this independent coverage audit.
+CREATED_DATE_ISSNS = RSC_ISSNS | CELL_PRESS_ISSNS
 DEFAULT_FIELDS = [
     "title",
     "link",
@@ -88,7 +93,7 @@ DROP_TITLE_KEYWORDS = {
     "cover",
 }
 HEADERS = {
-    "User-Agent": "literature-rss-spider/1.0 (mailto:qiaochuzhang@outlook.com)",
+    "User-Agent": "literature-rss-spider/1.0",
     "Accept": "application/json",
 }
 
@@ -216,7 +221,7 @@ def fetch_source(
     end_date: date,
 ) -> dict[str, dict[str, str]]:
     url = f"https://api.crossref.org/journals/{issn}/works"
-    use_created_date = issn in RSC_ISSNS
+    use_created_date = issn in CREATED_DATE_ISSNS
     filter_name = "created-date" if use_created_date else "pub-date"
     sort_name = "created" if use_created_date else "published"
     params = {
@@ -299,6 +304,7 @@ def main() -> int:
     parser.add_argument("--fail-on-missing", action="store_true")
     source_group = parser.add_mutually_exclusive_group()
     source_group.add_argument("--only-rsc", action="store_true")
+    source_group.add_argument("--only-cell-press", action="store_true")
     source_group.add_argument("--exclude-rsc", action="store_true")
     args = parser.parse_args()
     if args.days < 1:
@@ -310,6 +316,8 @@ def main() -> int:
         sources = SOURCES
         if args.only_rsc:
             sources = tuple(source for source in SOURCES if source[0] in RSC_ISSNS)
+        elif args.only_cell_press:
+            sources = tuple(source for source in SOURCES if source[0] in CELL_PRESS_ISSNS)
         elif args.exclude_rsc:
             sources = tuple(source for source in SOURCES if source[0] not in RSC_ISSNS)
         expected = fetch_expected(days[0], days[-1], sources)
