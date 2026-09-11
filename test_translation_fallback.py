@@ -30,9 +30,7 @@ class TranslationFallbackTests(unittest.TestCase):
     @patch.object(pipeline, "google_translate_texts", side_effect=RuntimeError("429 Too Many Requests"))
     def test_google_failure_uses_llm_fallback(self, google_translate, build_client, llm_translate):
         original = pipeline.TRANSLATE_FALLBACK_PROVIDER
-        original_disabled = pipeline._GOOGLE_TRANSLATE_DISABLED
         pipeline.TRANSLATE_FALLBACK_PROVIDER = "llm"
-        pipeline._GOOGLE_TRANSLATE_DISABLED = False
         try:
             result = pipeline.translate_texts_with_provider(
                 None,
@@ -42,7 +40,6 @@ class TranslationFallbackTests(unittest.TestCase):
             )
         finally:
             pipeline.TRANSLATE_FALLBACK_PROVIDER = original
-            pipeline._GOOGLE_TRANSLATE_DISABLED = original_disabled
 
         self.assertEqual(result, ["固态电池电解质"])
         google_translate.assert_called_once()
@@ -53,36 +50,51 @@ class TranslationFallbackTests(unittest.TestCase):
             "title",
         )
 
-    @patch.object(pipeline.time, "sleep")
-    @patch("requests.get")
-    def test_google_429_stops_endpoint_retries_immediately(self, get, sleep):
+    @patch.object(pipeline, "_request_free_translation")
+    def test_google_429_rotates_to_another_free_route(self, request_translation):
         response = Mock(status_code=429)
-        response.raise_for_status.side_effect = requests.HTTPError("429", response=response)
+        rate_limit = requests.HTTPError("429", response=response)
+        request_translation.side_effect = [rate_limit, "测试"]
+        original_routes = pipeline.FREE_TRANSLATE_ROUTES
+        original_disabled = set(pipeline._FREE_TRANSLATE_DISABLED_ROUTES)
+        original_preferred = pipeline._FREE_TRANSLATE_PREFERRED_ROUTE
+        pipeline.FREE_TRANSLATE_ROUTES = ("googleapis", "google")
+        pipeline._FREE_TRANSLATE_DISABLED_ROUTES.clear()
+        pipeline._FREE_TRANSLATE_PREFERRED_ROUTE = None
+        try:
+            result = pipeline.google_translate_texts(["test"], "title")
+            disabled_after = set(pipeline._FREE_TRANSLATE_DISABLED_ROUTES)
+            preferred_after = pipeline._FREE_TRANSLATE_PREFERRED_ROUTE
+        finally:
+            pipeline.FREE_TRANSLATE_ROUTES = original_routes
+            pipeline._FREE_TRANSLATE_DISABLED_ROUTES.clear()
+            pipeline._FREE_TRANSLATE_DISABLED_ROUTES.update(original_disabled)
+            pipeline._FREE_TRANSLATE_PREFERRED_ROUTE = original_preferred
+
+        self.assertEqual(result, ["测试"])
+        self.assertIn("googleapis", disabled_after)
+        self.assertEqual(preferred_after, "google")
+        self.assertEqual(request_translation.call_args_list[0].args[0], "googleapis")
+        self.assertEqual(request_translation.call_args_list[1].args[0], "google")
+
+    def test_mymemory_chunking_obeys_500_byte_limit(self):
+        text = "scientific translation " * 80
+        chunks = pipeline._split_utf8_chunks(text)
+
+        self.assertGreater(len(chunks), 1)
+        self.assertTrue(all(len(chunk.encode("utf-8")) <= 450 for chunk in chunks))
+        self.assertEqual("".join(chunks).replace(" ", ""), text.replace(" ", ""))
+
+    @patch("requests.get")
+    def test_clients5_nested_response_is_parsed(self, get):
+        response = Mock()
+        response.json.return_value = [["卤化锡钙钛矿光伏电池", "en"]]
         get.return_value = response
 
-        with self.assertRaises(RuntimeError):
-            pipeline.google_translate_texts(["test"], "title")
-
-        get.assert_called_once()
-        sleep.assert_not_called()
-
-    @patch.object(pipeline, "translate_texts", return_value=["甲"])
-    @patch.object(pipeline, "google_translate_texts", side_effect=RuntimeError("429"))
-    def test_google_is_not_retried_after_first_failure(self, google_translate, llm_translate):
-        original = pipeline.TRANSLATE_FALLBACK_PROVIDER
-        original_disabled = pipeline._GOOGLE_TRANSLATE_DISABLED
-        pipeline.TRANSLATE_FALLBACK_PROVIDER = "llm"
-        pipeline._GOOGLE_TRANSLATE_DISABLED = False
-        try:
-            client = object()
-            pipeline.translate_texts_with_provider(client, ["a"], "title", "google")
-            pipeline.translate_texts_with_provider(client, ["b"], "title", "google")
-        finally:
-            pipeline.TRANSLATE_FALLBACK_PROVIDER = original
-            pipeline._GOOGLE_TRANSLATE_DISABLED = original_disabled
-
-        google_translate.assert_called_once()
-        self.assertEqual(llm_translate.call_count, 2)
+        self.assertEqual(
+            pipeline._request_free_translation("clients5", "tin perovskite photovoltaics"),
+            "卤化锡钙钛矿光伏电池",
+        )
 
 
 if __name__ == "__main__":

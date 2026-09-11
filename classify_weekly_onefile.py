@@ -100,8 +100,19 @@ TRANSLATE_FALLBACK_PROVIDER = os.getenv(
     "TRANSLATE_FALLBACK_PROVIDER",
     os.getenv("GEMINI_TRANSLATE_FALLBACK_PROVIDER", "llm"),
 ).strip().lower()
-_GOOGLE_TRANSLATE_DISABLED = False
 GOOGLE_TRANSLATE_MAX_RETRIES = int(os.getenv("GOOGLE_TRANSLATE_MAX_RETRIES", "4"))
+FREE_TRANSLATE_ROUTES = tuple(
+    route.strip().lower()
+    for route in os.getenv(
+        "FREE_TRANSLATE_ROUTES",
+        "googleapis,google,clients5,mymemory",
+    ).split(",")
+    if route.strip()
+)
+MYMEMORY_DAILY_CHAR_BUDGET = int(os.getenv("MYMEMORY_DAILY_CHAR_BUDGET", "4500"))
+_FREE_TRANSLATE_DISABLED_ROUTES: set[str] = set()
+_FREE_TRANSLATE_PREFERRED_ROUTE: Optional[str] = None
+_MYMEMORY_CHARS_USED = 0
 
 CLASSIFY_BATCH_SIZE = int(os.getenv("CLASSIFY_BATCH_SIZE", "12"))
 KEYWORD_STRONG_HITS = int(os.getenv("KEYWORD_STRONG_HITS", "2"))
@@ -590,60 +601,161 @@ def _cosine_sim_matrix(a, b):
 
 
 # ============================
-# Gemini translation
+# Free translation routes, followed by the configured LLM fallback
 # ============================
+def _parse_google_single_response(data: Any) -> str:
+    pieces = data[0] if isinstance(data, list) and data and isinstance(data[0], list) else []
+    return "".join(str(piece[0]) for piece in pieces if isinstance(piece, list) and piece).strip()
+
+
+def _split_utf8_chunks(text: str, max_bytes: int = 450) -> List[str]:
+    """Split a public abstract without breaking UTF-8 or exceeding MyMemory's limit."""
+    chunks: List[str] = []
+    remaining = text.strip()
+    while remaining:
+        encoded = remaining.encode("utf-8")
+        if len(encoded) <= max_bytes:
+            chunks.append(remaining)
+            break
+
+        prefix = encoded[:max_bytes].decode("utf-8", errors="ignore")
+        split_at = max(prefix.rfind(mark) for mark in (". ", "; ", ", ", " "))
+        if split_at < max(40, len(prefix) // 3):
+            split_at = len(prefix)
+        else:
+            split_at += 1
+        chunk = remaining[:split_at].strip()
+        if not chunk:
+            chunk = prefix
+            split_at = len(prefix)
+        chunks.append(chunk)
+        remaining = remaining[split_at:].strip()
+    return chunks
+
+
+def _request_free_translation(route: str, text: str) -> str:
+    import requests
+
+    if route in {"googleapis", "google"}:
+        host = "translate.googleapis.com" if route == "googleapis" else "translate.google.com"
+        response = requests.get(
+            f"https://{host}/translate_a/single",
+            params={"client": "gtx", "sl": "auto", "tl": "zh-CN", "dt": "t", "q": text},
+            timeout=45,
+        )
+        response.raise_for_status()
+        translated = _parse_google_single_response(response.json())
+    elif route == "clients5":
+        response = requests.get(
+            "https://clients5.google.com/translate_a/t",
+            params={"client": "dict-chrome-ex", "sl": "auto", "tl": "zh-CN", "q": text},
+            timeout=45,
+        )
+        response.raise_for_status()
+        data = response.json()
+        first = data[0] if isinstance(data, list) and data else ""
+        if isinstance(first, list):
+            first = first[0] if first else ""
+        translated = str(first).strip()
+    elif route == "mymemory":
+        response = requests.get(
+            "https://api.mymemory.translated.net/get",
+            params={"q": text, "langpair": "en|zh-CN", "mt": "1"},
+            timeout=45,
+        )
+        response.raise_for_status()
+        data = response.json()
+        if data.get("responseStatus") != 200 or data.get("quotaFinished"):
+            raise RuntimeError(f"MyMemory rejected request: {data.get('responseDetails') or data.get('responseStatus')}")
+        translated = str(data.get("responseData", {}).get("translatedText", "")).strip()
+    else:
+        raise RuntimeError(f"Unknown free translation route: {route}")
+
+    if not translated:
+        raise RuntimeError(f"Free translation route {route} returned an empty response")
+    return translated
+
+
+def _translate_one_with_free_routes(text: str, label: str, item: int, total: int) -> str:
+    global _FREE_TRANSLATE_PREFERRED_ROUTE, _MYMEMORY_CHARS_USED
+
+    routes = list(FREE_TRANSLATE_ROUTES)
+    if _FREE_TRANSLATE_PREFERRED_ROUTE in routes:
+        routes.remove(_FREE_TRANSLATE_PREFERRED_ROUTE)
+        routes.insert(0, _FREE_TRANSLATE_PREFERRED_ROUTE)
+
+    errors: List[str] = []
+    for route in routes:
+        if route in _FREE_TRANSLATE_DISABLED_ROUTES:
+            continue
+        try:
+            if route == "mymemory":
+                if _MYMEMORY_CHARS_USED + len(text) > MYMEMORY_DAILY_CHAR_BUDGET:
+                    raise RuntimeError("local MyMemory daily safety budget exhausted")
+                pieces = []
+                for chunk in _split_utf8_chunks(text):
+                    pieces.append(_request_free_translation(route, chunk))
+                translated = "".join(pieces)
+                _MYMEMORY_CHARS_USED += len(text)
+            else:
+                translated = _request_free_translation(route, text)
+            if _FREE_TRANSLATE_PREFERRED_ROUTE != route:
+                print(f"[free-translate:{label}] using route={route}", flush=True)
+            _FREE_TRANSLATE_PREFERRED_ROUTE = route
+            return translated
+        except Exception as exc:
+            errors.append(f"{route}: {exc}")
+            status_code = getattr(getattr(exc, "response", None), "status_code", None)
+            if status_code in {403, 429} or route == "mymemory":
+                _FREE_TRANSLATE_DISABLED_ROUTES.add(route)
+            print(
+                f"[free-translate:{label}] route={route} failed on item {item}/{total}: {exc}; trying next route",
+                flush=True,
+            )
+
+    raise RuntimeError("All free translation routes failed: " + " | ".join(errors))
+
+
 def google_translate_texts(texts, label: str) -> List[str]:
+    """Translate with several free routes; the historical name is kept for callers."""
     if not texts:
         return []
 
-    import requests
-
-    out = []
+    out: List[str] = []
     total = len(texts)
-    for i, text in enumerate(texts, start=1):
-        text = _normalize_cell(text)
+    for item, raw_text in enumerate(texts, start=1):
+        text = _normalize_cell(raw_text)
         if not text:
             out.append("")
             continue
 
-        last_err = None
+        last_error: Optional[Exception] = None
         for attempt in range(1, GOOGLE_TRANSLATE_MAX_RETRIES + 1):
             try:
-                resp = requests.get(
-                    "https://translate.googleapis.com/translate_a/single",
-                    params={
-                        "client": "gtx",
-                        "sl": "auto",
-                        "tl": "zh-CN",
-                        "dt": "t",
-                        "q": text,
-                    },
-                    timeout=45,
-                )
-                resp.raise_for_status()
-                data = resp.json()
-                pieces = data[0] if isinstance(data, list) and data and isinstance(data[0], list) else []
-                translated = "".join(str(p[0]) for p in pieces if isinstance(p, list) and p)
-                out.append(translated.strip())
+                out.append(_translate_one_with_free_routes(text, label, item, total))
                 break
-            except Exception as e:
-                last_err = e
-                status_code = getattr(getattr(e, "response", None), "status_code", None)
-                if status_code == 429:
-                    print(
-                        f"[google-translate:{label}] rate limited on item {i}/{total}; "
-                        "stop retrying this endpoint",
-                        flush=True,
-                    )
-                    raise RuntimeError(
-                        f"Google Translate rate limited for {label} item {i}/{total}: {e}"
-                    ) from e
-                wait = min(30, 2 * attempt) + random.uniform(0, 1.5)
-                print(f"[google-translate:{label}] item {i}/{total} attempt {attempt} failed: {e} (wait {wait:.1f}s)", flush=True)
+            except Exception as exc:
+                last_error = exc
+                available_routes = [
+                    route
+                    for route in FREE_TRANSLATE_ROUTES
+                    if route not in _FREE_TRANSLATE_DISABLED_ROUTES
+                ]
+                if not available_routes:
+                    break
+                if attempt == GOOGLE_TRANSLATE_MAX_RETRIES:
+                    break
+                wait = min(12, 2 * attempt) + random.uniform(0, 1.5)
+                print(
+                    f"[free-translate:{label}] item {item}/{total} attempt {attempt} exhausted routes: "
+                    f"{exc} (wait {wait:.1f}s)",
+                    flush=True,
+                )
                 time.sleep(wait)
         else:
-            raise RuntimeError(f"Google Translate failed for {label} item {i}/{total}: {last_err}")
-
+            last_error = last_error or RuntimeError("unknown free translation error")
+        if len(out) != item:
+            raise RuntimeError(f"Free translation failed for {label} item {item}/{total}: {last_error}")
     return out
 
 
@@ -739,18 +851,15 @@ def translate_texts(client, texts, label: str) -> List[str]:
 
 
 def translate_texts_with_provider(client, texts, label: str, provider: str) -> List[str]:
-    global _GOOGLE_TRANSLATE_DISABLED
     provider = (provider or "google").strip().lower()
     if provider in {"none", "skip"}:
         return ["" for _ in texts]
     if provider in {"google", "google_translate", "free"}:
         google_error = None
-        if not _GOOGLE_TRANSLATE_DISABLED:
-            try:
-                return google_translate_texts(texts, label)
-            except Exception as exc:
-                google_error = exc
-                _GOOGLE_TRANSLATE_DISABLED = True
+        try:
+            return google_translate_texts(texts, label)
+        except Exception as exc:
+            google_error = exc
         fallback = TRANSLATE_FALLBACK_PROVIDER
         if fallback not in {"llm", "gemini", "model", "zai"}:
             if google_error is not None:
@@ -758,7 +867,7 @@ def translate_texts_with_provider(client, texts, label: str, provider: str) -> L
             raise RuntimeError("Google Translate was disabled after an earlier failure.")
         if google_error is not None:
             print(
-                f"[translate:{label}] Google Translate unavailable; falling back to {fallback}: {google_error}",
+                f"[translate:{label}] all free translation routes unavailable; falling back to {fallback}: {google_error}",
                 flush=True,
             )
         fallback_client = client or _build_gemini_client()

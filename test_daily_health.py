@@ -20,7 +20,7 @@ from scripts.check_nature_sustainability import (
     missing_items,
     repair_daily_file,
 )
-from scripts.send_dingtalk_alert import resolve_webhook, signed_webhook_url
+from scripts.send_dingtalk_alert import build_alert_content, resolve_webhook, signed_webhook_url
 
 
 class DailyGapCheckTests(unittest.TestCase):
@@ -229,6 +229,12 @@ class DingTalkAlertTests(unittest.TestCase):
         self.assertIn("timestamp=1000", url)
         self.assertIn("&sign=", url)
         self.assertNotIn("secret-value", url)
+
+    def test_dingtalk_keyword_is_always_present(self):
+        content = build_alert_content("Nature omission", "remaining=3")
+
+        self.assertIn("文献遗漏警报", content)
+        self.assertEqual(content.count("文献遗漏警报"), 1)
 
     def test_access_token_can_build_webhook(self):
         self.assertEqual(

@@ -145,7 +145,7 @@ jobs:
           python -m pip install -U pip
           pip install -r requirements.txt
 
-      - name: Translate with Google and classify with GLM-5.2
+      - name: Translate with free routes and classify with GLM-5.2
         if: steps.daily_input.outputs.run == 'true'
         env:
           ZAI_API_KEY: ${{ secrets.ZAI_API_KEY }}
@@ -159,6 +159,9 @@ jobs:
           ZAI_CLASSIFY_MAX_RETRIES: "3"
           ZAI_RETRY_BASE_SECONDS: "4"
           ZAI_RETRY_MAX_SECONDS: "30"
+          FREE_TRANSLATE_ROUTES: googleapis,google,clients5,mymemory
+          GOOGLE_TRANSLATE_MAX_RETRIES: "2"
+          MYMEMORY_DAILY_CHAR_BUDGET: "4500"
           TRANSLATE_FALLBACK_PROVIDER: llm
           TRANSLATE_BATCH_SIZE_ABSTRACT: "6"
         shell: bash
@@ -171,7 +174,7 @@ jobs:
           python classify_daily_zai.py "${args[@]}"
 
       - name: Commit daily classification
-        if: steps.daily_input.outputs.run == 'true'
+        if: always() && steps.daily_input.outputs.run == 'true'
         env:
           GITHUB_TOKEN: ${{ github.token }}
         run: |
@@ -180,14 +183,19 @@ jobs:
           git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git remote set-url origin "https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
 
-          git add "${{ steps.daily_input.outputs.output }}"
-          git add output/checkpoints/*zai_classified* || true
+          git add -- "${{ steps.daily_input.outputs.output }}" 2>/dev/null || true
+          git add -- output/checkpoints/*zai_classified* 2>/dev/null || true
           if git diff --cached --quiet; then
-            echo "No daily classification changes to commit"
+            echo "No daily classification or checkpoint changes to commit"
             exit 0
           fi
 
-          git commit -m "chore: daily Z.AI classified xlsx (UTC $(date -u +'%Y-%m-%d'))"
+          if [ -f "${{ steps.daily_input.outputs.output }}" ]; then
+            message="chore: daily Z.AI classified xlsx"
+          else
+            message="chore: preserve partial daily translation checkpoint"
+          fi
+          git commit -m "$message (UTC $(date -u +'%Y-%m-%d'))"
           git fetch origin main
           git pull --rebase origin main
           git push origin HEAD:main

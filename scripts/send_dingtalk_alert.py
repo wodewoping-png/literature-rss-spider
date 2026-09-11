@@ -12,6 +12,16 @@ import os
 import time
 from urllib import error, parse, request
 
+DEFAULT_REQUIRED_KEYWORD = "文献遗漏警报"
+
+
+def build_alert_content(title: str, message: str, required_keyword: str = DEFAULT_REQUIRED_KEYWORD) -> str:
+    content = f"{title}\n{message}".strip()
+    keyword = required_keyword.strip()
+    if keyword and keyword not in content:
+        content = f"{keyword}\n{content}"
+    return content
+
 
 def signed_webhook_url(webhook: str, secret: str) -> str:
     if not secret:
@@ -67,7 +77,11 @@ def main() -> int:
     parser.add_argument("--dry-run", action="store_true")
     args = parser.parse_args()
 
-    content = f"{args.title}\n{args.message}"
+    content = build_alert_content(
+        args.title,
+        args.message,
+        os.getenv("DINGTALK_REQUIRED_KEYWORD", DEFAULT_REQUIRED_KEYWORD),
+    )
     if args.dry_run:
         print(content)
         return 0
