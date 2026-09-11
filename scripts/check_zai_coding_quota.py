@@ -268,7 +268,9 @@ def main() -> int:
         f"reset={outputs['next_reset_time'] or 'unknown'} reason={decision.reason}",
         flush=True,
     )
-    return 0 if decision.ready else 1
+    # A depleted or partly used window is an expected monitor state, not a
+    # workflow failure.  The ``ready`` output controls whether retry is sent.
+    return 0
 
 
 if __name__ == "__main__":
