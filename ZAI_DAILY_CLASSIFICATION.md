@@ -7,10 +7,10 @@
 1. 读取最新的 `output/news_with_abstract_YYYY-MM-DD.csv`。
 2. 沿用 `classification.txt`、关键词排除/包含规则和 sentence-transformers 语义候选。
 3. 标题、摘要优先依次使用 `translate.googleapis.com`、`translate.google.com`、`clients5.google.com` 三条免费 Google 路由；它们均不可用时，小量使用 MyMemory，最后才调用 GLM。
-4. 最终分类由 `glm-5.2` 完成，输出 `output/daily_classified/news_with_abstract_YYYY-MM-DD_zai_classified.xlsx`。
+4. 最终分类由 `glm-5.3-flash` 完成，输出 `output/daily_classified/news_with_abstract_YYYY-MM-DD_zai_classified.xlsx`。
 5. 每周五只读取最近 7 天已经分类好的每日 XLSX，去重后汇总到 `output/weekly_classified/weekly_daily_classified_YYYY-MM-DD.xlsx`，不会再次调用翻译或大模型。
 
-原 `.github/workflows/csv_to_xlsx.yaml` 已移除定时触发并改用 Z.AI GLM-5.2，保留 `workflow_dispatch` 作为历史周 CSV 的手动补跑流程，仍输出 XLSX 和 Word。
+原 `.github/workflows/csv_to_xlsx.yaml` 已移除定时触发并改用 Z.AI GLM-5.3-Flash，保留 `workflow_dispatch` 作为历史周 CSV 的手动补跑流程，仍输出 XLSX 和 Word。
 
 ## GitHub Secrets
 
@@ -33,9 +33,11 @@ python classify_daily_zai.py -i output/news_with_abstract_2026-09-02.csv -c clas
 python aggregate_daily_classified.py -c classification.txt --days 7
 ```
 
-GitHub Actions 的手动参数 `api-test` 会使用 `ZAI_API_KEY` 分别向三个接口发送一次最小 GLM-5.2 请求，只验证鉴权和模型调用，不生成日报文件。
+GitHub Actions 的手动参数 `api-test` 会使用 `ZAI_API_KEY` 分别向三个接口发送一次最小 GLM-5.3-Flash 请求，只验证鉴权和模型调用，不生成日报文件。
 
-任一免费翻译接口返回 `429 Too Many Requests` 时，程序会停用该线路并切换下一条免费线路。MyMemory 匿名调用受官方额度限制，流程默认最多使用 4500 字符/天，只作为小量兜底。所有免费线路都不可用时才切换到 GLM-5.2。翻译检查点按批写入；即使分类步骤失败，workflow 也会提交已完成的检查点，避免下次从头消耗额度。
+任一免费翻译接口返回 `429 Too Many Requests` 时，程序会停用该线路并切换下一条免费线路。MyMemory 匿名调用受官方额度限制，流程默认最多使用 4500 字符/天，只作为小量兜底。所有免费线路都不可用时才切换到 GLM-5.3-Flash。翻译检查点按批写入；即使分类步骤失败，workflow 也会提交已完成的检查点，避免下次从头消耗额度。
+
+GLM-5.3-Flash 不支持关闭 thinking。客户端会对该模型自动发送 `thinking.type=enabled`、`thinking.clear_thinking=false` 和 `reasoning_effort=max`；旧模型仍保留原有的关闭 thinking 行为。
 
 ## GLM Coding Plan 额度监控与自动补跑
 

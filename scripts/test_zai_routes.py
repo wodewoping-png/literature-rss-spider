@@ -41,7 +41,9 @@ def main() -> int:
             endpoints=[endpoint],
             model=os.getenv("ZAI_MODEL", DEFAULT_MODEL),
             timeout=int(os.getenv("ZAI_TIMEOUT", "60")),
-            max_tokens=64,
+            # GLM-5.3-Flash always thinks before answering, so leave enough room
+            # for both reasoning and the tiny JSON response.
+            max_tokens=512,
             temperature=0,
         )
         try:

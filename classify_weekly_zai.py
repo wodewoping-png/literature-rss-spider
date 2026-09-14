@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Run the established weekly XLSX/DOCX pipeline with Z.AI GLM-5.2."""
+"""Run the established weekly XLSX/DOCX pipeline with Z.AI GLM-5.3-Flash."""
 
 import classify_weekly_onefile as pipeline
 from classify_daily_zai import install_zai_backend

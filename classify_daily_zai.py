@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Classify one daily literature CSV with GLM-5.2 and Google Translate.
+"""Classify one daily literature CSV with GLM-5.3-Flash and free translation routes.
 
 This is intentionally separate from the retained Gemini weekly program.  It
 reuses the mature rule, embedding, checkpoint, and Excel formatting helpers,

@@ -1,9 +1,8 @@
 # -*- coding: utf-8 -*-
 """Small resilient client for Z.AI GLM text generation.
 
-The primary route uses Z.AI's general OpenAI-compatible API, which the
-official documentation recommends for custom applications. If that route
-fails, requests try BigModel's OpenAI-compatible API and then its
+The primary route uses Z.AI's Coding Plan OpenAI-compatible API. If that
+route fails, requests try BigModel's OpenAI-compatible API and then its
 Anthropic-compatible API.
 """
 
@@ -17,7 +16,7 @@ from typing import Any, Dict, Iterable, List, Optional
 import requests
 
 
-DEFAULT_MODEL = "glm-5.2"
+DEFAULT_MODEL = "glm-5.3-flash"
 DEFAULT_PRIMARY_BASE_URL = "https://api.z.ai/api/coding/paas/v4"
 DEFAULT_SECONDARY_BASE_URL = "https://open.bigmodel.cn/api/paas/v4"
 DEFAULT_FALLBACK_BASE_URL = "https://open.bigmodel.cn/api/anthropic"
@@ -142,8 +141,14 @@ class ZAIChatClient:
             "messages": messages,
             "temperature": self.temperature,
             "max_tokens": self.max_tokens,
-            "thinking": {"type": "disabled"},
         }
+        if self.model.lower() == "glm-5.3-flash":
+            # GLM-5.3-Flash does not support disabled thinking. These values
+            # follow the model's official recommended API configuration.
+            payload["thinking"] = {"type": "enabled", "clear_thinking": False}
+            payload["reasoning_effort"] = "max"
+        else:
+            payload["thinking"] = {"type": "disabled"}
         if json_object:
             payload["response_format"] = {"type": "json_object"}
 

@@ -1,4 +1,4 @@
-name: Weekly CSV to XLSX+Word (Z.AI GLM-5.2, manual)
+name: Weekly CSV to XLSX+Word (Z.AI GLM-5.3-Flash, manual)
 
 on:
   # Manual catch-up workflow. Normal production uses daily_classification_zai.yaml.
@@ -79,11 +79,11 @@ jobs:
           python -m pip install -U pip
           pip install -r requirements.txt
 
-      - name: Run weekly classification with Z.AI GLM-5.2
+      - name: Run weekly classification with Z.AI GLM-5.3-Flash
         if: steps.weekly_input.outputs.run == 'true'
         env:
           ZAI_API_KEY: ${{ secrets.ZAI_API_KEY }}
-          ZAI_MODEL: glm-5.2
+          ZAI_MODEL: glm-5.3-flash
           ZAI_BASE_URL: https://api.z.ai/api/coding/paas/v4
           ZAI_PROTOCOL: openai
           BIGMODEL_BASE_URL: https://open.bigmodel.cn/api/paas/v4

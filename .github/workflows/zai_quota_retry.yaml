@@ -113,7 +113,7 @@ jobs:
         continue-on-error: true
         env:
           ZAI_API_KEY: ${{ secrets.ZAI_API_KEY }}
-          ZAI_MODEL: glm-5.2
+          ZAI_MODEL: glm-5.3-flash
           ZAI_SESSION_MAX_USED_PERCENT: "15"
           ZAI_WEEKLY_MAX_USED_PERCENT: "95"
         run: python scripts/check_zai_coding_quota.py

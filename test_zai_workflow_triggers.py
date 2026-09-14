@@ -55,6 +55,16 @@ class ZAIDailyWorkflowTriggerTests(unittest.TestCase):
         self.assertIn("A daily classification run is already active", quota_text)
         self.assertEqual(quota_text.count("gh workflow run daily_classification_zai.yaml"), 1)
 
+    def test_monthly_workflow_tracks_current_zai_workflow_names(self):
+        daily = load_workflow("daily_classification_zai.yaml")
+        weekly = load_workflow("csv_to_xlsx.yaml")
+        monthly = load_workflow("monthly_literature_stats.yaml")
+
+        self.assertEqual(
+            monthly["on"]["workflow_run"]["workflows"],
+            [weekly["name"], daily["name"]],
+        )
+
 
 if __name__ == "__main__":
     unittest.main()

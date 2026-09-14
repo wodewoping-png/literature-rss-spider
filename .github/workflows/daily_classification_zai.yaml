@@ -1,4 +1,4 @@
-name: Daily Literature Classification (Z.AI GLM-5.2)
+name: Daily Literature Classification (Z.AI GLM-5.3-Flash)
 
 on:
   workflow_dispatch:
@@ -48,10 +48,10 @@ jobs:
       - name: Install probe dependency
         run: pip install requests
 
-      - name: Test all GLM-5.2 routes
+      - name: Test all GLM-5.3-Flash routes
         env:
           ZAI_API_KEY: ${{ secrets.ZAI_API_KEY }}
-          ZAI_MODEL: glm-5.2
+          ZAI_MODEL: glm-5.3-flash
         run: python scripts/test_zai_routes.py
 
   classify-daily:
@@ -145,11 +145,11 @@ jobs:
           python -m pip install -U pip
           pip install -r requirements.txt
 
-      - name: Translate with free routes and classify with GLM-5.2
+      - name: Translate with free routes and classify with GLM-5.3-Flash
         if: steps.daily_input.outputs.run == 'true'
         env:
           ZAI_API_KEY: ${{ secrets.ZAI_API_KEY }}
-          ZAI_MODEL: glm-5.2
+          ZAI_MODEL: glm-5.3-flash
           ZAI_BASE_URL: https://api.z.ai/api/coding/paas/v4
           ZAI_PROTOCOL: openai
           BIGMODEL_BASE_URL: https://open.bigmodel.cn/api/paas/v4

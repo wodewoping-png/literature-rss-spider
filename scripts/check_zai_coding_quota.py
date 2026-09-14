@@ -198,7 +198,7 @@ def query_quota(api_key: str, timeout: int = 20) -> Tuple[Optional[QuotaDecision
 def probe_coding_endpoint(api_key: str, timeout: int = 30) -> bool:
     payload = json.dumps(
         {
-            "model": os.getenv("ZAI_MODEL", "glm-5.2"),
+            "model": os.getenv("ZAI_MODEL", "glm-5.3-flash"),
             "messages": [{"role": "user", "content": "Reply OK."}],
             "temperature": 0,
             "max_tokens": 8,

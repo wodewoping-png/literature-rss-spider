@@ -71,14 +71,33 @@ class ZAIDailyPipelineTests(unittest.TestCase):
         response.json.return_value = {"choices": [{"message": {"content": '{"ok": true}'}}]}
         post.return_value = response
         endpoint = ZAIEndpoint("primary", "https://api.z.ai/api/paas/v4", "openai", "secret")
-        client = ZAIChatClient(endpoints=[endpoint], model="glm-5.2")
+        client = ZAIChatClient(endpoints=[endpoint])
 
         result = client.generate([{"role": "user", "content": "classify"}])
 
         self.assertEqual(result, '{"ok": true}')
         self.assertEqual(post.call_args.args[0], "https://api.z.ai/api/paas/v4/chat/completions")
-        self.assertEqual(post.call_args.kwargs["json"]["model"], "glm-5.2")
+        payload = post.call_args.kwargs["json"]
+        self.assertEqual(payload["model"], "glm-5.3-flash")
+        self.assertEqual(payload["thinking"], {"type": "enabled", "clear_thinking": False})
+        self.assertEqual(payload["reasoning_effort"], "max")
         self.assertEqual(post.call_args.kwargs["headers"]["Authorization"], "Bearer secret")
+
+    @patch("zai_client.requests.post")
+    def test_legacy_model_keeps_disabled_thinking(self, post: Mock):
+        response = Mock()
+        response.raise_for_status.return_value = None
+        response.json.return_value = {"choices": [{"message": {"content": "ok"}}]}
+        post.return_value = response
+        endpoint = ZAIEndpoint("primary", "https://example.test/v4", "openai", "secret")
+
+        ZAIChatClient(endpoints=[endpoint], model="glm-5.2").generate(
+            [{"role": "user", "content": "test"}], json_object=False
+        )
+
+        payload = post.call_args.kwargs["json"]
+        self.assertEqual(payload["thinking"], {"type": "disabled"})
+        self.assertNotIn("reasoning_effort", payload)
 
     @patch("zai_client.requests.post")
     def test_falls_back_through_bigmodel_openai_to_anthropic(self, post: Mock):
