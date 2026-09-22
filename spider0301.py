@@ -95,6 +95,7 @@ BROWSER_CHANNEL = os.getenv("PLAYWRIGHT_CHANNEL", "").strip().lower()
 # ✅ ScienceDirect 特殊源：发布日期不准 -> 直接抓最新 N 篇 + pub_date 写“抓取日期的前一天”
 SD_FEED_APPLIED_ENERGY = "https://rss.sciencedirect.com/publication/science/03062619"
 SD_FEED_ENERGY_POLICY = "https://rss.sciencedirect.com/publication/science/03014215"
+PNAS_FEED_URL = "https://www.pnas.org/action/showFeed?ui=0&mi=eymic2&type=search&feed=rss&query=%2526access%253Don%2526content%253DarticlesChapters%2526publication%253Dpnas%2526sortBy%253DEarliest%2526target%253Ddefault"
 SD_SPECIAL_LIMITS = {
     SD_FEED_APPLIED_ENERGY: 30, # Applied Energy
     SD_FEED_ENERGY_POLICY: 7, # Energy Policy
@@ -153,6 +154,12 @@ CROSSREF_FALLBACK_FEEDS = {
         "doi_prefix": "10.1039/",
         "source_suffix": "",
         "date_source": "created",
+    },
+    PNAS_FEED_URL: {
+        "issn": "1091-6490",
+        "journal": "Proceedings of the National Academy of Sciences",
+        "doi_prefix": "10.1073/",
+        "source_suffix": "",
     },
     "https://onlinelibrary.wiley.com/feed/15213773/most-recent": {
         "issn": "1521-3773",
@@ -606,6 +613,14 @@ def safe_get(url: str, params=None, headers=None):
         return None
 
 
+def _non_retryable_http_status(exc: Exception) -> int | None:
+    response = getattr(exc, "response", None)
+    status = getattr(response, "status_code", None)
+    if isinstance(status, int) and 400 <= status < 500 and status not in {408, 429}:
+        return status
+    return None
+
+
 def parse_rss_feed(url: str):
     """Fetch RSS with tolerant decoding before handing it to feedparser.
 
@@ -615,6 +630,7 @@ def parse_rss_feed(url: str):
     """
     last_error = ""
     for attempt in range(1, 4):
+        terminal_status = None
         try:
             response = requests.get(url, headers=RSS_REQUEST_HEADERS, timeout=REQ_TIMEOUT)
             response.raise_for_status()
@@ -628,11 +644,18 @@ def parse_rss_feed(url: str):
             last_error = str(getattr(parsed, "bozo_exception", "RSS returned no entries"))
         except Exception as exc:
             last_error = str(exc)
+            terminal_status = _non_retryable_http_status(exc)
         print(f"⚠️ RSS读取失败，第 {attempt}/3 次: {url} ({last_error})")
+        if terminal_status is not None:
+            print(f"ℹ️ RSS返回不可重试的 HTTP {terminal_status}，停止重试: {url}")
+            break
         if attempt < 3:
             time.sleep(attempt)
 
-    print(f"❌ RSS连续3次无可用条目: {url} ({last_error})")
+    if url in CROSSREF_FALLBACK_FEEDS:
+        print(f"ℹ️ RSS无可用条目，将使用 Crossref 回退: {url} ({last_error})")
+    else:
+        print(f"❌ RSS无可用条目: {url} ({last_error})")
     return feedparser.FeedParserDict(feed=feedparser.FeedParserDict(), entries=[])
 
 def within_days(pub_dt: datetime, days: int) -> bool:
