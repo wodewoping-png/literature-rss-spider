@@ -43,6 +43,7 @@ EXPLICIT_FALLBACKS = {
     "https://ieeexplore.ieee.org/rss/toc61.xml": ("1937-4208", "10.1109"),
     "https://www.science.org/action/showfeed?type=etoc&feed=rss&jc=sciadv": ("2375-2548", "10.1126"),
     "https://www.science.org/action/showfeed?type=etoc&feed=rss&jc=science": ("0036-8075", "10.1126"),
+    "https://www.pnas.org/action/showfeed?ui=0&mi=eymic2&type=search&feed=rss&query=%2526access%253don%2526content%253darticleschapters%2526publication%253dpnas%2526sortby%253dearliest%2526target%253ddefault": ("1091-6490", "10.1073"),
 }
 ACS_ISSNS = {
     "chreay": "0009-2665",
@@ -160,9 +161,18 @@ def rsc_crossref_recent(issn: str, end_date: date) -> tuple[bool, str]:
     return False, f"RSC Crossref coverage query failed after 3 attempts: {last_error}"
 
 
+def non_retryable_http_status(exc: Exception) -> int | None:
+    response = getattr(exc, "response", None)
+    status = getattr(response, "status_code", None)
+    if isinstance(status, int) and 400 <= status < 500 and status not in {408, 429}:
+        return status
+    return None
+
+
 def fetch_feed(url: str) -> tuple[list, str, str]:
     last_error = ""
     for attempt in range(1, 4):
+        terminal_status = None
         try:
             response = requests.get(url, headers=RSS_HEADERS, timeout=25)
             response.raise_for_status()
@@ -173,6 +183,9 @@ def fetch_feed(url: str) -> tuple[list, str, str]:
             last_error = str(getattr(parsed, "bozo_exception", "RSS returned no entries"))
         except Exception as exc:
             last_error = str(exc)
+            terminal_status = non_retryable_http_status(exc)
+        if terminal_status is not None:
+            break
         if attempt < 3:
             time.sleep(attempt)
     return [], url, last_error or "RSS returned no entries"
