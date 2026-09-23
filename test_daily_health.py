@@ -94,6 +94,30 @@ class BackfillDateTests(unittest.TestCase):
         self.assertEqual(len(parsed.entries), 1)
         self.assertEqual(parsed.entries[0].title, "Paper")
 
+    def test_rss_fetch_does_not_retry_deterministic_client_error(self):
+        response = mock.Mock(status_code=403)
+        response.raise_for_status.side_effect = spider0301.requests.HTTPError(
+            "403 Client Error",
+            response=response,
+        )
+        with mock.patch("spider0301.requests.get", return_value=response) as get:
+            parsed = spider0301.parse_rss_feed(spider0301.PNAS_FEED_URL)
+        self.assertEqual(len(parsed.entries), 0)
+        get.assert_called_once()
+
+    def test_rss_fetch_retries_rate_limit_response(self):
+        response = mock.Mock(status_code=429)
+        response.raise_for_status.side_effect = spider0301.requests.HTTPError(
+            "429 Client Error",
+            response=response,
+        )
+        with (
+            mock.patch("spider0301.requests.get", return_value=response) as get,
+            mock.patch("spider0301.time.sleep"),
+        ):
+            spider0301.parse_rss_feed("https://example.com/feed")
+        self.assertEqual(get.call_count, 3)
+
     def test_rsc_crossref_fallback_accepts_rsc_doi(self):
         message = {
             "DOI": "10.1039/d6ee01234a",
@@ -113,6 +137,22 @@ class BackfillDateTests(unittest.TestCase):
         self.assertIsNotNone(record)
         self.assertEqual(record["source"], "Energy & Environmental Science")
         self.assertEqual(record["doi"], "10.1039/d6ee01234a")
+
+    def test_pnas_crossref_fallback_accepts_pnas_doi(self):
+        message = {
+            "DOI": "10.1073/pnas.2600000123",
+            "title": ["PNAS fallback paper"],
+            "container-title": ["Proceedings of the National Academy of Sciences"],
+            "published-online": {"date-parts": [[2026, 9, 20]]},
+            "URL": "https://doi.org/10.1073/pnas.2600000123",
+            "author": [{"given": "First", "family": "Author"}],
+        }
+        meta = spider0301.CROSSREF_FALLBACK_FEEDS[spider0301.PNAS_FEED_URL]
+        with mock.patch.object(spider0301, "TARGET_DATES", {date(2026, 9, 20)}):
+            record = spider0301._crossref_work_to_record(message, meta)
+        self.assertIsNotNone(record)
+        self.assertEqual(record["source"], "Proceedings of the National Academy of Sciences")
+        self.assertEqual(record["doi"], "10.1073/pnas.2600000123")
 
     def test_cell_press_fallback_uses_full_created_date(self):
         message = {
@@ -231,6 +271,8 @@ class FeedEndpointHealthTests(unittest.TestCase):
             fallback_issn("https://www.science.org/action/showFeed?type=etoc&feed=rss&jc=sciadv"),
             "2375-2548",
         )
+        self.assertEqual(fallback_issn(spider0301.PNAS_FEED_URL), "1091-6490")
+        self.assertEqual(fallback_prefix(spider0301.PNAS_FEED_URL), "10.1073")
 
     @mock.patch("scripts.check_feed_endpoints.crossref_available", return_value=(True, "reachable"))
     @mock.patch("scripts.check_feed_endpoints.fetch_feed", return_value=([], "ACS", "HTTP 403"))
@@ -239,6 +281,12 @@ class FeedEndpointHealthTests(unittest.TestCase):
             "https://pubs.acs.org/action/showFeed?type=axatoc&feed=rss&jc=jacsat",
             date(2026, 9, 2),
         )
+        self.assertEqual(result["status"], "fallback_ok")
+
+    @mock.patch("scripts.check_feed_endpoints.crossref_available", return_value=(True, "reachable"))
+    @mock.patch("scripts.check_feed_endpoints.fetch_feed", return_value=([], "PNAS", "HTTP 403"))
+    def test_failed_pnas_feed_is_healthy_when_fallback_is_reachable(self, _fetch, _crossref):
+        result = check_one(spider0301.PNAS_FEED_URL, date(2026, 9, 20))
         self.assertEqual(result["status"], "fallback_ok")
 
     @mock.patch("scripts.check_feed_endpoints.fetch_feed", return_value=([], "Unknown", "timeout"))
