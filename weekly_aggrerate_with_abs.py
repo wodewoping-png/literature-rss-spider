@@ -1,7 +1,9 @@
 # weekly_aggregate_with_abs.py
 from pathlib import Path
 from datetime import date, datetime, timedelta, timezone
+from html import unescape
 from urllib.parse import urlsplit, urlunsplit
+import re
 import pandas as pd
 
 OUTPUT_DIR = Path("output")
@@ -54,7 +56,37 @@ def normalize_link(url: str) -> str:
     if not isinstance(url, str) or not url.strip():
         return ""
     parts = urlsplit(url.strip())
-    return urlunsplit((parts.scheme, parts.netloc, parts.path, "", ""))
+    return urlunsplit((parts.scheme.lower(), parts.netloc.lower(), parts.path, "", ""))
+
+
+def normalize_doi(value: str) -> str:
+    """Normalize bare DOI, doi: and doi.org URL forms to one identity."""
+    raw = unescape(str(value or "")).strip()
+    raw = re.sub(
+        r"^(?:https?://(?:dx\.)?doi\.org/|doi:\s*)",
+        "",
+        raw,
+        flags=re.IGNORECASE,
+    )
+    match = re.search(r"10\.\d{4,9}/[^\s?#<>\"']+", raw, flags=re.IGNORECASE)
+    if not match:
+        return ""
+    doi = match.group(0).rstrip(".,;:")
+    for opening, closing in (("(", ")"), ("[", "]"), ("{", "}")):
+        while doi.endswith(closing) and doi.count(opening) < doi.count(closing):
+            doi = doi[:-1]
+    return doi.casefold()
+
+
+def record_identity_key(row) -> str:
+    doi = normalize_doi(row.get("doi", "")) or normalize_doi(row.get("link", ""))
+    if doi:
+        return f"doi:{doi}"
+    link = normalize_link(row.get("link", ""))
+    if link:
+        return f"url:{link}"
+    title = str(row.get("title", "") or "").strip().casefold()
+    return f"title:{title}" if title else f"row:{row.name}"
 
 def normalize_pub_date(df: pd.DataFrame) -> pd.DataFrame:
     """
@@ -191,8 +223,10 @@ def merge_group_rows(g: pd.DataFrame) -> dict:
         source = pick_nonempty_longer(source, v)
 
     doi = ""
-    for v in g["doi"].tolist():
-        doi = pick_nonempty_longer(doi, v)
+    for doi_value, link_value in zip(g["doi"].tolist(), g["link"].tolist()):
+        doi = normalize_doi(doi_value) or normalize_doi(link_value)
+        if doi:
+            break
 
     # ✅ last_author + last_author_source：非空优先；都非空取更长；source 跟随胜者
     best_la = ""
@@ -350,15 +384,15 @@ def aggregate_rolling7_dedupe_by_link(run_date=None):
         print_windows(input_start_date, input_end_date, publication_start_date, publication_end_date)
         return
 
-    # ====== 核心：link_norm 分组补齐合并 ======
-    all_df["link_norm"] = all_df["link"].apply(normalize_link)
-    all_df.loc[all_df["link_norm"] == "", "link_norm"] = (
-        "title:" + all_df.loc[all_df["link_norm"] == "", "title"].astype(str).str.strip().str.lower()
-    )
+    # ====== 核心：DOI 优先分组；缺失 DOI 时按规范化链接/标题兜底 ======
+    all_df["record_identity"] = all_df.apply(record_identity_key, axis=1)
 
     merged_rows = []
-    for _, g in all_df.groupby("link_norm", sort=False):
+    for _, g in all_df.groupby("record_identity", sort=False):
         merged_rows.append(merge_group_rows(g))
+    duplicate_count = len(all_df) - len(merged_rows)
+    if duplicate_count:
+        print(f"DOI/link deduplication: merged {duplicate_count} duplicate rows")
 
     dedup = pd.DataFrame(merged_rows)
 
