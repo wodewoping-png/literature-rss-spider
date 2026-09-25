@@ -565,15 +565,26 @@ def get_entry_pub_date(entry):
     return dt
 
 def extract_doi_from_url(url: str) -> str:
-    if not url:
+    return normalize_doi(url)
+
+
+def normalize_doi(value: str) -> str:
+    """Return a canonical DOI for identity comparisons and CSV output."""
+    raw = unescape(str(value or "")).strip()
+    raw = re.sub(
+        r"^(?:https?://(?:dx\.)?doi\.org/|doi:\s*)",
+        "",
+        raw,
+        flags=re.IGNORECASE,
+    )
+    match = re.search(r"10\.\d{4,9}/[^\s?#<>\"']+", raw, flags=re.IGNORECASE)
+    if not match:
         return ""
-    m = re.search(r"/10\.\d{4,9}/[^\s?#]+", url)
-    if m:
-        return m.group(0).lstrip("/")
-    m2 = re.search(r"10\.\d{4,9}/[^\s?#]+", url)
-    if m2:
-        return m2.group(0)
-    return ""
+    doi = match.group(0).rstrip(".,;:")
+    for opening, closing in (("(", ")"), ("[", "]"), ("{", "}")):
+        while doi.endswith(closing) and doi.count(opening) < doi.count(closing):
+            doi = doi[:-1]
+    return doi.casefold()
 
 def extract_doi_from_entry(entry) -> str:
     for key in ("doi", "dc_identifier", "prism_doi", "dc:identifier", "id"):
@@ -596,7 +607,7 @@ def normalize_link(url: str) -> str:
     return urlunsplit((parts.scheme, parts.netloc, parts.path, "", ""))
 
 def record_key(doi: str, link: str) -> str:
-    d = (doi or "").strip().lower()
+    d = normalize_doi(doi) or normalize_doi(link)
     if d:
         return f"doi:{d}"
     return f"url:{normalize_link(link).lower()}"
@@ -1924,66 +1935,82 @@ def print_missing_abstract_report(records: list[dict]):
     if any(extract_sciencedirect_pii(r.get("link", "")) for r in missing) and not ELSEVIER_API_KEY:
         print(" Info: configure ELSEVIER_API_KEY for complete ScienceDirect abstracts; public APIs remain enabled as fallback.")
 
+
+def _record_fill_score(record: dict) -> int:
+    fields = [
+        "title",
+        "link",
+        "source",
+        "published_str",
+        "pub_date",
+        "doi",
+        "last_author",
+        "abstract",
+        "abstract_source",
+    ]
+    return sum(
+        1
+        for field in fields
+        if record.get(field) is not None
+        and (not isinstance(record.get(field), str) or record.get(field).strip())
+    )
+
+
+def merge_duplicate_records(records: list[dict]) -> list[dict]:
+    """Merge records by canonical DOI, falling back to normalized URL."""
+    groups: dict[str, list[dict]] = {}
+    for index, record in enumerate(records):
+        item = record.copy()
+        doi = normalize_doi(item.get("doi", "")) or normalize_doi(item.get("link", ""))
+        if doi:
+            item["doi"] = doi
+            key = f"doi:{doi}"
+        else:
+            link = (item.get("link") or "").strip()
+            normalized_link = normalize_link(link).lower() if link else ""
+            key = f"url:{normalized_link}" if normalized_link else f"row:{index}"
+        groups.setdefault(key, []).append(item)
+
+    merged = []
+    for items in groups.values():
+        items = sorted(items, key=_record_fill_score, reverse=True)
+        base = items[0].copy()
+        for other in items[1:]:
+            for field in (
+                "title",
+                "link",
+                "source",
+                "published_str",
+                "doi",
+                "last_author",
+                "last_author_source",
+                "abstract",
+                "abstract_source",
+            ):
+                if not (base.get(field) or "").strip():
+                    value = other.get(field)
+                    if not isinstance(value, str) or value.strip():
+                        base[field] = value
+            if base.get("pub_date") is None and other.get("pub_date") is not None:
+                base["pub_date"] = other.get("pub_date")
+            base["must_have_abstract"] = bool(base.get("must_have_abstract")) or bool(
+                other.get("must_have_abstract")
+            )
+        canonical_doi = normalize_doi(base.get("doi", "")) or normalize_doi(base.get("link", ""))
+        if canonical_doi:
+            base["doi"] = canonical_doi
+        merged.append(base)
+    return merged
+
 def export_records(today_records: dict):
     if not today_records:
         print("⚠️ 没有记录可导出。")
         return
 
-    def _record_fill_score(r: dict) -> int:
-        fields = [
-            "title",
-            "link",
-            "source",
-            "published_str",
-            "pub_date",
-            "doi",
-            "last_author",
-            "abstract",
-            "abstract_source",
-        ]
-        score = 0
-        for f in fields:
-            v = r.get(f)
-            if v is None:
-                continue
-            if isinstance(v, str):
-                if v.strip():
-                    score += 1
-            else:
-                score += 1
-        return score
-
-    def _merge_records_by_link(records: list[dict]) -> list[dict]:
-        groups: dict[str, list[dict]] = {}
-        for r in records:
-            link = (r.get("link") or "").strip()
-            norm = normalize_link(link).lower() if link else ""
-            key = f"url:{norm}" if norm else record_key(r.get("doi", ""), link)
-            groups.setdefault(key, []).append(r)
-
-        merged = []
-        for _, items in groups.items():
-            if len(items) == 1:
-                merged.append(items[0])
-                continue
-            items = sorted(items, key=_record_fill_score, reverse=True)
-            base = items[0].copy()
-            for other in items[1:]:
-                for f in ("title", "link", "source", "published_str", "doi", "last_author", "abstract", "abstract_source"):
-                    if not (base.get(f) or "").strip():
-                        v = (other.get(f) or "").strip() if isinstance(other.get(f), str) else other.get(f)
-                        if isinstance(v, str):
-                            if v.strip():
-                                base[f] = v
-                        elif v is not None:
-                            base[f] = v
-                if base.get("pub_date") is None and other.get("pub_date") is not None:
-                    base["pub_date"] = other.get("pub_date")
-                base["must_have_abstract"] = bool(base.get("must_have_abstract")) or bool(other.get("must_have_abstract"))
-            merged.append(base)
-        return merged
-
-    merged_records = _merge_records_by_link(list(today_records.values()))
+    source_records = list(today_records.values())
+    merged_records = merge_duplicate_records(source_records)
+    if len(merged_records) != len(source_records):
+        print(f"🧹 DOI去重：合并 {len(source_records) - len(merged_records)} 条重复记录")
     df_all = pd.DataFrame(merged_records)
 
     keep_cols = [
@@ -2040,6 +2067,7 @@ def main():
     records_list = list(today_records.values())
     enrich_with_html_then_api(records_list)
 
+    records_list = merge_duplicate_records(records_list)
     today_records = {record_key(r.get("doi",""), r.get("link","")): r for r in records_list}
 
     drop_keys = [k for k, r in today_records.items() if r.get("_drop")]
