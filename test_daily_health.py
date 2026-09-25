@@ -118,6 +118,38 @@ class BackfillDateTests(unittest.TestCase):
             spider0301.parse_rss_feed("https://example.com/feed")
         self.assertEqual(get.call_count, 3)
 
+    def test_record_key_normalizes_doi_variants(self):
+        expected = "doi:10.1002/aenm.202506744"
+        self.assertEqual(spider0301.record_key("DOI:10.1002/AENM.202506744.", ""), expected)
+        self.assertEqual(
+            spider0301.record_key("", "https://doi.org/10.1002/AENM.202506744?source=rss"),
+            expected,
+        )
+
+    def test_daily_merge_deduplicates_same_doi_across_different_links(self):
+        records = [
+            {
+                "title": "Paper",
+                "link": "https://publisher.example/article/one",
+                "doi": "10.1002/AENM.202506744",
+                "abstract": "",
+                "must_have_abstract": False,
+            },
+            {
+                "title": "Paper with complete metadata",
+                "link": "https://doi.org/10.1002/aenm.202506744",
+                "doi": "https://doi.org/10.1002/aenm.202506744",
+                "abstract": "Complete abstract",
+                "must_have_abstract": False,
+            },
+        ]
+
+        merged = spider0301.merge_duplicate_records(records)
+
+        self.assertEqual(len(merged), 1)
+        self.assertEqual(merged[0]["doi"], "10.1002/aenm.202506744")
+        self.assertEqual(merged[0]["abstract"], "Complete abstract")
+
     def test_rsc_crossref_fallback_accepts_rsc_doi(self):
         message = {
             "DOI": "10.1039/d6ee01234a",
