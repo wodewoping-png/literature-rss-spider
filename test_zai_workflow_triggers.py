@@ -42,6 +42,30 @@ class ZAIDailyWorkflowTriggerTests(unittest.TestCase):
         self.assertIn("legacy_is_current", workflow_text)
         self.assertNotIn(".source.sha256", workflow_text)
 
+    def test_publisher_priority_alerts_only_use_post_repair_results(self):
+        workflow = load_workflow("daily_gap_backfill.yaml")
+        steps = {
+            step.get("id"): step
+            for step in workflow["jobs"]["check-and-backfill"]["steps"]
+            if step.get("id")
+        }
+
+        expected_repair_steps = {
+            "nature_priority_alert": "nature_repair",
+            "rsc_priority_alert": "rsc_repair",
+            "cell_press_priority_alert": "cell_press_repair",
+        }
+        for alert_id, repair_id in expected_repair_steps.items():
+            condition = steps[alert_id]["if"]
+            self.assertIn(f"steps.{repair_id}.outcome == 'failure'", condition)
+            self.assertIn(f"steps.{repair_id}.outputs.missing_count != '0'", condition)
+            self.assertNotIn("_source.outputs.missing_count", condition)
+
+        self.assertIn(
+            "steps.rsc_repair.outputs.invalid_count != '0'",
+            steps["rsc_priority_alert"]["if"],
+        )
+
     def test_quota_monitor_retries_only_a_pending_daily_run(self):
         quota = load_workflow("zai_quota_retry.yaml")
         self.assertIn("schedule", quota["on"])
