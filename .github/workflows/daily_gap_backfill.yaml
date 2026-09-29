@@ -123,7 +123,8 @@ jobs:
         continue-on-error: true
         if: >-
           always() &&
-          (steps.nature_source.outcome == 'failure' || steps.nature_source.outputs.missing_count != '0')
+          (steps.nature_repair.outcome == 'failure' ||
+           steps.nature_repair.outputs.missing_count != '0')
         env:
           DINGTALK_WEBHOOK: ${{ secrets.DINGTALK_WEBHOOK || secrets.DINGTALK_WEBHOOK_URL }}
           DINGTALK_ACCESS_TOKEN: ${{ secrets.DINGTALK_ACCESS_TOKEN || secrets.DINGTALK_TOKEN }}
@@ -177,9 +178,9 @@ jobs:
         continue-on-error: true
         if: >-
           always() &&
-          (steps.rsc_source.outcome == 'failure' ||
-           steps.rsc_source.outputs.missing_count != '0' ||
-           steps.rsc_source.outputs.initial_invalid_count != '0')
+          (steps.rsc_repair.outcome == 'failure' ||
+           steps.rsc_repair.outputs.missing_count != '0' ||
+           steps.rsc_repair.outputs.invalid_count != '0')
         env:
           DINGTALK_WEBHOOK: ${{ secrets.DINGTALK_WEBHOOK || secrets.DINGTALK_WEBHOOK_URL }}
           DINGTALK_ACCESS_TOKEN: ${{ secrets.DINGTALK_ACCESS_TOKEN || secrets.DINGTALK_TOKEN }}
@@ -234,8 +235,8 @@ jobs:
         continue-on-error: true
         if: >-
           always() &&
-          (steps.cell_press_source.outcome == 'failure' ||
-           steps.cell_press_source.outputs.missing_count != '0')
+          (steps.cell_press_repair.outcome == 'failure' ||
+           steps.cell_press_repair.outputs.missing_count != '0')
         env:
           DINGTALK_WEBHOOK: ${{ secrets.DINGTALK_WEBHOOK || secrets.DINGTALK_WEBHOOK_URL }}
           DINGTALK_ACCESS_TOKEN: ${{ secrets.DINGTALK_ACCESS_TOKEN || secrets.DINGTALK_TOKEN }}
