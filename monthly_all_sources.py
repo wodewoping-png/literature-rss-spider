@@ -25,6 +25,61 @@ TOPICS = ("光伏", "正极", "负极", "电解质", "非活性材料等", "其�
           "热能", "核能", "氢氨醇", "氢基能源", "产业降碳", "CCUS", "塑料回收")
 
 
+def is_climate_policy(title: str) -> bool:
+    """Only explicit policy, coalition and political-economy titles match.
+
+    'Regulation' alone is deliberately excluded: it commonly describes
+    electrochemical, biological or control-system mechanisms.
+    """
+    t = title.casefold()
+    if re.search(r"\b(policy learning|policy trading operation|political characteristics)\b", t):
+        return False
+    subject = re.search(
+        r"\b(climate|carbon|emissions?|decarboniz\w*|clean technolog\w*|energy|electricity|hydrogen|ccs|industry|industrial|plastics?|green transition)\b", t)
+    governance = re.search(
+        r"\b(policy|policies|political|coalition|alliance|treaty|carbon pricing|just transition|energy poverty|geopolitical risk|climate agreement)\b", t)
+    return bool(subject and governance) or bool(re.search(
+        r"\b(building energy performance regulation|carbon border penalties|domestic carbon pricing|climate.disaster funding)\b", t))
+
+
+POLICY_PATH = ("零碳产业", "物质循环", "资源回收利用与排放治理", "其他环境治理")
+GRID_PATH = ("零碳产业", "能量转化", "能量分配与运输", "电网相关技术")
+
+
+def _industrial_decarbonization(title: str) -> tuple[str, ...]:
+    """Disambiguate the broad upstream tag using the paper's actual subject."""
+    t = title.casefold()
+    if re.search(r"\b(decarbonization pathways|strategic low.carbon transition|financing cost differences|system.level decarbonization|material inequality|urban material inequality)\b", t):
+        return POLICY_PATH
+    if re.search(r"\b(data cent(?:er|re)s?)\b", t):
+        return ("AI与智能科技", "AI硬件层", "数据中心")
+    if re.search(r"\b(fishing vessels?|maritime|shipping|ship\b)", t):
+        return ("通用技术", "通信和运输", "物质运输", "水路运输")
+    if re.search(r"\b(aviation|aircraft)\b", t):
+        return ("通用技术", "通信和运输", "物质运输", "航空")
+    if re.search(r"\b(vehicles?|robotaxis?|transportation|vehicle routing|freight)\b", t) and not re.search(r"\b(charging|v2g|grid|power.transportation networks?)\b", t):
+        return ("通用技术", "通信和运输", "物质运输", "陆路运输")
+    if re.search(r"\b(microgrids?|electricity|power systems?|energy systems?|charging|v2g|dispatch|flexible loads?|energy communit\w*|multi.energy flow|grid.interaction)\b", t):
+        return GRID_PATH
+    if re.search(r"\b(battery storage|battery system technologies|hybrid storage)\b", t):
+        return ("零碳产业", "能量转化", "能量存储", "电化学储能", "二次电池")
+    if re.search(r"\b(cooling|hvac|thermal insulation|radiative cooling|thermal rectification|thermal.radiative regulation)\b", t):
+        return ("零碳产业", "能量转化", "能源测", "二次能源利用", "制冷散热技术")
+    if re.search(r"\b(wastewater|remediation|pollution)\b", t):
+        return ("零碳产业", "物质循环", "资源回收利用与排放治理", "污水处理" if "wastewater" in t else "其他环境治理")
+    if re.search(r"\b(syngas|methanol|petrochemical|acetylene|alkene|chemical manufacturing|adipic acid|propane dehydrogenation|lignin.derived|tetrahydrofurfuryl|methane to methanol)\b", t):
+        return ("零碳产业", "物质循环", "资源加工", "有机物", "平台化工品")
+    if re.search(r"\b(steel|iron ore|aluminum|cement|concrete)\b", t):
+        return ("零碳产业", "物质循环", "资源加工", "无机物", "非金属" if "cement" in t or "concrete" in t else "金属")
+    if re.search(r"\b(lignin adhesive|wood bonding|hydrogel|smart windows?|electrochromic|metamaterial reactors?|monolithic film)\b", t):
+        return ("通用技术", "材料工程", "其它先进材料")
+    if re.search(r"\b(vertical farming|agricultural)\b", t):
+        return ("零碳产业", "物质循环", "资源获取", "种植养殖技术")
+    if re.search(r"\b(building retrofit|building control|buildings?|industrial park|thermochemical reaction)\b", t):
+        return ("通用技术", "工艺和工程")
+    return ("通用技术", "工艺和工程")
+
+
 def source_name(source: str) -> tuple[str, str]:
     text = (source or "").strip()
     if "Nature Communications" in text:
@@ -153,9 +208,18 @@ def collect(month: str, daily_dir: Path, weekly_dir: Path) -> tuple[list[dict], 
 def category_path(row: dict) -> tuple[str, ...]:
     title = str(row.get("title") or "")
     low = title.casefold()
+    if is_climate_policy(title):
+        # The supplied taxonomy has no climate-policy branch. Its closest
+        # existing route for emission governance is other environmental
+        # management, never resource processing or a device technology.
+        return POLICY_PATH
     raw = str(row.get("categories") or "")
     for topic in (x.strip() for x in raw.split(";")):
         if topic in TOPICS:
+            if topic == "产业降碳":
+                return _industrial_decarbonization(title)
+            if topic == "CCUS" and re.search(r"\b(co2|carbon dioxide|carbon monoxide)\b.*\b(reduction|hydrogenation|conversion|methanation|electrolysis|to methanol|to ethanol)\b", low):
+                return ("零碳产业", "物质循环", "资源加工", "有机物", "平台化工品")
             return classify_five("氢基能源" if topic == "氢氨醇" else topic, title)
     if re.search(r"\b(photovoltaic|solar cell|perovskite.silicon|solar module)\b", low):
         return classify_five("光伏", title)
