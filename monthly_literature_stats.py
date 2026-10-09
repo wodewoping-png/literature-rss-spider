@@ -23,6 +23,7 @@ from zoneinfo import ZoneInfo
 import openpyxl
 import pandas as pd
 from excel_output_utils import format_literature_worksheet
+from monthly_industry_view import reclassify_monthly_workbook
 from openpyxl.styles import Alignment
 
 
@@ -477,6 +478,9 @@ def generate_monthly_workbook(
         print(f"[monthly] {sheet_name}: {len(articles)} matched records")
 
     wb.save(output_path)
+    industry_counts = reclassify_monthly_workbook(output_path)
+    for industry, count in industry_counts.items():
+        print(f"[monthly] {industry}: {count} unique records")
     print(f"[monthly] Read {len(weekly_files)} weekly workbook(s)")
     print(f"[monthly] Read {len(daily_files)} classified daily workbook(s)")
     print(f"[monthly] Wrote {output_path}")
@@ -499,3 +503,4 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
+
