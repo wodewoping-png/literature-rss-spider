@@ -20,7 +20,7 @@ from excel_output_utils import format_literature_worksheet
 
 ROOTS = ("零碳产业", "AI与智能科技", "通用技术")
 TAXONOMY = Path(__file__).parent / "config/monthly/industry_taxonomy.json"
-HEADERS = ("二级分类", "三级分类", "出版商", "期刊名", "标题", "通讯作者", "发表日期", "DOI", "数量")
+HEADERS = ("出版商", "期刊名", "标题", "通讯作者", "发表日期", "DOI", "二级分类", "三级分类", "数量")
 BATTERY = {"正极", "负极", "电解质", "非活性材料等", "其他储能器件"}
 
 
@@ -93,16 +93,29 @@ def reclassify_monthly_workbook(path: Path, taxonomy_path: Path = TAXONOMY) -> d
         allowed = {tuple(x) for x in json.load(f)["paths"]}
     wb = openpyxl.load_workbook(path)
     if tuple(wb.sheetnames) == ROOTS:
-        return {name: sum(bool(wb[name].cell(r, 7).value) for r in range(2, wb[name].max_row + 1)) for name in ROOTS}
+        return {name: sum(bool(wb[name].cell(r, 3).value) for r in range(2, wb[name].max_row + 1)) for name in ROOTS}
 
     # Keep the first instance of a DOI across the former topical tabs. The old
     # report can repeat a DOI inside a tab and across different topic tabs.
     articles = {}
     template_header = wb.worksheets[0]
-    sample = next((ws for ws in wb if ws.max_row >= 3), template_header)
+    publisher_styles = {}
+    journal_order = {}
+    publisher_order = {}
+    for source_ws in wb.worksheets:
+        current_publisher = ""
+        for source_row in source_ws.iter_rows(min_row=2):
+            if source_row[0].value:
+                current_publisher = str(source_row[0].value).strip()
+                if current_publisher not in publisher_styles:
+                    publisher_styles[current_publisher] = source_row
+                    publisher_order[current_publisher] = len(publisher_order)
+            if source_row[1].value:
+                journal_order.setdefault((current_publisher, str(source_row[1].value).strip()),
+                                         len(journal_order))
     for ws in wb.worksheets:
         headers = [str(c.value or "").strip() for c in ws[1]]
-        if tuple(headers) != HEADERS[2:]:
+        if tuple(headers) != HEADERS[:6] + HEADERS[8:]:
             raise ValueError(f"Unexpected monthly layout in {ws.title}: {headers}")
         publisher = journal = ""
         for row in ws.iter_rows(min_row=2):
@@ -125,42 +138,65 @@ def reclassify_monthly_workbook(path: Path, taxonomy_path: Path = TAXONOMY) -> d
 
     output = openpyxl.Workbook()
     output.remove(output.active)
+    output.loaded_theme = wb.loaded_theme
     result = {}
     for root in ROOTS:
         ws = output.create_sheet(root)
-        ws.freeze_panes = "E2"
+        ws.freeze_panes = "C2"
         ws.sheet_view.showGridLines = template_header.sheet_view.showGridLines
         for col, heading in enumerate(HEADERS, 1):
             target = ws.cell(1, col, heading)
-            _copy_style(template_header.cell(1, min(max(col - 2, 1), 7)), target)
-        for col in range(3, 10):
-            old = openpyxl.utils.get_column_letter(col - 2)
-            new = openpyxl.utils.get_column_letter(col)
-            ws.column_dimensions[new].width = template_header.column_dimensions[old].width or 18
-        ws.column_dimensions["A"].width = 17
-        ws.column_dimensions["B"].width = 25
+            source_col = col if col <= 6 else 7
+            _copy_style(template_header.cell(1, source_col), target)
+        for col in range(1, 7):
+            letter = openpyxl.utils.get_column_letter(col)
+            ws.column_dimensions[letter].width = template_header.column_dimensions[letter].width or 18
+        ws.column_dimensions["G"].width = 17
+        ws.column_dimensions["H"].width = 25
+        ws.column_dimensions["I"].width = template_header.column_dimensions["G"].width or 8
         ws.row_dimensions[1].height = template_header.row_dimensions[1].height or 24
 
         groups = sorted((key for key in grouped if key[0][0] == root),
-                        key=lambda x: (x[0][1], x[0][2], x[1], x[2]))
+                        key=lambda x: (publisher_order.get(x[1], 999),
+                                       journal_order.get((x[1], x[2]), 999),
+                                       x[0][1], x[0][2]))
         count = 0
+        publisher_starts = {}
+        journal_starts = {}
         for (category, publisher, journal) in groups:
             entries = grouped[(category, publisher, journal)]
             begin = ws.max_row + 1
+            publisher_starts.setdefault(publisher, begin)
+            journal_starts.setdefault((publisher, journal), begin)
             for title, author, date, doi in entries:
                 count += 1
-                values = (category[1], category[2], publisher, journal,
-                          title, author, date, doi, len(entries))
+                values = (publisher, journal, title, author, date, doi,
+                          category[1], category[2], len(entries))
                 row_idx = ws.max_row + 1
+                source_row = publisher_styles[publisher]
                 for col, value in enumerate(values, 1):
                     cell = ws.cell(row_idx, col, value)
-                    _copy_style(sample.cell(2, min(max(col - 2, 1), 7)), cell)
+                    source_col = col if col <= 6 else 7 if col == 9 else 3
+                    _copy_style(source_row[source_col - 1], cell)
                     cell.alignment = Alignment(horizontal="left", vertical="center", wrap_text=True)
                 ws.row_dimensions[row_idx].height = min(96, max(30, 16 * (1 + len(str(title)) // 64)))
             if len(entries) > 1:
-                for col in (3, 4, 9):
-                    ws.merge_cells(start_row=begin, start_column=col,
-                                   end_row=ws.max_row, end_column=col)
+                ws.merge_cells(start_row=begin, start_column=9,
+                               end_row=ws.max_row, end_column=9)
+        # Publisher stays the outer group; journal follows it. Classification
+        # remains at article level, so a journal can contain several paths.
+        for (publisher, journal), start in journal_starts.items():
+            ends = [i for i in range(start + 1, ws.max_row + 2)
+                    if i > ws.max_row or ws.cell(i, 2).value != journal or ws.cell(i, 1).value != publisher]
+            end = ends[0] - 1
+            if end > start:
+                ws.merge_cells(start_row=start, start_column=2, end_row=end, end_column=2)
+        for publisher, start in publisher_starts.items():
+            ends = [i for i in range(start + 1, ws.max_row + 2)
+                    if i > ws.max_row or ws.cell(i, 1).value != publisher]
+            end = ends[0] - 1
+            if end > start:
+                ws.merge_cells(start_row=start, start_column=1, end_row=end, end_column=1)
         format_literature_worksheet(ws)
         # Grouped cells remain visibly organized by the same publisher/journal
         # convention as the source, while category columns stay readable.
