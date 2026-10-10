@@ -25,7 +25,6 @@ BATTERY = {"正极", "负极", "电解质", "非活性材料等", "其他储能�
 BATTERY_FIFTH = {
     "正极": "正极", "负极": "负极", "电解质": "电解质",
     "非活性材料等": "非活性材料/检测技术",
-    "其他储能器件": "其他储能器件",
 }
 
 
@@ -92,9 +91,19 @@ def classify_five(topic: str, title: str) -> tuple[str, ...]:
         if topic in BATTERY:
             if "supercapacitor" in t:
                 return base + ("电化学储能", "超级电容器")
-            if topic == "其他储能器件" and not re.search(
-                r"\b(batter\w*|cathode|anode|electrolyte|zinc.air|lithium.oxygen|li.o2|flow batter\w*)\b", t
-            ):
+            if topic == "其他储能器件":
+                for pattern, label in (
+                    (r"\b(cathodes?|positive electrodes?)\b", "正极"),
+                    (r"\b(anodes?|negative electrodes?)\b", "负极"),
+                    (r"\b(electrolytes?|ionic liquids?)\b", "电解质"),
+                    (r"\b(separators?|current collectors?|battery management|thermal runaway|battery diagnostics?)\b", "非活性材料/检测技术"),
+                ):
+                    if re.search(pattern, t):
+                        return base + ("电化学储能", label)
+                if re.search(r"\b(triboelectric|nanogenerators?|piezoelectric|hydrovoltaic|energy harvesting|electricity generation)\b", t):
+                    return ("零碳产业", "能量转化", "能源测", "一次能源转化", "其他发电技术")
+                if re.search(r"\b(oxygen reduction|electrocatal\w*|catalysts?)\b", t):
+                    return ("通用技术", "材料工程", "特种功能材料", "催化材料")
                 return base + ("其它储能技术",)
             return base + ("电化学储能", BATTERY_FIFTH[topic])
         if topic == "热能":

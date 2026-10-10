@@ -326,15 +326,25 @@ def make_workbook(records: list[dict], output_path: Path, template_path: Path) -
         ws.column_dimensions["K"].width = 10
         ws.row_dimensions[1].height = 30
         ws.sheet_view.zoomScale = 85
+        ws.sheet_properties.outlinePr.summaryBelow = False
         for cell in ws[1]:
             cell.alignment = Alignment(horizontal="center", vertical="center", wrap_text=True)
         for pub in ordered_publishers:
-            first_publisher_row = True
+            publisher_start = ws.max_row + 1
             for p, journal in journals:
                 if p != pub:
                     continue
                 entries = grouped.get((root, pub, journal), [])
-                for index, (record, path) in enumerate(entries or [(None, None)]):
+                # Keep the original publisher/journal hierarchy, then put
+                # related category paths next to each other within a journal.
+                entries = sorted(entries, key=lambda item: (
+                    item[1][1:], -item[0]["_date"].toordinal(),
+                    str(item[0].get("title") or "")))
+                journal_start = ws.max_row + 1
+                # A journal summary stays visible when its article detail is
+                # collapsed. This prevents a merged name/count from being
+                # anchored to a hidden article row.
+                for index, (record, path) in enumerate([(None, None)] + entries):
                     values = (pub, journal,
                               record.get("title") if record else None,
                               record.get("last_author") if record else None,
@@ -352,17 +362,18 @@ def make_workbook(records: list[dict], output_path: Path, template_path: Path) -
                         src_col = col if col <= 6 else 3 if col <= 10 else 7
                         _copy_style(source[src_col - 1], cell)
                         cell.alignment = Alignment(horizontal="left", vertical="center", wrap_text=True)
-                    # Keep one visible label per publisher/journal block while
-                    # retaining values on every row for Excel's AutoFilter.
-                    # The four-section number format hides a repeated text
-                    # value without deleting it or merging the data rows.
-                    if not first_publisher_row:
-                        ws.cell(row_idx, 1).number_format = ";;;"
-                    if index:
-                        ws.cell(row_idx, 2).number_format = ";;;"
-                    first_publisher_row = False
-                    ws.row_dimensions[row_idx].height = min(96, max(18, 16 * (1 + len(str(values[2] or "")) // 64)))
-        ws.auto_filter.ref = f"A1:K{ws.max_row}"
+                    ws.row_dimensions[row_idx].height = (24 if not record else
+                        min(96, max(18, 16 * (1 + len(str(values[2] or "")) // 64))))
+                if entries:
+                    for column in (2, 11):
+                        ws.merge_cells(start_row=journal_start, start_column=column,
+                                       end_row=ws.max_row, end_column=column)
+                    ws.row_dimensions.group(journal_start + 1, ws.max_row,
+                                            outline_level=1, hidden=True)
+                    ws.row_dimensions[journal_start].collapsed = True
+            if ws.max_row > publisher_start:
+                ws.merge_cells(start_row=publisher_start, start_column=1,
+                               end_row=ws.max_row, end_column=1)
         format_literature_worksheet(ws)
     output_path.parent.mkdir(parents=True, exist_ok=True)
     output.save(output_path)
