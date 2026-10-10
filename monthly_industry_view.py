@@ -23,8 +23,8 @@ TAXONOMY = Path(__file__).parent / "config/monthly/industry_taxonomy.json"
 HEADERS = ("出版商", "期刊名", "标题", "通讯作者", "发表日期", "DOI", "五级分类", "数量")
 BATTERY = {"正极", "负极", "电解质", "非活性材料等", "其他储能器件"}
 BATTERY_FIFTH = {
-    "正极": "正极", "负极": "负极", "电解质": "电解质",
-    "非活性材料等": "非活性材料/检测技术",
+    "正极": "电池正极", "负极": "电池负极", "电解质": "电池电解质",
+    "非活性材料等": "电池非活性材料/检测技术",
 }
 
 
@@ -93,10 +93,10 @@ def classify_five(topic: str, title: str) -> tuple[str, ...]:
                 return base + ("电化学储能", "超级电容器")
             if topic == "其他储能器件":
                 for pattern, label in (
-                    (r"\b(cathodes?|positive electrodes?)\b", "正极"),
-                    (r"\b(anodes?|negative electrodes?)\b", "负极"),
-                    (r"\b(electrolytes?|ionic liquids?)\b", "电解质"),
-                    (r"\b(separators?|current collectors?|battery management|thermal runaway|battery diagnostics?)\b", "非活性材料/检测技术"),
+                    (r"\b(cathodes?|positive electrodes?)\b", "电池正极"),
+                    (r"\b(anodes?|negative electrodes?)\b", "电池负极"),
+                    (r"\b(electrolytes?|ionic liquids?)\b", "电池电解质"),
+                    (r"\b(separators?|current collectors?|battery management|thermal runaway|battery diagnostics?)\b", "电池非活性材料/检测技术"),
                 ):
                     if re.search(pattern, t):
                         return base + ("电化学储能", label)
