@@ -22,6 +22,11 @@ ROOTS = ("零碳产业", "AI与智能科技", "通用技术")
 TAXONOMY = Path(__file__).parent / "config/monthly/industry_taxonomy.json"
 HEADERS = ("出版商", "期刊名", "标题", "通讯作者", "发表日期", "DOI", "五级分类", "数量")
 BATTERY = {"正极", "负极", "电解质", "非活性材料等", "其他储能器件"}
+BATTERY_FIFTH = {
+    "正极": "正极", "负极": "负极", "电解质": "电解质",
+    "非活性材料等": "非活性材料/检测技术",
+    "其他储能器件": "其他储能器件",
+}
 
 
 def classify(topic: str, title: str) -> tuple[str, str, str]:
@@ -87,7 +92,11 @@ def classify_five(topic: str, title: str) -> tuple[str, ...]:
         if topic in BATTERY:
             if "supercapacitor" in t:
                 return base + ("电化学储能", "超级电容器")
-            return base + ("电化学储能", "二次电池")
+            if topic == "其他储能器件" and not re.search(
+                r"\b(batter\w*|cathode|anode|electrolyte|zinc.air|lithium.oxygen|li.o2|flow batter\w*)\b", t
+            ):
+                return base + ("其它储能技术",)
+            return base + ("电化学储能", BATTERY_FIFTH[topic])
         if topic == "热能":
             if "molten salt" in t or "liquid thermal" in t:
                 return base + ("储热", "液态储热")

@@ -17,10 +17,11 @@ import openpyxl
 import pandas as pd
 from openpyxl.styles import Alignment
 from excel_output_utils import format_literature_worksheet
-from monthly_industry_view import ROOTS, TAXONOMY, classify_five, _copy_style
+from monthly_industry_view import ROOTS, TAXONOMY, BATTERY, classify_five, _copy_style
 
 
-HEADERS = ("出版商", "期刊名", "标题", "通讯作者", "发表日期", "DOI", "五级分类", "数量")
+HEADERS = ("出版商", "期刊名", "标题", "通讯作者", "发表日期", "DOI",
+           "二级分类", "三级分类", "四级分类", "五级分类", "数量")
 TOPICS = ("光伏", "正极", "负极", "电解质", "非活性材料等", "其他储能器件",
           "热能", "核能", "氢氨醇", "氢基能源", "产业降碳", "CCUS", "塑料回收")
 
@@ -214,7 +215,19 @@ def category_path(row: dict) -> tuple[str, ...]:
         # management, never resource processing or a device technology.
         return POLICY_PATH
     raw = str(row.get("categories") or "")
-    for topic in (x.strip() for x in raw.split(";")):
+    topics = [x.strip() for x in raw.split(";")]
+    # A source record may carry several battery tags. Use the subject stated
+    # in its title when it singles out one of those existing source categories.
+    battery_tags = set(topics) & BATTERY
+    if len(battery_tags) > 1:
+        cues = (("正极", r"\b(cathode|positive electrode)\b"),
+                ("负极", r"\b(anode|negative electrode)\b"),
+                ("电解质", r"\b(electrolyte|ionic liquid|electrolytic)\b"),
+                ("非活性材料等", r"\b(separator|current collector|battery management|diagnostic|thermal runaway)\b"))
+        matches = [topic for topic, pattern in cues if topic in battery_tags and re.search(pattern, low)]
+        if len(matches) == 1:
+            topics = [matches[0]] + [t for t in topics if t != matches[0]]
+    for topic in topics:
         if topic in TOPICS:
             if topic == "产业降碳":
                 return _industrial_decarbonization(title)
@@ -302,43 +315,44 @@ def make_workbook(records: list[dict], output_path: Path, template_path: Path) -
     for root in ROOTS:
         ws = output.create_sheet(root)
         ws.sheet_view.showGridLines = ws0.sheet_view.showGridLines
-        ws.freeze_panes = ws0.freeze_panes
+        ws.freeze_panes = "C2"
         for col, header in enumerate(HEADERS, 1):
             target = ws.cell(1, col, header)
             _copy_style(ws0.cell(1, min(col, 7)), target)
-        for col in range(1, 7):
-            letter = openpyxl.utils.get_column_letter(col)
-            ws.column_dimensions[letter].width = ws0.column_dimensions[letter].width or 18
-        ws.column_dimensions["G"].width = 18
-        ws.column_dimensions["H"].width = ws0.column_dimensions["G"].width or 8
-        ws.row_dimensions[1].height = ws0.row_dimensions[1].height or 24
+        for letter, width in (("A", 19), ("B", 30), ("C", 64),
+                              ("D", 22), ("E", 15), ("F", 47),
+                              ("G", 17), ("H", 25), ("I", 21), ("J", 25)):
+            ws.column_dimensions[letter].width = width
+        ws.column_dimensions["K"].width = 10
+        ws.row_dimensions[1].height = 30
+        ws.sheet_view.zoomScale = 85
+        for cell in ws[1]:
+            cell.alignment = Alignment(horizontal="center", vertical="center", wrap_text=True)
         for pub in ordered_publishers:
-            start_pub = ws.max_row + 1
             for p, journal in journals:
                 if p != pub:
                     continue
                 entries = grouped.get((root, pub, journal), [])
-                start = ws.max_row + 1
-                for record, path in entries or [(None, None)]:
+                for index, (record, path) in enumerate(entries or [(None, None)]):
                     values = (pub, journal,
                               record.get("title") if record else None,
                               record.get("last_author") if record else None,
                               record.get("_date") if record else None,
                               record.get("doi") or record.get("link") if record else None,
-                              path[-1] if path else None, len(entries))
+                              path[1] if path and len(path) > 1 else None,
+                              path[2] if path and len(path) > 2 else None,
+                              path[3] if path and len(path) > 3 else None,
+                              path[-1] if path else None,
+                              len(entries) if index == 0 else None)
                     row_idx = ws.max_row + 1
                     source = styles.get(pub, styles.get("Others"))
                     for col, value in enumerate(values, 1):
                         cell = ws.cell(row_idx, col, value)
-                        src_col = col if col <= 6 else 3 if col == 7 else 7
+                        src_col = col if col <= 6 else 3 if col <= 10 else 7
                         _copy_style(source[src_col - 1], cell)
                         cell.alignment = Alignment(horizontal="left", vertical="center", wrap_text=True)
                     ws.row_dimensions[row_idx].height = min(96, max(18, 16 * (1 + len(str(values[2] or "")) // 64)))
-                if len(entries) > 1:
-                    for col in (2, 8):
-                        ws.merge_cells(start_row=start, start_column=col, end_row=ws.max_row, end_column=col)
-            if ws.max_row > start_pub:
-                ws.merge_cells(start_row=start_pub, start_column=1, end_row=ws.max_row, end_column=1)
+        ws.auto_filter.ref = f"A1:K{ws.max_row}"
         format_literature_worksheet(ws)
     output_path.parent.mkdir(parents=True, exist_ok=True)
     output.save(output_path)
