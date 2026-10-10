@@ -329,6 +329,7 @@ def make_workbook(records: list[dict], output_path: Path, template_path: Path) -
         for cell in ws[1]:
             cell.alignment = Alignment(horizontal="center", vertical="center", wrap_text=True)
         for pub in ordered_publishers:
+            first_publisher_row = True
             for p, journal in journals:
                 if p != pub:
                     continue
@@ -351,6 +352,15 @@ def make_workbook(records: list[dict], output_path: Path, template_path: Path) -
                         src_col = col if col <= 6 else 3 if col <= 10 else 7
                         _copy_style(source[src_col - 1], cell)
                         cell.alignment = Alignment(horizontal="left", vertical="center", wrap_text=True)
+                    # Keep one visible label per publisher/journal block while
+                    # retaining values on every row for Excel's AutoFilter.
+                    # The four-section number format hides a repeated text
+                    # value without deleting it or merging the data rows.
+                    if not first_publisher_row:
+                        ws.cell(row_idx, 1).number_format = ";;;"
+                    if index:
+                        ws.cell(row_idx, 2).number_format = ";;;"
+                    first_publisher_row = False
                     ws.row_dimensions[row_idx].height = min(96, max(18, 16 * (1 + len(str(values[2] or "")) // 64)))
         ws.auto_filter.ref = f"A1:K{ws.max_row}"
         format_literature_worksheet(ws)
