@@ -1,10 +1,11 @@
 # -*- coding: utf-8 -*-
 """
-Generate a monthly literature statistics workbook from classified weekly Excel files.
+Generate a monthly industry workbook from the ALL sheets of daily Excel files.
 
 Default behavior:
   - Month: previous month in Asia/Shanghai, e.g. 2026-06-03 -> 2026-05.
-  - Input: translated weekly workbooks plus classified daily backfill workbooks.
+  - Input: all daily classified workbooks for the month; translated weekly ALL
+    sheets add metadata or records when present. Filter by publication month.
   - Output: output/monthly/YYYY-MM 文献统计表.xlsx
 """
 
@@ -23,6 +24,8 @@ from zoneinfo import ZoneInfo
 import openpyxl
 import pandas as pd
 from excel_output_utils import format_literature_worksheet
+from monthly_industry_view import reclassify_monthly_workbook
+from monthly_all_sources import collect, make_workbook
 from openpyxl.styles import Alignment
 
 
@@ -445,40 +448,18 @@ def generate_monthly_workbook(
     template_path: Path,
     include_untranslated: bool = False,
 ) -> Path:
-    start, end = month_bounds(month)
-    source_map = load_source_map(source_map_path)
-
+    month_bounds(month)
     if not template_path.exists():
         raise FileNotFoundError(f"Template workbook not found: {template_path}")
-
-    weekly_files = weekly_files_for_month(weekly_dir, month, include_untranslated)
-    daily_files = daily_classified_files_for_month(daily_classified_dir, month)
-    input_files = weekly_files + daily_files
-    if not input_files:
-        raise FileNotFoundError(
-            f"No classified Excel files found for {month} in {weekly_dir} or {daily_classified_dir}"
-        )
-
+    records, stats = collect(month, daily_classified_dir, weekly_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
     output_path = output_dir / f"{month} 文献统计表.xlsx"
-    shutil.copy(template_path, output_path)
-
-    wb = openpyxl.load_workbook(output_path)
-    for sheet_name in wb.sheetnames:
-        sheet_frames = []
-        for input_file in input_files:
-            frame = read_weekly_sheet(input_file, sheet_name)
-            if not frame.empty:
-                sheet_frames.append(frame)
-
-        raw_articles = pd.concat(sheet_frames, ignore_index=True) if sheet_frames else pd.DataFrame()
-        articles = normalize_article_data(raw_articles, source_map, start, end)
-        fill_sheet(wb[sheet_name], articles)
-        print(f"[monthly] {sheet_name}: {len(articles)} matched records")
-
-    wb.save(output_path)
-    print(f"[monthly] Read {len(weekly_files)} weekly workbook(s)")
-    print(f"[monthly] Read {len(daily_files)} classified daily workbook(s)")
+    counts = make_workbook(records, output_path, template_path)
+    print(f"[monthly] Read {stats['daily_files']} daily and {stats['weekly_files']} weekly ALL worksheets")
+    print(f"[monthly] {stats['input_rows']} input rows, {stats['outside_month']} outside month, "
+          f"{stats['duplicates']} duplicates, {stats['unique']} unique articles")
+    for industry, count in counts.items():
+        print(f"[monthly] {industry}: {count} records")
     print(f"[monthly] Wrote {output_path}")
     return output_path
 
@@ -499,3 +480,4 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
+
