@@ -126,6 +126,18 @@ def classify_daily(
     frame = pd.read_csv(csv_path, encoding="utf-8-sig", keep_default_na=False)
     frame = pipeline.ensure_base_columns(frame)
     print(f"[io] loaded rows: {len(frame)}", flush=True)
+    # Older daily CSVs may contain an RSS row without DOI alongside an
+    # enriched copy of the same URL. Collapse them before translation and
+    # classification so each category sheet contains the paper once.
+    from spider0301 import merge_duplicate_records
+
+    source_count = len(frame)
+    frame = pd.DataFrame(
+        merge_duplicate_records(frame.to_dict(orient="records")),
+        columns=frame.columns,
+    )
+    if len(frame) != source_count:
+        print(f"[io] merged {source_count - len(frame)} duplicate daily rows", flush=True)
 
     rules = pipeline.load_classification_rules(str(classification_path))
     ordered_categories = [rule.name for rule in rules]
