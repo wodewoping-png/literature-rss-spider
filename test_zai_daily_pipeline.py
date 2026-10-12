@@ -2,17 +2,57 @@ import tempfile
 import unittest
 import zipfile
 from pathlib import Path
+from types import SimpleNamespace
 from unittest.mock import Mock, patch
 
 import pandas as pd
 from openpyxl import load_workbook
 
 from classify_weekly_onefile import write_grouped_xlsx
-from classify_daily_zai import pick_latest_daily_csv
+from classify_daily_zai import classify_daily, pick_latest_daily_csv
 from zai_client import ZAIChatClient, ZAIEndpoint, endpoints_from_env
 
 
 class ZAIDailyPipelineTests(unittest.TestCase):
+    def test_classification_merges_doi_less_copy_before_grouping(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            source = root / "news_with_abstract_2026-10-11.csv"
+            pd.DataFrame(
+                [
+                    {"title": "Grid integration", "link": "https://example.org/paper?a=1", "doi": "", "abstract": "RSS"},
+                    {"title": "Grid integration", "link": "https://example.org/paper?a=2", "doi": "10.1000/grid", "abstract": ""},
+                ]
+            ).to_csv(source, index=False, encoding="utf-8-sig")
+
+            def classify_once(df, **kwargs):
+                self.assertEqual(len(df), 1)
+                self.assertEqual(df.iloc[0]["doi"], "10.1000/grid")
+                out = df.copy()
+                out["stable_id"] = "one"
+                out["categories"] = "Energy"
+                return out, [["Energy"]], []
+
+            with (
+                patch(
+                    "classify_daily_zai.pipeline.load_classification_rules",
+                    return_value=[SimpleNamespace(name="Energy")],
+                ),
+                patch("classify_daily_zai.pipeline.classify_hybrid", side_effect=classify_once),
+            ):
+                output = classify_daily(
+                    source,
+                    root / "rules.txt",
+                    root / "classified",
+                    root / "checkpoints",
+                    root / "debug",
+                    translation_provider="none",
+                )
+            workbook = load_workbook(output, read_only=True)
+            self.assertEqual(workbook["ALL"].max_row, 2)
+            self.assertEqual(workbook["Energy"].max_row, 2)
+            workbook.close()
+
     @patch.dict(
         "os.environ",
         {"ZAI_API_KEY": "shared-key"},
