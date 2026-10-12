@@ -1957,18 +1957,33 @@ def _record_fill_score(record: dict) -> int:
 
 
 def merge_duplicate_records(records: list[dict]) -> list[dict]:
-    """Merge records by canonical DOI, falling back to normalized URL."""
+    """Merge by DOI and attach DOI-less copies through an unambiguous URL."""
+    dois_by_link: dict[str, set[str]] = {}
+    for record in records:
+        doi = normalize_doi(record.get("doi", "")) or normalize_doi(record.get("link", ""))
+        link = normalize_link((record.get("link") or "").strip()).lower()
+        if doi and link:
+            dois_by_link.setdefault(link, set()).add(doi)
+
     groups: dict[str, list[dict]] = {}
     for index, record in enumerate(records):
         item = record.copy()
         doi = normalize_doi(item.get("doi", "")) or normalize_doi(item.get("link", ""))
+        link = normalize_link((item.get("link") or "").strip()).lower()
         if doi:
             item["doi"] = doi
             key = f"doi:{doi}"
         else:
-            link = (item.get("link") or "").strip()
-            normalized_link = normalize_link(link).lower() if link else ""
-            key = f"url:{normalized_link}" if normalized_link else f"row:{index}"
+            known_dois = dois_by_link.get(link, set()) if link else set()
+            if len(known_dois) == 1:
+                doi = next(iter(known_dois))
+                item["doi"] = doi
+                key = f"doi:{doi}"
+            elif len(known_dois) > 1:
+                # A shared landing page must not collapse distinct papers.
+                key = f"row:{index}"
+            else:
+                key = f"url:{link}" if link else f"row:{index}"
         groups.setdefault(key, []).append(item)
 
     merged = []
