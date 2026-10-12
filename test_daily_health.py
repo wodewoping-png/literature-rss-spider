@@ -150,6 +150,26 @@ class BackfillDateTests(unittest.TestCase):
         self.assertEqual(merged[0]["doi"], "10.1002/aenm.202506744")
         self.assertEqual(merged[0]["abstract"], "Complete abstract")
 
+    def test_daily_merge_joins_doi_less_copy_with_same_publisher_url(self):
+        link = "https://www.sciencedirect.com/science/article/pii/S0306261926015448?dgcid=rss_sd_all"
+        records = [
+            {"title": "Grid integration", "link": link, "doi": "", "abstract": "RSS abstract"},
+            {"title": "Grid integration", "link": link, "doi": "10.1016/j.apenergy.2026.128888", "abstract": ""},
+        ]
+        merged = spider0301.merge_duplicate_records(records)
+        self.assertEqual(len(merged), 1)
+        self.assertEqual(merged[0]["doi"], "10.1016/j.apenergy.2026.128888")
+        self.assertEqual(merged[0]["abstract"], "RSS abstract")
+
+    def test_daily_merge_keeps_distinct_dois_on_shared_landing_page(self):
+        link = "https://publisher.example/issue/1"
+        records = [
+            {"title": "Paper A", "link": link, "doi": "10.1000/a"},
+            {"title": "Paper B", "link": link, "doi": "10.1000/b"},
+            {"title": "Unknown paper", "link": link, "doi": ""},
+        ]
+        self.assertEqual(len(spider0301.merge_duplicate_records(records)), 3)
+
     def test_rsc_crossref_fallback_accepts_rsc_doi(self):
         message = {
             "DOI": "10.1039/d6ee01234a",
