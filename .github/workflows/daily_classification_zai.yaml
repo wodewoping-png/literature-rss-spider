@@ -210,26 +210,17 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
-      - name: Decide whether weekly aggregation is due
-        id: weekly_gate
-        shell: bash
-        run: |
-          if [ "${{ github.event.inputs.task }}" = "weekly" ] || [ "${{ github.event.inputs.task }}" = "all" ]; then
-            echo "run=true" >> "$GITHUB_OUTPUT"
-          elif [ "${{ github.event.inputs.task }}" = "daily" ] && [ "$(date -u +%u)" = "5" ]; then
-            echo "run=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "run=false" >> "$GITHUB_OUTPUT"
-          fi
-
       - name: Checkout latest main including daily result
-        if: steps.weekly_gate.outputs.run == 'true'
         uses: actions/checkout@v6
         with:
           ref: main
           fetch-depth: 0
           token: ${{ github.token }}
           persist-credentials: true
+
+      - name: Wait for Friday daily classification (Asia/Shanghai)
+        id: weekly_gate
+        run: python scripts/weekly_classification_gate.py
 
       - name: Set up Python
         if: steps.weekly_gate.outputs.run == 'true'
@@ -243,7 +234,9 @@ jobs:
 
       - name: Merge the seven daily classified workbooks
         if: steps.weekly_gate.outputs.run == 'true'
-        run: python aggregate_daily_classified.py -c classification.txt --days 7
+        run: >-
+          python aggregate_daily_classified.py -c classification.txt --days 7
+          --end-date "${{ steps.weekly_gate.outputs.end_date }}"
 
       - name: Commit weekly merged workbook
         if: steps.weekly_gate.outputs.run == 'true'
