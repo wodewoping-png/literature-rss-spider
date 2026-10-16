@@ -72,56 +72,8 @@ jobs:
         shell: bash
         env:
           FORCE_RECLASSIFY: ${{ github.event.inputs.force_reclassify }}
-        run: |
-          latest=""
-          output=""
-
-          # Pick the newest CSV whose corresponding workbook is missing or
-          # stale. This also lets repeated runs drain a multi-day backlog.
-          while IFS= read -r candidate; do
-            name="$(basename "${candidate%.csv}")"
-            candidate_output="output/daily_classified/${name}_zai_classified.xlsx"
-            current_hash="$(sha256sum "$candidate" | awk '{print $1}')"
-            stored_hash=""
-            if [ -f "$candidate_output" ]; then
-              stored_hash="$(
-                unzip -p "$candidate_output" docProps/core.xml 2>/dev/null |
-                  grep -oE 'source_sha256=[0-9a-f]{64}' |
-                  head -n 1 |
-                  cut -d= -f2 || true
-              )"
-            fi
-
-            legacy_is_current="false"
-            if [ -f "$candidate_output" ] && [ -z "$stored_hash" ]; then
-              source_commit="$(git log -1 --format=%H -- "$candidate" || true)"
-              output_commit="$(git log -1 --format=%H -- "$candidate_output" || true)"
-              if [ -n "$source_commit" ] && [ -n "$output_commit" ] &&
-                 git merge-base --is-ancestor "$source_commit" "$output_commit"; then
-                legacy_is_current="true"
-              fi
-            fi
-
-            if [ "$FORCE_RECLASSIFY" = "true" ] ||
-               [ ! -f "$candidate_output" ] ||
-               { [ -n "$stored_hash" ] && [ "$stored_hash" != "$current_hash" ]; } ||
-               { [ -z "$stored_hash" ] && [ "$legacy_is_current" != "true" ]; }; then
-              latest="$candidate"
-              output="$candidate_output"
-              break
-            fi
-          done < <(find output -maxdepth 1 -type f -name 'news_with_abstract_*.csv' | sort -r)
-
-          if [ -z "$latest" ]; then
-            echo "run=false" >> "$GITHUB_OUTPUT"
-            echo "No new or changed daily CSV needs classification."
-            exit 0
-          fi
-
-          echo "input=$latest" >> "$GITHUB_OUTPUT"
-          echo "output=$output" >> "$GITHUB_OUTPUT"
-          echo "run=true" >> "$GITHUB_OUTPUT"
-          echo "Will translate/classify newest pending content: $latest"
+          DAILY_CLASSIFICATION_START_DATE: "2026-10-17"
+        run: python scripts/select_daily_classification.py
 
       - name: Set up Python
         if: steps.daily_input.outputs.run == 'true'
@@ -130,22 +82,13 @@ jobs:
           python-version: "3.11"
           cache: pip
 
-      - name: Cache embedding models
-        if: steps.daily_input.outputs.run == 'true'
-        uses: actions/cache@v5
-        with:
-          path: |
-            ~/.cache/huggingface
-            ~/.cache/torch
-          key: hf-cache-${{ runner.os }}-v2
-
       - name: Install dependencies
         if: steps.daily_input.outputs.run == 'true'
         run: |
           python -m pip install -U pip
-          pip install -r requirements.txt
+          pip install pandas openpyxl python-docx requests
 
-      - name: Translate with free routes and classify with GLM-5.3-Flash
+      - name: Translate with free routes and classify by industry taxonomy
         if: steps.daily_input.outputs.run == 'true'
         env:
           ZAI_API_KEY: ${{ secrets.ZAI_API_KEY }}
@@ -168,10 +111,10 @@ jobs:
         run: |
           args=(
             -i "${{ steps.daily_input.outputs.input }}"
-            -c classification.txt
+            --taxonomy config/monthly/industry_taxonomy.json
             --translation-provider google
           )
-          python classify_daily_zai.py "${args[@]}"
+          python classify_daily_industry.py "${args[@]}"
 
       - name: Commit daily classification
         if: always() && steps.daily_input.outputs.run == 'true'
@@ -184,7 +127,8 @@ jobs:
           git remote set-url origin "https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
 
           git add -- "${{ steps.daily_input.outputs.output }}" 2>/dev/null || true
-          git add -- output/checkpoints/*zai_classified* 2>/dev/null || true
+          git add -- output/checkpoints/*zai_classified_translation.csv 2>/dev/null || true
+          git add -- output/checkpoints/industry_classification.json 2>/dev/null || true
           if git diff --cached --quiet; then
             echo "No daily classification or checkpoint changes to commit"
             exit 0

@@ -6,9 +6,14 @@ import hashlib
 import os
 import re
 import zipfile
-from datetime import datetime
+from datetime import datetime, timedelta
 from pathlib import Path
 from zoneinfo import ZoneInfo
+
+try:
+    from .select_daily_classification import START_DATE, expected_markers, workbook_current
+except ImportError:
+    from select_daily_classification import START_DATE, expected_markers, workbook_current
 
 
 def weekly_report_status(root: Path, now: datetime | None = None) -> tuple[bool, str, str]:
@@ -31,6 +36,17 @@ def weekly_report_status(root: Path, now: datetime | None = None) -> tuple[bool,
         return False, report_date, "Waiting for a readable daily classification workbook."
     if not match or match[1] != hashlib.sha256(source.read_bytes()).hexdigest():
         return False, report_date, "Waiting for classification of the latest Friday source."
+
+    if report_date >= START_DATE:
+        markers = expected_markers(root)
+        for offset in range(7):
+            day = (local_now.date() - timedelta(days=offset)).isoformat()
+            if day < START_DATE:
+                continue
+            day_source = root / "output" / f"news_with_abstract_{day}.csv"
+            day_output = root / "output/daily_classified" / f"news_with_abstract_{day}_zai_classified.xlsx"
+            if not workbook_current(day_source, day_output, markers):
+                return False, report_date, f"Waiting for current industry classification: {day}."
 
     weekly = root / "output/weekly_classified" / f"weekly_daily_classified_{report_date}.xlsx"
     if weekly.exists():

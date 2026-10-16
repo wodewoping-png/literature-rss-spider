@@ -1,0 +1,29 @@
+name: Industry Classification Tests
+
+on:
+  pull_request:
+    paths:
+      - "*industry*.py"
+      - "monthly*.py"
+      - "aggregate_daily_classified.py"
+      - "excel_output_utils.py"
+      - "config/monthly/industry_taxonomy.json"
+      - "scripts/*classification*.py"
+      - "tests/test_industry_classification.py"
+      - ".github/workflows/*classification*.yaml"
+      - ".github/workflows/zai_quota_retry.yaml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  offline-contracts:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+      - run: pip install pandas openpyxl python-docx requests
+      - run: python -m unittest discover -s tests -v
