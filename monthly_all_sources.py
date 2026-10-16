@@ -10,7 +10,7 @@ import re
 from calendar import monthrange
 from collections import Counter, defaultdict
 from copy import copy
-from datetime import datetime
+from datetime import date, datetime, timedelta
 from pathlib import Path
 
 import openpyxl
@@ -164,11 +164,26 @@ def _read_all(path: Path):
 
 
 def collect(month: str, daily_dir: Path, weekly_dir: Path) -> tuple[list[dict], dict]:
-    daily = sorted(daily_dir.glob(f"news_with_abstract_{month}-??_zai_classified.xlsx"))
-    weekly = sorted(weekly_dir.glob(f"weekly_news_with_abstract_{month}-??_translated.xlsx"))
+    year, mon = map(int, month.split("-"))
+    start = date(year, mon, 1)
+    end = date(year, mon, monthrange(year, mon)[1])
+    def run_date(path):
+        match = re.search(r"(\d{4}-\d{2}-\d{2})", path.name)
+        try:
+            return date.fromisoformat(match[1]) if match else None
+        except ValueError:
+            return None
+    # Retain the pre-existing spillover windows: gap repair may discover a
+    # prior-month publication only in a following-month run. Publication date,
+    # rather than the filename month, determines report membership below.
+    daily = sorted(p for p in daily_dir.glob("news_with_abstract_????-??-??_zai_classified.xlsx")
+                   if (day := run_date(p)) and start <= day <= end + timedelta(days=31))
+    weekly = sorted(p for pattern in ("weekly_news_with_abstract_????-??-??_translated.xlsx",
+                                      "weekly_daily_classified_????-??-??.xlsx")
+                    for p in weekly_dir.glob(pattern)
+                    if (day := run_date(p)) and start <= day <= end + timedelta(days=7))
     if not daily:
         raise FileNotFoundError(f"No daily Excel workbooks for {month} in {daily_dir}")
-    year, mon = map(int, month.split("-"))
     expected = {f"{month}-{day:02d}" for day in range(1, monthrange(year, mon)[1] + 1)}
     observed = {p.name[19:29] for p in daily}
     missing = sorted(expected - observed)
@@ -182,14 +197,15 @@ def collect(month: str, daily_dir: Path, weekly_dir: Path) -> tuple[list[dict], 
         stats["files"] += 1
         for row in _read_all(path):
             stats["input_rows"] += 1
-            date = _date(row)
-            if not date or date.strftime("%Y-%m") != month:
+            publication_date = _date(row)
+            if not publication_date or publication_date.strftime("%Y-%m") != month:
                 stats["outside_month"] += 1
                 continue
             if not str(row.get("title") or "").strip():
                 stats["empty_title"] += 1
                 continue
             key = _record_key(row)
+            row["_classification_run_date"] = run_date(path).isoformat()
             if key in records:
                 stats["duplicates"] += 1
                 old = records[key]
@@ -198,11 +214,14 @@ def collect(month: str, daily_dir: Path, weekly_dir: Path) -> tuple[list[dict], 
                 for field in ("abstract", "categories", "last_author", "doi", "link"):
                     if not old.get(field) and row.get(field):
                         old[field] = row[field]
-                if row.get("classification_schema") == SCHEMA_VERSION:
+                if (row.get("classification_schema") == SCHEMA_VERSION and
+                    (old.get("classification_schema") != SCHEMA_VERSION or
+                     row["_classification_run_date"] >= old.get("_classification_run_date", ""))):
                     for field in (*DECISION_COLUMNS, "categories", "legacy_categories"):
                         old[field] = row.get(field) or ""
+                    old["_classification_run_date"] = row["_classification_run_date"]
             else:
-                row["_date"] = date
+                row["_date"] = publication_date
                 records[key] = row
     stats["unique"] = len(records)
     stats["daily_files"] = len(daily)
@@ -364,7 +383,7 @@ def make_workbook(records: list[dict], output_path: Path, template_path: Path) -
                               path[1] if path and len(path) > 1 else None,
                               path[2] if path and len(path) > 2 else None,
                               path[3] if path and len(path) > 3 else None,
-                              path[-1] if path else None,
+                              path[4] if path and len(path) > 4 else None,
                               len(entries) if index == 0 else None)
                     row_idx = ws.max_row + 1
                     source = styles.get(pub, styles.get("Others"))
