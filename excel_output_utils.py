@@ -20,7 +20,7 @@ DATE_HEADERS = {
     "发表日期",
 }
 DOI_HEADERS = {"doi", "DOI"}
-LINK_HEADERS = {"link", "链接", "url", "URL"}
+LINK_HEADERS = {"link", "链接", "原文链接", "url", "URL"}
 HYPERLINK_FONT_COLOR = "0563C1"
 
 

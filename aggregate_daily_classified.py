@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 """Merge already-classified daily XLSX files into one weekly XLSX.
 
-No translation, embeddings, or LLM calls are made here.  Duplicate papers are
-merged by stable id/link/title and category labels are unioned.
+No translation, embeddings, or LLM calls are made here. Industry decisions
+are retained atomically; historical topical reports keep their old behavior.
 """
 
 from __future__ import annotations
@@ -21,6 +21,10 @@ from classify_weekly_onefile import (
     ensure_stable_id_column,
     load_classification_rules,
     write_grouped_xlsx,
+)
+from industry_classification import (
+    SCHEMA_VERSION, DEFAULT_TAXONOMY, Taxonomy, apply_decision,
+    deduplicate_records, write_industry_workbook,
 )
 
 
@@ -90,6 +94,15 @@ def merge_daily_frames(frames: Sequence[pd.DataFrame], ordered_categories: Seque
 
     combined = pd.concat(frames, ignore_index=True, sort=False).fillna("")
     combined = ensure_base_columns(combined)
+    if (combined.get("classification_schema", pd.Series(dtype=str)) == SCHEMA_VERSION).any():
+        taxonomy = Taxonomy(DEFAULT_TAXONOMY)
+        records = deduplicate_records(combined.to_dict(orient="records"))
+        # Manual mixed-period reports keep legacy-only rows visible instead
+        # of interpreting an old topical label as a new industry decision.
+        records = [r if r.get("classification_schema") == SCHEMA_VERSION else
+                   apply_decision(r, {"path": [], "reason": "切换前旧记录，尚无行业图景判定", "review": False}, taxonomy)
+                   for r in records]
+        return pd.DataFrame(records).fillna("")
     combined = ensure_stable_id_column(combined)
     rows = [
         _merge_group(group, ordered_categories)
@@ -124,14 +137,14 @@ def aggregate_daily_workbooks(
         print(f"[weekly] read {len(frame)} rows from {path.name}", flush=True)
 
     merged = merge_daily_frames(frames, ordered_categories)
-    labels_list = [_labels(value) for value in merged.get("categories", pd.Series(dtype=str)).tolist()]
-    write_grouped_xlsx(
-        merged,
-        labels_list,
-        ordered_categories,
-        still_missing_ids=[],
-        output_xlsx=str(output_path),
-    )
+    if (merged.get("classification_schema", pd.Series(dtype=str)) == SCHEMA_VERSION).any():
+        write_industry_workbook(merged.to_dict(orient="records"), output_path,
+                                Taxonomy(DEFAULT_TAXONOMY), source_name=";".join(p.name for p in files),
+                                input_count=sum(len(f) for f in frames))
+    else:
+        labels_list = [_labels(value) for value in merged.get("categories", pd.Series(dtype=str)).tolist()]
+        write_grouped_xlsx(merged, labels_list, ordered_categories,
+                           still_missing_ids=[], output_xlsx=str(output_path))
     print(f"[weekly] merged {len(files)} daily files into {len(merged)} unique papers: {output_path}", flush=True)
     return output_path
 
