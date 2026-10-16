@@ -3,7 +3,7 @@ import json
 import shutil
 import tempfile
 import unittest
-from datetime import datetime
+from datetime import date, datetime
 from pathlib import Path
 from unittest.mock import patch
 from zoneinfo import ZoneInfo
@@ -18,7 +18,7 @@ from industry_classification import (
     apply_decision, deduplicate_records, record_path, semantic_classify,
     write_industry_workbook,
 )
-from monthly_all_sources import category_path
+from monthly_all_sources import category_path, collect, make_workbook
 from scripts.select_daily_classification import expected_markers, select_pending, workbook_current
 from scripts.weekly_classification_gate import weekly_report_status
 
@@ -186,6 +186,55 @@ class IndustryTests(unittest.TestCase):
         self.assertEqual(category_path(row), ("通用技术", "基础学科", "基础物理"))
         excluded = apply_decision(row, {"path": [], "reason": "无贴切路径", "review": False}, self.tax)
         self.assertEqual(category_path(excluded), ())
+
+    def test_monthly_collect_includes_later_backfill_with_publication_date_filter(self):
+        daily = self.root / "daily"; daily.mkdir()
+        weekly = self.root / "weekly"; weekly.mkdir()
+        def write(folder, name, rows):
+            pd.DataFrame(rows).to_excel(folder / name, sheet_name="ALL", index=False)
+        base = {"title": "Base September article", "pub_date": "2026-09-15", "doi": "10.1234/base"}
+        for day in range(1, 31):
+            write(daily, f"news_with_abstract_2026-09-{day:02d}_zai_classified.xlsx", [base])
+        def late(doi, pub="2026-09-30"):
+            return {"title": doi, "doi": doi, "pub_date": pub}
+        write(daily, "news_with_abstract_2026-10-01_zai_classified.xlsx", [late("10.1234/daily"), late("10.1234/outside", "2026-10-01")])
+        newest = apply_decision(base, {"path": ["通用技术", "基础学科", "基础物理"], "reason": "较新判定", "review": False}, self.tax)
+        write(daily, "news_with_abstract_2026-10-31_zai_classified.xlsx", [late("10.1234/day31"), newest])
+        write(daily, "news_with_abstract_2026-11-01_zai_classified.xlsx", [late("10.1234/too-late-daily")])
+        older = apply_decision(base, {"path": ["AI与智能科技", "AI软件层", "AI4S"], "reason": "较早判定", "review": False}, self.tax)
+        write(weekly, "weekly_news_with_abstract_2026-10-07_translated.xlsx", [late("10.1234/weekly"), older])
+        write(weekly, "weekly_news_with_abstract_2026-10-08_translated.xlsx", [late("10.1234/too-late-weekly")])
+        write(weekly, "weekly_daily_classified_2026-10-06.xlsx", [late("10.1234/new-weekly")])
+        rows, stats = collect("2026-09", daily, weekly)
+        self.assertEqual({r["doi"] for r in rows}, {"10.1234/base", "10.1234/daily", "10.1234/day31", "10.1234/weekly", "10.1234/new-weekly"})
+        self.assertEqual(stats["outside_month"], 1)
+        self.assertEqual(stats["daily_files"], 32)
+        self.assertEqual(stats["weekly_files"], 2)
+        self.assertEqual(record_path(next(r for r in rows if r["doi"] == base["doi"])),
+                         ("通用技术", "基础学科", "基础物理"))
+
+    def test_monthly_does_not_repeat_shallow_paths_in_fifth_level(self):
+        template = self.root / "template.xlsx"
+        wb = openpyxl.Workbook(); ws = wb.active
+        ws.append(["出版社", "期刊名", "标题", "通讯作者", "发表日期", "DOI", "数量"])
+        ws.append(["Springer-Nature", "Nature"])
+        wb.save(template); wb.close()
+        paths = [("AI与智能科技", "AI软件层", "AI4S"),
+                 ("零碳产业", "能量转化", "能量存储", "电化学储能", "电池正极")]
+        rows = [apply_decision({"title": f"Paper {i}", "source": "Nature", "_date": date(2026, 10, 16)},
+                              {"path": p, "reason": "语义判定", "review": False}, self.tax)
+                for i, p in enumerate(paths)]
+        output = self.root / "monthly.xlsx"
+        make_workbook(rows, output, template)
+        wb = openpyxl.load_workbook(output)
+        ai_row = next(r for r in wb["AI与智能科技"].iter_rows(min_row=2) if r[2].value == "Paper 0")
+        self.assertEqual(ai_row[7].value, "AI4S")
+        self.assertIsNone(ai_row[8].value)
+        self.assertIsNone(ai_row[9].value)
+        battery = next(r for r in wb["零碳产业"].iter_rows(min_row=2) if r[2].value == "Paper 1")
+        self.assertEqual(battery[9].value, "电池正极")
+        self.assertTrue(wb["AI与智能科技"].merged_cells)
+        wb.close()
 
     def test_weekly_gate_waits_for_all_seven_new_daily_outputs(self):
         self.fixture()
