@@ -68,7 +68,8 @@ CELL_PRESS_ISSNS = {"2451-9294", "2542-4351", "2590-3322", "2590-2385"}
 # These publishers expose incomplete (often year- or month-only) publication
 # dates in Crossref. Their full registration date is the reliable discovery
 # clock used by the live spider and this independent coverage audit.
-CREATED_DATE_ISSNS = RSC_ISSNS | CELL_PRESS_ISSNS
+IEEE_ISSNS = {issn for issn, _, prefix in SOURCES if prefix == "10.1109/"}
+CREATED_DATE_ISSNS = RSC_ISSNS | CELL_PRESS_ISSNS | IEEE_ISSNS
 DEFAULT_FIELDS = [
     "title",
     "link",
@@ -276,6 +277,17 @@ def fetch_source(
             "abstract_source": "crossref" if abstract else "",
             "must_have_abstract": "0",
         }
+        if issn in IEEE_ISSNS:
+            items[key]["discovery_date"] = pub_dt.isoformat()
+            exact = None
+            for field in ("published-online", "published-print", "issued"):
+                parts = message.get(field, {}).get("date-parts", [[]])[0]
+                if len(parts) >= 3:
+                    exact = crossref_date({field: message[field]})
+                    if exact:
+                        break
+            items[key]["pub_date"] = exact.isoformat() if exact else ""
+            items[key]["published_str"] = exact.isoformat() if exact else ""
     return items
 
 

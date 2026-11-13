@@ -260,6 +260,12 @@ CROSSREF_FALLBACK_FEEDS = {
 }
 CROSSREF_FALLBACK_ROWS = 100
 
+# IEEE early-access metadata often has only a publication year. Discover by
+# registration time, but never present that timestamp as the publication date.
+for _meta in CROSSREF_FALLBACK_FEEDS.values():
+    if _meta["doi_prefix"] == "10.1109/":
+        _meta["date_source"] = "created"
+
 # ✅ Debug：作者抓取路径日志
 DEBUG_AUTHOR = os.getenv("DEBUG_AUTHOR", "1") == "1"
 
@@ -920,6 +926,12 @@ def _crossref_work_to_record(msg: dict, meta: dict) -> dict | None:
     link = _crossref_primary_url(msg, doi)
     published_str = pub_date.strftime("%Y-%m-%d %H:%M:%S %Z") if pub_date else ""
 
+    discovery_date = pub_date.isoformat() if pub_date else ""
+    if meta["doi_prefix"] == "10.1109/":
+        pub_date = next((dt for field in ("published-online", "published-print", "issued")
+                         if (dt := _crossref_date_field(msg, field, require_day=True))), None)
+        published_str = pub_date.isoformat() if pub_date else ""
+
     abstract = (msg.get("abstract", "") or "").strip()
     if abstract:
         abstract = clean_html_text(abstract)
@@ -931,6 +943,7 @@ def _crossref_work_to_record(msg: dict, meta: dict) -> dict | None:
         "source": source_title,
         "published_str": published_str,
         "pub_date": pub_date,
+        "discovery_date": discovery_date,
         "doi": doi,
         "last_author": last_author,
         "last_author_source": "crossref" if last_author else "",
@@ -994,7 +1007,7 @@ def merge_crossref_fallback_record(base: dict, prev_by_key, prev_has_abs_keys, p
     key = record_key(base.get("doi", ""), base.get("link", ""))
     if key in prev_has_abs_keys:
         rec = {**prev_by_key.get(key, {}), "must_have_abstract": False}
-        for field in ("title", "link", "source", "published_str", "pub_date", "doi", "rss_pub_date", "rss_published_str"):
+        for field in ("title", "link", "source", "published_str", "pub_date", "doi", "rss_pub_date", "rss_published_str", "discovery_date"):
             if base.get(field) not in (None, ""):
                 rec[field] = base.get(field)
         for field in ("last_author", "last_author_source", "abstract", "abstract_source"):
@@ -2039,6 +2052,7 @@ def export_records(today_records: dict):
         "abstract",
         "abstract_source",
         "must_have_abstract",
+        "discovery_date",
     ]
 
     df = df_all.loc[:, [c for c in keep_cols if c in df_all.columns]]

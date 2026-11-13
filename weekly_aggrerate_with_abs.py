@@ -296,6 +296,7 @@ def merge_group_rows(g: pd.DataFrame) -> dict:
         "published_str": out_published_str,
         "source": source,
         "pub_date": pub_date_min,
+        "discovery_date": next((str(v) for v in g.get("discovery_date", []) if pd.notna(v) and str(v)), ""),
         "doi": doi,
         "last_author": last_author,
         "last_author_source": last_author_source,
@@ -372,6 +373,11 @@ def aggregate_rolling7_dedupe_by_link(run_date=None):
     all_df["pub_date"] = pd.to_datetime(all_df["pub_date"], utc=True, errors="coerce")
 
     in_window = all_df["pub_date"].notna() & (all_df["pub_date"] >= start_dt) & (all_df["pub_date"] < end_dt_exclusive)
+    # Undated early-access papers remain discoverable without inventing a
+    # publication day. Keep the discovery timestamp in a separate column.
+    if "discovery_date" in all_df:
+        discovered = pd.to_datetime(all_df["discovery_date"], utc=True, errors="coerce")
+        in_window |= all_df["pub_date"].isna() & discovered.ge(start_dt) & discovered.lt(end_dt_exclusive)
     before = len(all_df)
     all_df = all_df.loc[in_window].copy()
     after = len(all_df)

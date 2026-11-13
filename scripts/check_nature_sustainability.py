@@ -219,6 +219,8 @@ def repair_daily_file(path: Path, items: dict[str, dict[str, str]]) -> int:
     for field in DEFAULT_FIELDS:
         if field not in fieldnames:
             fieldnames.append(field)
+    if any("discovery_date" in item for item in items.values()) and "discovery_date" not in fieldnames:
+        fieldnames.append("discovery_date")
 
     existing = {record_key(row.get("doi", ""), row.get("link", "")) for row in rows}
     added = 0
