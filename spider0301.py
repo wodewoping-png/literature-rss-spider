@@ -527,7 +527,7 @@ def parse_date_strict(d: str):
         return None
     try:
         ts = pd.to_datetime(d, utc=True, errors="raise")
-        return ts.to_pydatetime()
+        return None if pd.isna(ts) else ts.to_pydatetime()
     except Exception:
         return None
 
@@ -676,14 +676,14 @@ def parse_rss_feed(url: str):
     return feedparser.FeedParserDict(feed=feedparser.FeedParserDict(), entries=[])
 
 def within_days(pub_dt: datetime, days: int) -> bool:
-    if not pub_dt:
+    if pub_dt is None or pd.isna(pub_dt):
         return False
     if pub_dt.tzinfo is None:
         pub_dt = pub_dt.replace(tzinfo=timezone.utc)
     return (today_utc - pub_dt.date()).days <= days
 
 def in_target_dates(pub_dt: datetime | None) -> bool:
-    if not pub_dt:
+    if pub_dt is None or pd.isna(pub_dt):
         return False
     if pub_dt.tzinfo is None:
         pub_dt = pub_dt.replace(tzinfo=timezone.utc)
@@ -1503,7 +1503,11 @@ def load_yesterday_cache(path: Path):
         key = record_key(doi, link)
 
         pub_dt = row.get("pub_date")
-        pub_dt = pub_dt.to_pydatetime() if hasattr(pub_dt, "to_pydatetime") else None
+        pub_dt = (
+            pub_dt.to_pydatetime()
+            if pd.notna(pub_dt) and hasattr(pub_dt, "to_pydatetime")
+            else None
+        )
 
         abstract = str(row.get("abstract", "") or "").strip()
 
@@ -1513,6 +1517,7 @@ def load_yesterday_cache(path: Path):
             "source": str(row.get("source", "") or ""),
             "published_str": str(row.get("published_str", "") or ""),
             "pub_date": pub_dt,
+            "discovery_date": str(row.get("discovery_date", "") or "").strip(),
             "doi": doi,
             "last_author": str(row.get("last_author", "") or ""),
             "last_author_source": str(row.get("last_author_source", "") or ""),
@@ -2130,3 +2135,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+

@@ -387,7 +387,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: >-
-          gh workflow run daily_classification_zai.yaml
+          python scripts/dispatch_workflow.py daily_classification_zai.yaml
           --repo "${GITHUB_REPOSITORY}"
           --ref main
           -f task=daily
@@ -476,3 +476,4 @@ jobs:
           echo "RSS endpoints/fallbacks still unhealthy: $UNHEALTHY_FEEDS"
           echo "::error title=RSS feed health check failed::Unhealthy feeds: ${UNHEALTHY_FEEDS:-unknown}; missing dates: ${FAILED_DATES:-none}; Nature DOI gaps: ${NATURE_MISSING_DOIS:-none}; RSC DOI gaps: ${RSC_MISSING_DOIS:-none}; Cell Press DOI gaps: ${CELL_PRESS_MISSING_DOIS:-none}; fallback DOI gaps: ${CROSSREF_MISSING_DOIS:-none}"
           exit 1
+

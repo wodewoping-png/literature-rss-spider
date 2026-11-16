@@ -31,6 +31,10 @@ concurrency:
 
 jobs:
   run-rss-spider:
+    outputs:
+      crawl: ${{ steps.crawl.outcome }}
+      commit: ${{ steps.commit_daily.outcome }}
+      gap_dispatch: ${{ steps.gap_dispatch.outcome }}
     if: github.event.schedule == '0 2 * * *' || github.event.inputs.task == 'daily' || github.event.inputs.task == 'all'
     runs-on: ubuntu-latest
     timeout-minutes: 120
@@ -56,6 +60,7 @@ jobs:
           pip install -r requirements-spider.txt
 
       - name: Run spider (headless)
+        id: crawl
         run: python spider0301.py
         env:
           PLAYWRIGHT_HEADLESS: "1"
@@ -63,6 +68,7 @@ jobs:
           ELSEVIER_API_KEY: ${{ secrets.ELSEVIER_API_KEY }}
 
       - name: Commit daily results (rebase-safe)
+        id: commit_daily
         env:
           GITHUB_TOKEN: ${{ github.token }}
         run: |
@@ -83,10 +89,11 @@ jobs:
           git push origin HEAD:main
 
       - name: Trigger daily gap check
+        id: gap_dispatch
         env:
           GH_TOKEN: ${{ github.token }}
         run: >-
-          gh workflow run daily_gap_backfill.yaml
+          python scripts/dispatch_workflow.py daily_gap_backfill.yaml
           --repo "${GITHUB_REPOSITORY}"
           --ref main
 
@@ -182,9 +189,13 @@ jobs:
           DINGTALK_WEBHOOK: ${{ secrets.DINGTALK_WEBHOOK || secrets.DINGTALK_WEBHOOK_URL }}
           DINGTALK_SECRET: ${{ secrets.DINGTALK_SECRET }}
           DAILY_RESULT: ${{ needs.run-rss-spider.result }}
+          CRAWL_RESULT: ${{ needs.run-rss-spider.outputs.crawl }}
+          COMMIT_RESULT: ${{ needs.run-rss-spider.outputs.commit }}
+          GAP_DISPATCH_RESULT: ${{ needs.run-rss-spider.outputs.gap_dispatch }}
           WEEKLY_RESULT: ${{ needs.run-weekly-aggregate-with-abs.result }}
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
         run: >-
           python scripts/send_dingtalk_alert.py
           --title "Literature RSS workflow failed"
-          --message "repository=${GITHUB_REPOSITORY}; daily=${DAILY_RESULT}; weekly=${WEEKLY_RESULT}; run=${RUN_URL}"
+          --message "repository=${GITHUB_REPOSITORY}; daily=${DAILY_RESULT}; crawl=${CRAWL_RESULT:-unknown}; data_commit=${COMMIT_RESULT:-unknown}; gap_dispatch=${GAP_DISPATCH_RESULT:-unknown}; weekly_job=${WEEKLY_RESULT} (may be gated/skipped); run=${RUN_URL}"
+
