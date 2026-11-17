@@ -68,6 +68,37 @@ jobs:
           fi
           python scripts/check_daily_gaps.py "${args[@]}"
 
+      # Build the missing target CSV before any publisher-specific repair tries
+      # to append to it. Otherwise a single missing day makes every source
+      # repair fail with FileNotFoundError despite a successful later backfill.
+      - name: Install spider dependencies
+        if: steps.gaps.outputs.missing_count != '0'
+        run: |
+          python -m pip install -U pip
+          pip install -r requirements-spider.txt
+
+      - name: Attempt each missing date once
+        if: steps.gaps.outputs.missing_count != '0'
+        id: backfill
+        env:
+          MISSING_DATES: ${{ steps.gaps.outputs.missing_dates }}
+          ELSEVIER_API_KEY: ${{ secrets.ELSEVIER_API_KEY }}
+          PLAYWRIGHT_HEADLESS: "1"
+          PLAYWRIGHT_CHANNEL: "chrome"
+        run: |
+          failed_dates=""
+          for day in $MISSING_DATES; do
+            echo "Attempting one backfill for UTC output date $day"
+            if ! RUN_DATE="$day" timeout 70m python -u spider0301.py; then
+              echo "Backfill process failed for $day"
+            fi
+            if ! python scripts/check_daily_gaps.py --dates "$day" --fail-on-gap; then
+              failed_dates="${failed_dates} ${day}"
+            fi
+          done
+          failed_dates="${failed_dates# }"
+          echo "failed_dates=$failed_dates" >> "$GITHUB_OUTPUT"
+
       - name: Install source-health dependencies
         run: pip install feedparser requests
 
@@ -291,34 +322,6 @@ jobs:
             --end-date "$end_date" \
             --github-output "$GITHUB_OUTPUT" \
             --fail-on-unhealthy
-
-      - name: Install spider dependencies
-        if: steps.gaps.outputs.missing_count != '0'
-        run: |
-          python -m pip install -U pip
-          pip install -r requirements-spider.txt
-
-      - name: Attempt each missing date once
-        if: steps.gaps.outputs.missing_count != '0'
-        id: backfill
-        env:
-          MISSING_DATES: ${{ steps.gaps.outputs.missing_dates }}
-          ELSEVIER_API_KEY: ${{ secrets.ELSEVIER_API_KEY }}
-          PLAYWRIGHT_HEADLESS: "1"
-          PLAYWRIGHT_CHANNEL: "chrome"
-        run: |
-          failed_dates=""
-          for day in $MISSING_DATES; do
-            echo "Attempting one backfill for UTC output date $day"
-            if ! RUN_DATE="$day" timeout 70m python -u spider0301.py; then
-              echo "Backfill process failed for $day"
-            fi
-            if ! python scripts/check_daily_gaps.py --dates "$day" --fail-on-gap; then
-              failed_dates="${failed_dates} ${day}"
-            fi
-          done
-          failed_dates="${failed_dates# }"
-          echo "failed_dates=$failed_dates" >> "$GITHUB_OUTPUT"
 
       - name: Attempt fallback-journal repair once
         if: >-

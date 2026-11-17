@@ -292,14 +292,16 @@ def main() -> int:
         else:
             expected = fetch_expected_items(days[0], days[-1])
             coverage_label = SOURCE_NAME
-        observed = load_observed_keys(args.output_dir, days)
+        # Late RSS additions may be stored in the following run's CSV.
+        observed_days = days + [args.end_date + timedelta(days=1)]
+        observed = load_observed_keys(args.output_dir, observed_days)
         missing = missing_items(expected, observed)
         initially_missing = len(missing)
         added = 0
         if args.repair_date and missing:
             target = args.output_dir / f"news_with_abstract_{args.repair_date.isoformat()}.csv"
             added = repair_daily_file(target, missing)
-            observed = load_observed_keys(args.output_dir, days)
+            observed = load_observed_keys(args.output_dir, observed_days)
             missing = missing_items(expected, observed)
 
         missing_dois = " ".join(item["doi"] for item in missing.values())
@@ -355,3 +357,4 @@ def main() -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
+

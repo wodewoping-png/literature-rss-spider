@@ -10,7 +10,7 @@ import os
 import re
 import time
 from collections import Counter
-from datetime import date, datetime, timezone
+from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 
 import requests
@@ -62,6 +62,7 @@ SOURCES = (
     ("1937-4208", "IEEE Transactions on Power Delivery", "10.1109/"),
     ("2375-2548", "Science Advances", "10.1126/"),
     ("0036-8075", "Science", "10.1126/"),
+    ("1091-6490", "Proceedings of the National Academy of Sciences", "10.1073/"),
 )
 RSC_ISSNS = {"0306-0012", "1754-5692"}
 CELL_PRESS_ISSNS = {"2451-9294", "2542-4351", "2590-3322", "2590-2385"}
@@ -333,7 +334,11 @@ def main() -> int:
         elif args.exclude_rsc:
             sources = tuple(source for source in SOURCES if source[0] not in RSC_ISSNS)
         expected = fetch_expected(days[0], days[-1], sources)
-        observed = load_observed_aliases(args.output_dir, days)
+        # The spider's output date is its run date, not necessarily a paper's
+        # Crossref publication/creation date. A paper registered on end_date
+        # may legitimately first appear in the next day's output.
+        observed_days = days + [args.end_date + timedelta(days=1)]
+        observed = load_observed_aliases(args.output_dir, observed_days)
         missing = find_missing(expected, observed)
         initially_missing = len(missing)
         initially_invalid = count_rsc_front_matter(args.output_dir, days) if args.only_rsc else 0
@@ -344,7 +349,7 @@ def main() -> int:
             if args.only_rsc:
                 removed = clean_rsc_front_matter(target)
             added = repair_daily_file(target, missing)
-            observed = load_observed_aliases(args.output_dir, days)
+            observed = load_observed_aliases(args.output_dir, observed_days)
             missing = find_missing(expected, observed)
         invalid = count_rsc_front_matter(args.output_dir, days) if args.only_rsc else 0
 
@@ -406,3 +411,4 @@ def main() -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
+
